@@ -1,6 +1,9 @@
 process.env.TZ = "UTC";
 
 const express = require("express");
+app.get("/", (req, res) => {
+    res.send("LoveTextForHer backend is running ❤️");
+});
 const cors = require("cors");
 const { Pool } = require("pg");
 const cron = require("node-cron");
