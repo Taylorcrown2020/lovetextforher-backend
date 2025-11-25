@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard – LoveTextForHer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                         "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+
+<header class="p-5 bg-white shadow-sm flex justify-between items-center">
+    <h1 class="text-2xl font-semibold">❤️ LoveTextForHer Admin</h1>
+    <button onclick="loadUsers()"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+        Refresh
+    </button>
+</header>
+
+<div class="p-8">
+    <h2 class="text-3xl font-semibold mb-6">Subscribers</h2>
+
+    <div id="userTableContainer" class="overflow-x-auto bg-white shadow rounded-xl">
+        <table class="min-w-full text-left">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="p-4">Email</th>
+                    <th class="p-4">Name</th>
+                    <th class="p-4">Frequency</th>
+                    <th class="p-4">Time</th>
+                    <th class="p-4">Next Delivery</th>
+                    <th class="p-4">Active</th>
+                    <th class="p-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userRows"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const API = "https://renderlovetextforher.onrender.com";
+
+// Load all users
+async function loadUsers() {
+    const res = await fetch(`${API}/api/admin/users`);
+    const users = await res.json();
+
+    const table = document.getElementById("userRows");
+    table.innerHTML = "";
+
+    users.forEach(user => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td class="p-4">${user.email}</td>
+            <td class="p-4">${user.name || ''}</td>
+            <td class="p-4">${user.frequency}</td>
+            <td class="p-4">${user.timings.join(", ")}</td>
+            <td class="p-4">${new Date(user.next_delivery).toLocaleString()}</td>
+            <td class="p-4">
+                <span class="px-3 py-1 rounded-lg ${user.is_active ? 'bg-green-200 text-green-700' : 'bg-red-200 text-red-700'}">
+                    ${user.is_active ? 'Active' : 'Inactive'}
+                </span>
+            </td>
+            <td class="p-4 space-x-3">
+                <button onclick="forceSend(${user.id})"
+                        class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
+                    Send Now
+                </button>
+
+                <button onclick="toggleActive(${user.id}, ${user.is_active})"
+                        class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg">
+                    ${user.is_active ? 'Deactivate' : 'Activate'}
+                </button>
+
+                <button onclick="deleteUser(${user.id})"
+                        class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg">
+                    Delete
+                </button>
+            </td>
+        `;
+
+        table.appendChild(row);
+    });
+}
+
+// Actions
+async function forceSend(id) {
+    await fetch(`${API}/api/admin/send/${id}`, { method: "POST" });
+    alert("Message queued to send!");
+}
+
+async function toggleActive(id, active) {
+    await fetch(`${API}/api/admin/active/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !active })
+    });
+    loadUsers();
+}
+
+async function deleteUser(id) {
+    if (!confirm("Delete this user?")) return;
+
+    await fetch(`${API}/api/admin/delete/${id}`, { method: "DELETE" });
+
+    loadUsers();
+}
+
+loadUsers();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "lovetextforher",
+  "version": "1.0.0",
+  "description": "Romantic quote delivery service for couples",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "romance",
+    "quotes",
+    "relationships"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
+  "dependencies": {
+    "@getbrevo/brevo": "^3.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^7.0.10",
+    "pg": "^8.16.3",
+    "twilio": "^5.10.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unsubscribe – LoveTextForHer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-white text-center pt-32 text-gray-800">
+
+<h1 class="text-4xl font-bold">We're sad to see you go 💔</h1>
+<p class="mt-4 text-lg text-gray-600">Are you sure you want to stop receiving love messages?</p>
+
+<div class="mt-10">
+    <button onclick="unsubscribeNow()"
+            class="px-8 py-4 bg-red-500 text-white rounded-xl text-lg hover:bg-red-600 transition">
+        Unsubscribe
+    </button>
+</div>
+
+<p id="statusMsg" class="mt-8 text-xl"></p>
+
+<script>
+async function unsubscribeNow() {
+    const token = new URLSearchParams(window.location.search).get("token");
+
+    const res = await fetch("https://renderlovetextforher.onrender.com/api/unsubscribe/" + token, {
+        method: "POST"
+    });
+
+    const data = await res.json();
+    const msg = document.getElementById("statusMsg");
+
+    if (data.success) {
+        msg.textContent = "You have been unsubscribed ❤️";
+        msg.className = "text-green-600 text-xl";
+    } else {
+        msg.textContent = data.error;
+        msg.className = "text-red-600 text-xl";
+    }
+}
+</script>
+
+</body>
+</html>
