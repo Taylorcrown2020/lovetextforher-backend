@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin — Customers</title>
+
+    <!-- Prevent nav.js from injecting anything -->
+    <script>
+        window.SKIP_NAV_JS = true;
+    </script>
+
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --text-dark: #1a1a1a;
+            --card-bg: rgba(255,255,255,0.55);
+            --max-width: 1200px;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+            padding-top: 120px;
+        }
+
+        /* NAVBAR */
+        #navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 18px;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 2px 14px rgba(0,0,0,0.08);
+            z-index: 1000;
+        }
+
+        #navbar-inner {
+            max-width: var(--max-width);
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: 20px;
+            color: var(--primary);
+        }
+
+        #navbar a {
+            margin-left: 22px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.25s ease;
+        }
+
+        #navbar a:hover {
+            color: var(--primary);
+        }
+
+        /* HEADER */
+        h2 {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
+        }
+
+        /* CUSTOMER LIST */
+        #list {
+            max-width: 900px;
+            margin: 0 auto 60px auto;
+            padding: 0 16px;
+        }
+
+        .customer {
+            padding: 22px;
+            background: var(--card-bg);
+            border-radius: 18px;
+            margin: 16px 0;
+            box-shadow: 0 10px 35px rgba(214,51,108,0.15);
+            transition: 0.25s ease;
+        }
+
+        .customer:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 45px rgba(214,51,108,0.25);
+        }
+
+        .email {
+            color: #444;
+            font-size: 15px;
+        }
+
+        button {
+            margin-top: 12px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(90deg, #d6336c, #8b5cf6);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 6px 20px rgba(214,51,108,0.25);
+            transition: 0.25s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 32px rgba(214,51,108,0.35);
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ADMIN AUTH CHECK -->
+<script>
+async function verifyAdmin() {
+    const res = await fetch("/api/admin/me", {
+        method: "GET",
+        credentials: "include"
+    });
+
+    if (!res.ok) {
+        window.location.href = "/admin_login.html";
+        return;
+    }
+}
+verifyAdmin();
+</script>
+
+<!-- ADMIN NAVBAR -->
+<div id="navbar">
+    <div id="navbar-inner">
+        <div class="logo">LOVETEXTFORHER</div>
+        <div>
+            <a href="/admin.html">Dashboard</a>
+            <a href="/admin_users.html">Users</a>
+            <a href="/admin_customers.html">Customers</a>
+            <a href="/admin_kpis.html">KPIs</a>
+            <a href="#" id="logout-admin">Logout</a>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE CONTENT -->
+<h2>Customer Accounts</h2>
+<div id="list"></div>
+
+<script>
+async function loadCustomers() {
+    const res = await fetch("/api/admin/customers", {
+        credentials: "include"
+    });
+
+    if (!res.ok) {
+        window.location.href = "/admin_login.html";
+        return;
+    }
+
+    const customers = await res.json();
+    const box = document.getElementById("list");
+    box.innerHTML = "";
+
+    customers.forEach(c => {
+        box.innerHTML += `
+            <div class="customer" id="customer-${c.id}">
+                <strong>${c.email}</strong>
+                <div class="email">Customer ID: ${c.id}</div>
+                <div class="email">Name: ${c.name || "(none)"}</div>
+
+                <button onclick="deleteCustomer(${c.id})">
+                    Delete Customer
+                </button>
+            </div>
+        `;
+    });
+}
+
+async function deleteCustomer(id) {
+    if (!confirm("This will delete the customer AND all related recipients. Are you sure?")) return;
+
+    const res = await fetch(`/api/admin/customer/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        const el = document.getElementById(`customer-${id}`);
+        if (el) el.remove();
+    } else {
+        alert("Error deleting customer.");
+    }
+}
+
+// FIXED LOGOUT BUTTON
+document.getElementById("logout-admin").addEventListener("click", async () => {
+    await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "include"
+    });
+    window.location.href = "/admin_login.html";
+});
+
+loadCustomers();
+</script>
+
+</body>
+</html>

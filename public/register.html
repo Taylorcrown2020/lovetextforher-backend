@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Create Account ❤️</title>
+
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --primary-light: #ffe3ed;
+            --text-dark: #1a1a1a;
+            --text-soft: #5f3a4d;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+            min-height: 100vh;
+        }
+
+        /* Placeholder for nav.js injected navbar */
+        #navbar {
+            width: 100%;
+            height: 80px;
+        }
+
+        /* Card */
+        .box {
+            max-width: 420px;
+            margin: 120px auto;
+            background: rgba(255,255,255,0.7);
+            padding: 32px;
+            border-radius: 18px;
+            border: 1px solid #f8cde6;
+            box-shadow: 0 10px 35px rgba(214,51,108,0.15);
+            backdrop-filter: blur(12px);
+        }
+
+        h2 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 22px;
+            font-weight: 800;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            margin-top: 12px;
+            border: 2px solid #fbcfe8;
+            border-radius: 10px;
+            font-size: 15px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 22px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: 0 8px 18px rgba(214,51,108,0.25);
+            cursor: pointer;
+            transition: 0.25s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(214,51,108,0.35);
+        }
+
+        #msg {
+            text-align: center;
+            color: #c81e59;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="navbar"></div>
+
+<div class="box">
+    <h2>Create Account</h2>
+
+    <input id="name" placeholder="Your Name (optional)">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+
+    <button onclick="registerUser()">Create Account</button>
+
+    <p id="msg"></p>
+</div>
+
+<script src="/js/nav.js" defer></script>
+
+<script>
+async function registerUser() {
+    const nameField = document.getElementById("name");
+    const emailField = document.getElementById("email");
+    const passField = document.getElementById("password");
+    const msg = document.getElementById("msg");
+
+    msg.innerText = "";
+
+    if (!emailField.value || !passField.value) {
+        msg.innerText = "Email and password are required.";
+        return;
+    }
+
+    const res = await fetch("/api/customer/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: nameField.value,
+            email: emailField.value,
+            password: passField.value
+        })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        // New users are immediately guided to subscription options
+        window.location.href = "/products.html";
+    } else {
+        msg.innerText = data.error || "Registration failed.";
+    }
+}
+</script>
+
+</body>
+</html>

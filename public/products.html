@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Products</title>
+
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --text-dark: #1a1a1a;
+            --text-soft: #5f3a4d;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+        }
+
+        /* PRODUCT GRID */
+        .product-section {
+            max-width: 1200px;
+            margin: 150px auto 60px;
+        }
+
+        .product-title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+            margin-top: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 18px;
+            padding: 18px;
+            border: 1px solid #f8cde6;
+            box-shadow: 0 10px 35px rgba(214,51,108,0.15);
+        }
+
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 14px;
+        }
+
+        .name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 12px;
+        }
+
+        .price {
+            font-size: 16px;
+            color: var(--text-soft);
+            margin: 6px 0 14px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+
+        .btn-subscribe {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 8px 18px rgba(214,51,108,0.25);
+        }
+
+        .btn-add {
+            background: linear-gradient(90deg, #8b5cf6, #d6336c);
+            color: white;
+            box-shadow: 0 8px 18px rgba(140,51,214,0.25);
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- NAVBAR AUTO INJECTED -->
+<script>
+    window.SKIP_NAV_JS = false;
+</script>
+<script src="/js/nav.js" defer></script>
+
+<div class="product-section">
+    <div class="product-title">Our Romantic Products</div>
+    <div class="grid" id="productGrid"></div>
+</div>
+
+<script>
+// ----------------------------
+// Product definitions
+// ----------------------------
+const PRODUCTS = {
+    "free-trial": {
+        id: "free-trial",
+        name: "LoveText Free Trial (3 Days)",
+        price: 0.00,
+        billing: "3-Day Trial",
+        subscription: true,
+        image: "/img/free-trial.jpg"
+    },
+    "love-basic": {
+        id: "love-basic",
+        name: "LoveText Basic Subscription",
+        price: 5.00,
+        billing: "Monthly Subscription",
+        subscription: true,
+        image: "/img/love-basic.jpg"
+    },
+    "love-plus": {
+        id: "love-plus",
+        name: "LoveText Plus Subscription",
+        price: 12.99,
+        billing: "Monthly Subscription",
+        subscription: true,
+        image: "/img/love-premium.jpg"
+    },
+    "custom-pack": {
+        id: "custom-pack",
+        name: "Custom Love Message Pack",
+        price: 9.99,
+        billing: "One-Time Purchase",
+        subscription: false,
+        image: "/img/custom-pack.jpg"
+    }
+};
+
+// ----------------------------
+// Load Products
+// ----------------------------
+function loadProducts() {
+    const grid = document.getElementById("productGrid");
+
+    Object.values(PRODUCTS).forEach(p => {
+        grid.innerHTML += `
+            <div class="card">
+                <img src="${p.image}">
+                <div class="name">${p.name}</div>
+                <div class="price">$${p.price.toFixed(2)} — ${p.billing}</div>
+
+                ${
+                    p.subscription
+                    ?
+                    `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">
+                        Subscribe Now
+                    </button>`
+                    :
+                    `<button class="btn btn-add" onclick="addToCart('${p.id}')">
+                        Add to Cart
+                    </button>`
+                }
+            </div>
+        `;
+    });
+}
+
+// ----------------------------
+// FIXED: STRIPE CHECKOUT — SUBSCRIPTION
+// ----------------------------
+async function subscribeNow(productId) {
+    const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId })  // FIX: send productId
+    });
+
+    const data = await res.json();
+
+    // If not logged in
+    if (data.error && data.error.includes("Not logged")) {
+        window.location.href = "/login.html";
+        return;
+    }
+
+    if (data.url) {
+        window.location.href = data.url;
+    } else {
+        alert("Unable to start checkout.");
+    }
+}
+
+// ----------------------------
+// Add to Cart for non-subscription items
+// ----------------------------
+async function addToCart(productId) {
+    const res = await fetch("/api/cart/add", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId })
+    });
+
+    const data = await res.json();
+
+    if (data.error && data.error.includes("Not logged")) {
+        window.location.href = "/login.html";
+        return;
+    }
+
+    if (data.success) {
+        window.location.href = "/cart.html";
+    } else {
+        alert(data.error || "Unable to add to cart.");
+    }
+}
+
+loadProducts();
+</script>
+
+</body>
+</html>

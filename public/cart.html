@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Your Cart</title>
+
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --text-dark: #1a1a1a;
+            --text-soft: #5f3a4d;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+            min-height: 100vh;
+        }
+
+        /* NAVBAR */
+        #navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 18px 0;
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 2px 14px rgba(0,0,0,0.05);
+            z-index: 1000;
+        }
+
+        #navbar-inner {
+            max-width: 1200px;
+            margin: auto;
+            padding: 0 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        #navbar a {
+            margin-left: 22px;
+            text-decoration: none;
+            color: var(--text-dark);
+        }
+
+        /* CART WRAPPER */
+        .cart-container {
+            max-width: 900px;
+            margin: 150px auto 50px;
+            padding: 40px;
+            background: rgba(255,255,255,0.55);
+            border-radius: 22px;
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+        }
+
+        .cart-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 25px;
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid #ffe0ec;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 14px;
+            box-shadow: 0 8px 28px rgba(214,51,108,0.12);
+        }
+
+        .item-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .item-price {
+            font-size: 15px;
+            color: var(--text-soft);
+        }
+
+        .sub-badge {
+            font-size: 12px;
+            color: white;
+            background: var(--secondary);
+            padding: 3px 8px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .cart-total {
+            text-align: right;
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 25px;
+        }
+
+        .checkout-btn {
+            margin-top: 25px;
+            padding: 16px 26px;
+            border-radius: 12px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 700;
+            text-decoration: none;
+            float: right;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar">
+    <div id="navbar-inner">
+        <div class="logo">LOVETEXTFORHER</div>
+        <div>
+            <a href="/products.html">Products</a>
+            <a href="/dashboard.html">Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<!-- CART -->
+<div class="cart-container">
+    <div class="cart-title">Your Cart</div>
+
+    <div id="cartItems"></div>
+    <div id="cartTotal" class="cart-total"></div>
+
+    <button id="checkoutBtn" class="checkout-btn" style="display:none;">
+        Checkout
+    </button>
+</div>
+
+<script>
+/* MATCHES PRODUCTS IN products.html */
+const PRODUCTS = {
+    "free-trial": {
+        name: "LoveText Free Trial",
+        price: 0.00,
+        isSubscription: true
+    },
+    "love-basic": {
+        name: "LoveText Basic Subscription",
+        price: 5.00,
+        isSubscription: true
+    },
+    "love-plus": {
+        name: "LoveText Plus Subscription",
+        price: 12.99,
+        isSubscription: true
+    },
+    "custom-pack": {
+        name: "Custom Love Message Pack",
+        price: 9.99,
+        isSubscription: false
+    }
+};
+
+/* LOAD CART */
+async function loadCart() {
+    const res = await fetch("/api/cart", { credentials: "include" });
+
+    if (res.status === 401) {
+        window.location = "/login.html";
+        return;
+    }
+
+    const data = await res.json();
+
+    const container = document.getElementById("cartItems");
+    const totalEl = document.getElementById("cartTotal");
+    const checkoutBtn = document.getElementById("checkoutBtn");
+
+    if (!data.items || data.items.length === 0) {
+        container.innerHTML = `<p>Your cart is empty.</p>`;
+        totalEl.innerHTML = "";
+        checkoutBtn.style.display = "none";
+        return;
+    }
+
+    let total = 0;
+    let subCount = 0;
+    let subProductId = null;
+
+    container.innerHTML = "";
+
+    data.items.forEach(item => {
+        const p = PRODUCTS[item.productId];
+        if (!p) return;
+
+        if (p.isSubscription) {
+            subCount++;
+            subProductId = item.productId;
+        }
+
+        container.innerHTML += `
+            <div class="item">
+                <div>
+                    <div class="item-name">${p.name}</div>
+                    <div class="item-price">$${p.price.toFixed(2)}</div>
+                    ${p.isSubscription ? `<div class="sub-badge">Subscription</div>` : ""}
+                </div>
+                <button class="remove-btn" onclick="removeItem('${item.productId}')">
+                    Remove
+                </button>
+            </div>
+        `;
+
+        total += p.price;
+    });
+
+    totalEl.innerHTML = `Total: $${total.toFixed(2)}`;
+    checkoutBtn.style.display = "inline-block";
+
+    checkoutBtn.onclick = () => handleCheckout(subCount, subProductId);
+}
+
+/* REMOVE ITEM */
+async function removeItem(productId) {
+    await fetch("/api/cart/remove", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId })
+    });
+
+    loadCart();
+}
+
+/* CHECKOUT LOGIC */
+async function handleCheckout(subCount, productId) {
+    if (subCount === 0) {
+        alert("Non-subscription checkout coming soon.");
+        return;
+    }
+
+    if (subCount > 1) {
+        alert("You can only subscribe to one plan at a time.");
+        return;
+    }
+
+    const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId })
+    });
+
+    if (res.status === 401) {
+        window.location.href = "/login.html";
+        return;
+    }
+
+    const data = await res.json();
+
+    if (data.url) window.location.href = data.url;
+    else alert("Unable to start checkout.");
+}
+
+/* INIT */
+loadCart();
+</script>
+
+</body>
+</html>

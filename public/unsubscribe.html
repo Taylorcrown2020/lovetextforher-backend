@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Unsubscribe ❤️</title>
+
+    <script>
+        /* Force nav.js to ALWAYS show visitor nav on this page */
+        window.FORCE_VISITOR_NAV = true;
+    </script>
+
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --primary-light: #ffe3ed;
+            --text-dark: #1a1a1a;
+            --text-soft: #5f3a4d;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+            min-height: 100vh;
+            text-align: center;
+            padding: 120px 20px; /* prevents navbar overlap */
+        }
+
+        /* Navbar placeholder for nav.js */
+        #navbar {
+            width: 100%;
+            height: 80px;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        p {
+            color: var(--text-soft);
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .status-box {
+            max-width: 520px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.6);
+            padding: 30px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.7);
+            box-shadow: 0 12px 28px rgba(214,51,108,0.10);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="navbar"></div>
+
+<div class="status-box">
+    <h2 id="title">Processing…</h2>
+    <p id="text">Please wait while we unsubscribe you.</p>
+</div>
+
+<script src="/js/nav.js" defer></script>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const token = params.get("token");
+
+async function unsubscribe() {
+    const res = await fetch(`/api/unsubscribe/${token}`, {
+        method: "POST"
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        title.innerText = "You’ve been unsubscribed 💔";
+        text.innerText = "You will no longer receive messages.";
+    } else {
+        title.innerText = "Invalid Link";
+        text.innerText = "Your unsubscribe link is invalid or expired.";
+    }
+}
+
+unsubscribe();
+</script>
+
+</body>
+</html>

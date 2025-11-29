@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LoveTextForHer — Automated Romantic Messages</title>
+
+    <style>
+        :root {
+            --primary: #d6336c;            /* Pink */
+            --secondary: #8b5cf6;          /* Lavender */
+            --primary-light: #ffe3ed;
+            --secondary-light: #ede9fe;
+            --text-dark: #1a1a1a;
+            --text-light: #555;
+            --max-width: 1200px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Inter", sans-serif; }
+
+        body {
+            background: #fff;
+            color: var(--text-dark);
+        }
+
+        /* ============================================================
+           NAVIGATION
+        ============================================================ */
+        .nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 18px 0;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-inner {
+            max-width: var(--max-width);
+            margin: auto;
+            padding: 0 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: var(--primary);
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            margin-left: 22px;
+            padding: 6px 0;
+            transition: 0.25s ease;
+        }
+
+        .nav-links a:hover { color: var(--primary); }
+
+
+        /* ============================================================
+           HERO SECTION
+        ============================================================ */
+
+        .hero {
+            max-width: var(--max-width);
+            margin: 150px auto 0;
+            padding: 0 28px;
+            min-height: 520px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hero-text { max-width: 520px; }
+
+        .hero-title {
+            font-size: 54px;
+            line-height: 1.15;
+            font-weight: 800;
+            margin-bottom: 25px;
+        }
+
+        .hero-sub {
+            font-size: 18px;
+            color: var(--text-light);
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .cta-btn {
+            background: var(--primary);
+            color: #fff;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: 0.25s ease;
+            box-shadow: 0 12px 28px rgba(214, 51, 108, 0.25);
+        }
+
+        .cta-btn:hover {
+            background: #b8285b;
+            transform: translateY(-2px);
+        }
+
+
+        /* HERO MOCKUP (floating cards) */
+        .hero-mockup {
+            position: relative;
+            width: 440px;
+            height: 420px;
+        }
+
+        .glass-card {
+            position: absolute;
+            width: 320px;
+            height: 140px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(22px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+
+        .glass-card .line {
+            height: 10px;
+            border-radius: 6px;
+            margin: 15px 20px;
+
+            background: linear-gradient(90deg,
+                var(--primary),
+                var(--secondary)
+            );
+        }
+
+        .card-top { top: 0; right: 10px; transform: rotate(2deg); }
+        .card-mid { top: 130px; left: 20px; transform: rotate(-3deg); }
+        .card-bottom { top: 260px; right: 50px; transform: rotate(1deg); }
+
+
+        /* ============================================================
+           FEATURES
+        ============================================================ */
+
+        .features-strip {
+            background: var(--primary-light);
+            padding: 70px 0;
+            margin-top: 70px;
+        }
+
+        .features {
+            max-width: var(--max-width);
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 28px;
+        }
+
+        .feature {
+            text-align: center;
+            width: 25%;
+        }
+
+        .feature svg {
+            width: 45px;
+            height: 45px;
+            stroke: var(--primary);
+            stroke-width: 2;
+            fill: none;
+            margin-bottom: 14px;
+        }
+
+
+        /* ============================================================
+           PRODUCTS
+        ============================================================ */
+
+        .products-section {
+            max-width: var(--max-width);
+            margin: 90px auto;
+            padding: 0 28px;
+        }
+
+        .products-title {
+            text-align: center;
+            font-size: 34px;
+            font-weight: 800;
+            margin-bottom: 40px;
+        }
+
+        .products {
+            display: flex;
+            justify-content: space-between;
+            gap: 32px;
+        }
+
+        .product-card {
+            flex: 1;
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(18px);
+            border-radius: 22px;
+            padding: 28px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.7);
+            box-shadow: 0 25px 45px rgba(0,0,0,0.06);
+        }
+
+        .product-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .product-desc {
+            color: var(--text-light);
+            font-size: 15px;
+            margin-bottom: 16px;
+        }
+
+        .product-price {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+
+        .product-btn {
+            background: var(--primary);
+            color: #fff;
+            padding: 10px 22px;
+            font-size: 15px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .product-btn:hover { background: #b8285b; }
+
+    </style>
+</head>
+<body>
+
+<!-- ========================= NAV ========================= -->
+<div class="nav">
+    <div class="nav-inner">
+        <div class="logo">LOVETEXTFORHER</div>
+
+        <div class="nav-links">
+            <a href="/index.html">Home</a>
+            <a href="/login.html">Login</a>
+            <a href="/register.html">Register</a>
+            <a href="/admin_login.html">Admin</a>
+        </div>
+    </div>
+</div>
+
+<!-- ========================= HERO ========================= -->
+<section class="hero">
+    <div class="hero-text">
+        <h1 class="hero-title">Never Miss a Chance<br>to Make Her Smile.</h1>
+
+        <p class="hero-sub">
+            Automated romantic messages delivered exactly when she needs them — 
+            thoughtful, meaningful, and effortless for you.
+        </p>
+
+        <button class="cta-btn" onclick="location.href='/register.html'">
+            Get Started
+        </button>
+    </div>
+
+    <div class="hero-mockup">
+        <div class="glass-card card-top">
+            <div class="line" style="width: 65%;"></div>
+            <div class="line" style="width: 40%;"></div>
+        </div>
+
+        <div class="glass-card card-mid">
+            <div class="line" style="width: 70%;"></div>
+            <div class="line" style="width: 55%;"></div>
+        </div>
+
+        <div class="glass-card card-bottom">
+            <div class="line" style="width: 50%;"></div>
+            <div class="line" style="width: 35%;"></div>
+        </div>
+    </div>
+</section>
+
+<!-- ========================= FEATURES ========================= -->
+<section class="features-strip">
+    <div class="features">
+
+        <div class="feature">
+            <svg viewBox="0 0 24 24"><path d="M3 12h18M12 3v18" stroke-linecap="round"/></svg>
+            <div>Automated Delivery</div>
+        </div>
+
+        <div class="feature">
+            <svg viewBox="0 0 24 24">
+                <path d="M4 4h16v12H4z"/>
+                <path d="M8 20h8" stroke-linecap="round"/>
+            </svg>
+            <div>Personalized Messages</div>
+        </div>
+
+        <div class="feature">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="8"/>
+                <path d="M12 8v4l2 2" stroke-linecap="round"/>
+            </svg>
+            <div>Secure & Private</div>
+        </div>
+
+        <div class="feature">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14" stroke-linecap="round"/>
+            </svg>
+            <div>Set It Once</div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ========================= PRODUCTS ========================= -->
+<section class="products-section">
+    <h2 class="products-title">Choose Your Plan</h2>
+
+    <div class="products">
+
+        <div class="product-card">
+            <div class="product-title">Basic Subscription</div>
+            <div class="product-desc">Daily love messages for one recipient.</div>
+            <div class="product-price">$5 / month</div>
+<a href="/login.html" style="text-decoration:none;">
+    <button class="product-btn">Sign Up</button>
+</a>
+
+        <div class="product-card">
+            <div class="product-title">Premium Subscription</div>
+            <div class="product-desc">Up to 5 recipients — perfect for family or friends.</div>
+            <div class="product-price">$15 / month</div>
+<a href="/login.html" style="text-decoration:none;">
+    <button class="product-btn">Sign Up</button>
+</a>
+
+        <div class="product-card">
+            <div class="product-title">Custom Message Pack</div>
+            <div class="product-desc">Send 20 scheduled messages — one-time gift.</div>
+            <div class="product-price">$9.99 once</div>
+<a href="/login.html" style="text-decoration:none;">
+    <button class="product-btn">Sign Up</button>
+</a>
+
+        </div>
+
+    </div>
+</section>
+
+</body>
+</html>
+

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Dashboard — LoveTextForHer</title>
+
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --primary-light: #ffe3ed;
+            --secondary-light: #f3e9ff;
+            --text-dark: #1a1a1a;
+            --text-soft: #5f3a4d;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+        }
+
+        /* Placeholder navbar for nav.js */
+        #navbar {
+            width: 100%;
+            height: 95px;
+        }
+
+        .dashboard-container {
+            max-width: 950px;
+            margin: 150px auto;
+            padding: 45px 40px;
+            background: rgba(255,255,255,0.55);
+            backdrop-filter: blur(20px);
+            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+        }
+
+        h1.header-title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 35px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #subscriptionBanner {
+            display: none;
+            background: #ffe3ed;
+            padding: 18px;
+            border-radius: 12px;
+            text-align: center;
+            color: #b1184a;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+
+        #subscriptionBanner a {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 10px 18px;
+            background: var(--primary);
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .recipient-box {
+            background: rgba(255,255,255,0.7);
+            border: 1px solid #ffe0ec;
+            border-radius: 18px;
+            padding: 22px;
+            margin-bottom: 18px;
+            box-shadow: 0 8px 26px rgba(214,51,108,0.12);
+        }
+
+        .recipient-box strong {
+            color: var(--primary);
+        }
+
+        .delete-btn {
+            margin-top: 14px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+
+        #addForm input,
+        #addForm select {
+            width: 100%;
+            padding: 14px;
+            margin-top: 15px;
+            border-radius: 12px;
+            border: 2px solid rgba(214,51,108,0.25);
+        }
+
+        #addForm button {
+            width: 100%;
+            padding: 16px;
+            margin-top: 22px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        #msg {
+            text-align: center;
+            margin-top: 16px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        #manageSubBtn {
+            margin: 120px auto 10px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Placeholder for nav.js -->
+<div id="navbar"></div>
+
+<button id="manageSubBtn" class="delete-btn">Manage Subscription</button>
+
+<div class="dashboard-container">
+
+    <div id="subscriptionBanner">
+        You need a subscription to add recipients ❤️  
+        <br><br>
+        <a href="/products.html">View Subscription Plans</a>
+    </div>
+
+    <h1 class="header-title">Your Recipients</h1>
+
+    <div id="recipients"></div>
+
+    <h2 class="form-title">Add New Recipient</h2>
+
+    <div id="addForm">
+        <input id="r_name" placeholder="Recipient Name">
+        <input id="r_email" type="email" placeholder="Recipient Email">
+
+        <select id="r_frequency">
+            <option value="daily">Daily</option>
+            <option value="every-other-day">Every Other Day</option>
+            <option value="three-times-week">Three Times a Week</option>
+            <option value="weekly">Weekly</option>
+            <option value="bi-weekly">Bi-Weekly</option>
+        </select>
+
+        <select id="r_timings">
+            <option value="morning">Morning</option>
+            <option value="afternoon">Afternoon</option>
+            <option value="evening">Evening</option>
+            <option value="night">Night</option>
+        </select>
+
+        <select id="r_timezone">
+            <option value="America/Chicago">America/Chicago (Central)</option>
+            <option value="America/New_York">America/New_York (Eastern)</option>
+            <option value="America/Denver">America/Denver (Mountain)</option>
+            <option value="America/Los_Angeles">America/Los_Angeles (Pacific)</option>
+            <option value="America/Phoenix">America/Phoenix (Arizona)</option>
+            <option value="Pacific/Honolulu">Pacific/Honolulu (Hawaii)</option>
+            <option value="Europe/London">Europe/London</option>
+            <option value="Europe/Paris">Europe/Paris</option>
+            <option value="Asia/Tokyo">Asia/Tokyo</option>
+            <option value="Asia/Shanghai">Asia/Shanghai</option>
+        </select>
+
+        <button onclick="addRecipient()">Add Recipient</button>
+    </div>
+
+    <p id="msg"></p>
+
+</div>
+
+<script src="/js/nav.js" defer></script>
+
+<script>
+let HAS_SUBSCRIPTION = false;
+
+async function loadSubscriptionStatus() {
+    const res = await fetch("/api/customer/subscription", { credentials: "include" });
+    const data = await res.json();
+
+    HAS_SUBSCRIPTION = data.subscribed;
+
+    const banner = document.getElementById("subscriptionBanner");
+    const manageBtn = document.getElementById("manageSubBtn");
+
+    if (!HAS_SUBSCRIPTION) {
+        banner.style.display = "block";
+        manageBtn.style.display = "none";
+    } else {
+        banner.style.display = "none";
+        manageBtn.style.display = "block";
+    }
+}
+
+async function loadRecipients() {
+    const res = await fetch("/api/customer/recipients", { credentials: "include" });
+    const data = await res.json();
+
+    const box = document.getElementById("recipients");
+    box.innerHTML = "";
+
+    if (data.length === 0) {
+        box.innerHTML = `<p style="color:var(--text-soft); text-align:center; margin-top:20px;">
+            You have no recipients yet.
+        </p>`;
+        return;
+    }
+
+    data.forEach(r => {
+        const timings = Array.isArray(r.timings) ? r.timings.join(", ") : "—";
+
+        box.innerHTML += `
+            <div class="recipient-box">
+                <strong>${r.name}</strong> (${r.email})
+                <p>Frequency: ${r.frequency}</p>
+                <p>Timing: ${timings}</p>
+
+                <button class="delete-btn" onclick="removeRecipient(${r.id})">
+                    Delete
+                </button>
+            </div>
+        `;
+    });
+}
+
+async function addRecipient() {
+    if (!HAS_SUBSCRIPTION) {
+        msg.innerText = "A subscription is required.";
+        setTimeout(() => window.location = "/products.html", 1300);
+        return;
+    }
+
+    const name = r_name.value.trim();
+    const email = r_email.value.trim();
+    const frequency = r_frequency.value;
+    const timing = r_timings.value;
+    const timezone = r_timezone.value;
+
+    if (!name || !email || !timezone) {
+        msg.innerText = "Please fill out all fields.";
+        return;
+    }
+
+    const res = await fetch("/api/customer/recipients", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, frequency, timings: [timing], timezone })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        msg.innerText = "";
+        r_name.value = "";
+        r_email.value = "";
+        loadRecipients();
+    } else {
+        msg.innerText = data.error || "Error adding recipient.";
+    }
+}
+
+async function removeRecipient(id) {
+    if (!confirm("Are you sure you want to remove this recipient?")) return;
+
+    await fetch(`/api/customer/recipients/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+    });
+
+    loadRecipients();
+}
+
+document.getElementById("manageSubBtn").addEventListener("click", async () => {
+    const res = await fetch("/api/customer/subscription/portal", { credentials: "include" });
+    const data = await res.json();
+
+    if (data.url) {
+        window.location.href = data.url;
+    } else {
+        alert("No active subscription found.");
+    }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadSubscriptionStatus();
+    loadRecipients();
+});
+</script>
+
+</body>
+</html>

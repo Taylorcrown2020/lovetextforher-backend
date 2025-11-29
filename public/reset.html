@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Set New Password ❤️</title>
+
+    <script>
+        /* Force visitor navbar — prevents admin nav showing here */
+        window.FORCE_VISITOR_NAV = true;
+    </script>
+
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --primary-light: #ffe3ed;
+            --text-dark: #1a1a1a;
+            --text-soft: #5f3a4d;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+            min-height: 100vh;
+        }
+
+        /* Navbar spacer */
+        #navbar {
+            width: 100%;
+            height: 80px;
+        }
+
+        .box {
+            max-width: 420px;
+            margin: 120px auto;
+            background: rgba(255,255,255,0.70);
+            padding: 32px;
+            border-radius: 18px;
+            border: 1px solid #f8cde6;
+            box-shadow: 0 10px 35px rgba(214,51,108,0.15);
+            backdrop-filter: blur(12px);
+        }
+
+        h2 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 22px;
+            font-weight: 800;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            margin-top: 12px;
+            border: 2px solid #fbcfe8;
+            border-radius: 10px;
+            font-size: 15px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 22px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: 0 8px 18px rgba(214,51,108,0.25);
+            cursor: pointer;
+            transition: 0.25s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(214,51,108,0.35);
+        }
+
+        #msg {
+            text-align: center;
+            margin-top: 15px;
+            color: #c81e59;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="navbar"></div>
+
+<div class="box">
+    <h2>Choose a New Password</h2>
+
+    <input id="password" type="password" placeholder="New Password">
+
+    <button onclick="resetPassword()">Save Password</button>
+
+    <p id="msg"></p>
+</div>
+
+<script src="/js/nav.js" defer></script>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const token = urlParams.get("token");
+
+async function resetPassword() {
+    const res = await fetch("/api/reset/confirm", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({
+            token,
+            password: password.value
+        })
+    });
+
+    const data = await res.json();
+    const msg = document.getElementById("msg");
+
+    if (data.success) {
+        msg.innerText = "Password updated ❤️ Redirecting...";
+        setTimeout(() => window.location.href = "/login.html", 1500);
+    } else {
+        msg.innerText = data.error || "Invalid or expired link.";
+    }
+}
+</script>
+
+</body>
+</html>

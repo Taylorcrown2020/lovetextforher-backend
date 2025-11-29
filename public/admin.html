@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard — LoveTextForHer</title>
+
+    <!-- Prevent nav.js from modifying admin pages -->
+    <script>
+        window.SKIP_NAV_JS = true;
+    </script>
+
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --text-soft: #6a6a6a;
+            --max-width: 1200px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(125deg, #fff7fa, #f6f3ff);
+            min-height: 100vh;
+            padding-top: 100px;
+        }
+
+        /* NAVBAR */
+        #navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 18px 0;
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 2px 14px rgba(0,0,0,0.05);
+            z-index: 1000;
+        }
+
+        #navbar-inner {
+            max-width: var(--max-width);
+            margin: auto;
+            padding: 0 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        #navbar a {
+            margin-left: 22px;
+            text-decoration: none;
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        #navbar a:hover {
+            color: var(--primary);
+        }
+
+        /* PAGE TITLE */
+        h2 {
+            font-size: 42px;
+            font-weight: 800;
+            text-align: center;
+            margin-top: 40px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* GRID */
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 32px;
+            margin: 40px auto;
+            max-width: var(--max-width);
+            padding: 0 28px;
+        }
+
+        .admin-card {
+            background: rgba(255,255,255,0.55);
+            backdrop-filter: blur(20px);
+            padding: 32px;
+            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.8);
+            text-align: center;
+            box-shadow: 0 18px 45px rgba(0,0,0,0.06);
+            transition: 0.25s ease;
+        }
+
+        .admin-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 25px 55px rgba(0,0,0,0.10);
+        }
+
+        .admin-card h3 {
+            color: var(--primary);
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 15px;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- VERIFY ADMIN SESSION BEFORE SHOWING PAGE -->
+<script>
+async function verifyAdmin() {
+    const res = await fetch("/api/admin/me", {
+        method: "GET",
+        credentials: "include"
+    });
+
+    if (!res.ok) {
+        window.location.href = "/admin_login.html";
+        return;
+    }
+}
+verifyAdmin();
+</script>
+
+<!-- STATIC ADMIN NAVBAR -->
+<div id="navbar">
+    <div id="navbar-inner">
+        <div class="logo">LOVETEXTFORHER</div>
+        <div>
+            <a href="/admin.html">Dashboard</a>
+            <a href="/admin_users.html">Users</a>
+            <a href="/admin_customers.html">Customers</a>
+            <a href="/admin_kpis.html">KPIs</a>
+            <a href="#" id="logout-admin">Logout</a>
+        </div>
+    </div>
+</div>
+
+<h2>Admin Dashboard</h2>
+
+<div class="admin-grid">
+
+    <div class="admin-card">
+        <h3>Recipient Users</h3>
+        <a class="btn" href="/admin_users.html">Manage Users</a>
+    </div>
+
+    <div class="admin-card">
+        <h3>Customers</h3>
+        <a class="btn" href="/admin_customers.html">Manage Customers</a>
+    </div>
+
+    <div class="admin-card">
+        <h3>KPI Dashboard</h3>
+        <a class="btn" href="/admin_kpis.html">View KPIs</a>
+    </div>
+
+</div>
+
+<!-- FIXED LOGOUT -->
+<script>
+document.getElementById("logout-admin").addEventListener("click", async () => {
+    await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "include"
+    });
+    window.location.href = "/admin_login.html";
+});
+</script>
+
+</body>
+</html>
