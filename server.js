@@ -796,13 +796,13 @@ app.post("/api/admin/login", async (req, res) => {
             { expiresIn: "7d" }
         );
 
-        res.cookie("admin_token", {
-            httpOnly: true,
-            secure: false,
-            sameSite: "lax",
-            path: "/",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+res.cookie("admin_token", token, {
+    httpOnly: true,
+    secure: false,   // change to true if you enable HTTPS locally later
+    sameSite: "lax",
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+});
 
         res.json({ success: true });
     } catch (err) {
