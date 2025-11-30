@@ -6,9 +6,9 @@
     <title>LoveTextForHer — Automated Romantic Messages</title>
 
     <style>
-        :root {
-            --primary: #d6336c;            /* Pink */
-            --secondary: #8b5cf6;          /* Lavender */
+                :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
             --primary-light: #ffe3ed;
             --secondary-light: #ede9fe;
             --text-dark: #1a1a1a;
@@ -23,9 +23,7 @@
             color: var(--text-dark);
         }
 
-        /* ============================================================
-           NAVIGATION
-        ============================================================ */
+        /* ================= NAV ================= */
         .nav {
             position: fixed;
             top: 0;
@@ -33,8 +31,7 @@
             z-index: 1000;
             padding: 18px 0;
             backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255,255,255,0.6);
         }
 
         .nav-inner {
@@ -49,7 +46,6 @@
         .logo {
             font-size: 20px;
             font-weight: 900;
-            letter-spacing: 1px;
             color: var(--primary);
         }
 
@@ -58,17 +54,12 @@
             color: var(--text-dark);
             font-weight: 500;
             margin-left: 22px;
-            padding: 6px 0;
             transition: 0.25s ease;
         }
 
         .nav-links a:hover { color: var(--primary); }
 
-
-        /* ============================================================
-           HERO SECTION
-        ============================================================ */
-
+        /* ================= HERO ================= */
         .hero {
             max-width: var(--max-width);
             margin: 150px auto 0;
@@ -91,8 +82,8 @@
         .hero-sub {
             font-size: 18px;
             color: var(--text-light);
-            line-height: 1.6;
             margin-bottom: 30px;
+            line-height: 1.6;
         }
 
         .cta-btn {
@@ -102,19 +93,15 @@
             border-radius: 12px;
             font-size: 18px;
             font-weight: 600;
-            border: none;
             cursor: pointer;
+            border: none;
             transition: 0.25s ease;
-            box-shadow: 0 12px 28px rgba(214, 51, 108, 0.25);
+            box-shadow: 0 12px 28px rgba(214,51,108,0.25);
         }
 
-        .cta-btn:hover {
-            background: #b8285b;
-            transform: translateY(-2px);
-        }
+        .cta-btn:hover { background: #b8285b; transform: translateY(-2px); }
 
-
-        /* HERO MOCKUP (floating cards) */
+        /* ================= HERO CARDS ================= */
         .hero-mockup {
             position: relative;
             width: 440px;
@@ -126,9 +113,9 @@
             width: 320px;
             height: 140px;
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.55);
+            background: rgba(255,255,255,0.55);
             backdrop-filter: blur(22px);
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255,255,255,0.7);
             box-shadow: 0 25px 50px rgba(0,0,0,0.15);
         }
 
@@ -136,22 +123,14 @@
             height: 10px;
             border-radius: 6px;
             margin: 15px 20px;
-
-            background: linear-gradient(90deg,
-                var(--primary),
-                var(--secondary)
-            );
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
         }
 
         .card-top { top: 0; right: 10px; transform: rotate(2deg); }
         .card-mid { top: 130px; left: 20px; transform: rotate(-3deg); }
         .card-bottom { top: 260px; right: 50px; transform: rotate(1deg); }
 
-
-        /* ============================================================
-           FEATURES
-        ============================================================ */
-
+        /* ================= FEATURES ================= */
         .features-strip {
             background: var(--primary-light);
             padding: 70px 0;
@@ -172,19 +151,14 @@
         }
 
         .feature svg {
-            width: 45px;
-            height: 45px;
+            width: 45px; height: 45px;
             stroke: var(--primary);
             stroke-width: 2;
             fill: none;
             margin-bottom: 14px;
         }
 
-
-        /* ============================================================
-           PRODUCTS
-        ============================================================ */
-
+        /* ================= PRODUCTS ================= */
         .products-section {
             max-width: var(--max-width);
             margin: 90px auto;
@@ -215,23 +189,9 @@
             box-shadow: 0 25px 45px rgba(0,0,0,0.06);
         }
 
-        .product-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .product-desc {
-            color: var(--text-light);
-            font-size: 15px;
-            margin-bottom: 16px;
-        }
-
-        .product-price {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 18px;
-        }
+        .product-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .product-desc { color: var(--text-light); font-size: 15px; margin-bottom: 16px; }
+        .product-price { font-size: 22px; font-weight: 700; margin-bottom: 18px; }
 
         .product-btn {
             background: var(--primary);
@@ -245,6 +205,46 @@
         }
 
         .product-btn:hover { background: #b8285b; }
+
+        /* ================= MOBILE FIXES ================= */
+        @media (max-width: 768px) {
+
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                margin-top: 120px;
+            }
+
+            .hero-title { font-size: 38px; }
+            .hero-sub { font-size: 16px; }
+
+            .hero-mockup {
+                width: 100%;
+                height: 300px;
+                margin-top: 40px;
+            }
+
+            .glass-card {
+                width: 240px;
+                height: 110px;
+            }
+
+            .card-top { top: 0; left: 50%; transform: translateX(-50%) rotate(1deg); }
+            .card-mid { top: 110px; left: 50%; transform: translateX(-50%) rotate(-1deg); }
+            .card-bottom { top: 210px; left: 50%; transform: translateX(-50%) rotate(1deg); }
+
+            .features {
+                flex-direction: column;
+                gap: 40px;
+            }
+
+            .feature { width: 100%; }
+
+            .products {
+                flex-direction: column;
+                gap: 40px;
+            }
+        }
 
     </style>
 </head>
