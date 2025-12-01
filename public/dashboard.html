@@ -134,6 +134,9 @@
 <!-- Placeholder for nav.js -->
 <div id="navbar"></div>
 
+<h2>Message History</h2>
+<div id="logs"></div>
+
 <button id="manageSubBtn" class="delete-btn">Manage Subscription</button>
 
 <div class="dashboard-container">
@@ -301,6 +304,29 @@ document.getElementById("manageSubBtn").addEventListener("click", async () => {
         alert("No active subscription found.");
     }
 });
+
+async function loadLogs() {
+    const res = await fetch("/api/customer/logs");
+    const logs = await res.json();
+
+    const box = document.getElementById("logs");
+    box.innerHTML = "";
+
+    logs.forEach(log => {
+        const div = document.createElement("div");
+        div.className = "log-item";
+        div.innerHTML = `
+            <p><strong>Recipient:</strong> ${log.recipient_name}</p>
+            <p><strong>Email:</strong> ${log.email}</p>
+            <p><strong>Message:</strong> ${log.message}</p>
+            <p><strong>Sent At:</strong> ${new Date(log.sent_at).toLocaleString()}</p>
+            <hr>
+        `;
+        box.appendChild(div);
+    });
+}
+
+loadLogs();
 
 document.addEventListener("DOMContentLoaded", () => {
     loadSubscriptionStatus();

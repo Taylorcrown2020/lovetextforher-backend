@@ -168,6 +168,39 @@ app.use(cookieParser());
 /* -------------------------------------------------------------------------- */
 /*                               EMAIL SETUP (RESEND)                          */
 /* -------------------------------------------------------------------------- */
+app.get("/api/customer/logs", authCustomer, async (req, res) => {
+    try {
+        const logs = await pool.query(
+            `
+            SELECT l.id, l.email, l.message, l.sent_at, u.name AS recipient_name
+            FROM message_logs l
+            JOIN users u ON u.id = l.recipient_id
+            WHERE l.customer_id = $1
+            ORDER BY l.sent_at DESC
+            `,
+            [req.user.id]
+        );
+
+        res.json(logs.rows);
+    } catch (err) {
+        console.error("LOGS ERROR:", err);
+        res.status(500).json({ error: "Error fetching logs" });
+    }
+});
+
+async function logMessage(customerId, recipientId, email, msg) {
+    try {
+        await pool.query(
+            `
+            INSERT INTO message_logs (customer_id, recipient_id, email, message)
+            VALUES ($1, $2, $3, $4)
+            `,
+            [customerId, recipientId, email, msg]
+        );
+    } catch (err) {
+        console.error("❌ LOGGING ERROR:", err);
+    }
+}
 
 const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -909,6 +942,9 @@ app.post("/api/admin/send-now/:id", authAdmin, async (req, res) => {
             msg + "\n\nUnsubscribe: " + unsubscribeLink
         );
 
+        await logMessage(u.customer_id, u.id, u.email, msg);
+
+
         await pool.query(
             "UPDATE users SET last_sent=NOW() WHERE id=$1",
             [id]
@@ -1051,6 +1087,8 @@ cron.schedule("* * * * *", async () => {
                 html,
                 msg + "\n\nUnsubscribe: " + unsubscribe
             );
+
+            await logMessage(u.customer_id, u.id, u.email, msg);
 
             const next = calculateNextDelivery(u.frequency, u.timings);
 
