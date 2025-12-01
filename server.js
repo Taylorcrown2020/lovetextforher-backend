@@ -960,19 +960,6 @@ app.post("/api/admin/send-now/:id", authAdmin, async (req, res) => {
 /* -------------------------------------------------------------------------- */
 /*                                ADMIN KPIs                                  */
 /* -------------------------------------------------------------------------- */
-async function logMessage(customerId, recipientId, email, message, success = true) {
-    try {
-        await pool.query(
-            `
-            INSERT INTO message_logs (customer_id, recipient_id, email, message, success)
-            VALUES ($1,$2,$3,$4,$5)
-        `,
-            [customerId, recipientId, email, message, success]
-        );
-    } catch (err) {
-        console.error("LOG MESSAGE ERROR:", err);
-    }
-}
 /* -------------------------------------------------------------------------- */
 /*                                ADMIN KPIs                                  */
 /* -------------------------------------------------------------------------- */
@@ -1241,8 +1228,6 @@ cron.schedule("* * * * *", async () => {
             );
 
             await logMessage(u.customer_id, u.id, u.email, msg, true);
-
-            await logMessage(u.customer_id, u.id, u.email, msg);
 
             const next = calculateNextDelivery(u.frequency, u.timings);
 
