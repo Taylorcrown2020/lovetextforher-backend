@@ -167,36 +167,34 @@ app.use(express.json());
 app.use(cookieParser());
 
 /* -------------------------------------------------------------------------- */
-/*                               EMAIL SETUP                                  */
+/*                               EMAIL SETUP (RESEND)                          */
 /* -------------------------------------------------------------------------- */
 
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: process.env.SMTP_SECURE === "true",
+    host: "smtp.resend.com",
+    port: 587,
+    secure: false,
     auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user: "resend",
+        pass: process.env.RESEND_API_KEY,
     },
-});
-
-transporter.verify(err => {
-    if (err) console.error("❌ SMTP ERROR:", err);
-    else console.log("📨 SMTP READY");
 });
 
 async function sendEmail(to, subject, html, text = "") {
     try {
-        await transporter.sendMail({
+        const info = await transporter.sendMail({
             from: process.env.FROM_EMAIL,
             to,
             subject,
             html,
             text: text || html.replace(/<[^>]*>/g, ""),
         });
-        console.log("📤 EMAIL SENT →", to);
+
+        console.log("📨 Email sent:", info.messageId);
+        return true;
     } catch (err) {
         console.error("❌ EMAIL SEND ERROR:", err);
+        return false;
     }
 }
 

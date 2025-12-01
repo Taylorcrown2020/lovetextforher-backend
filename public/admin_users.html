@@ -175,11 +175,19 @@ async function loadUsers() {
 }
 
 async function sendNow(id) {
-    await fetch(`/api/admin/send-now/${id}`, {
-        method:"POST",
-        credentials:"include"
+    const res = await fetch(`/api/admin/send-now/${id}`, {
+        method: "POST",
+        credentials: "include"
     });
-    alert("Message sent!");
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        alert("❌ Failed: " + (data.error || "Unknown error"));
+        return;
+    }
+
+    alert("✅ Message sent successfully!");
 }
 
 async function deleteUser(id) {
