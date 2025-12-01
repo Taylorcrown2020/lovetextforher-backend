@@ -170,19 +170,12 @@ app.use(cookieParser());
 /*                               EMAIL SETUP (RESEND)                          */
 /* -------------------------------------------------------------------------- */
 
-const transporter = nodemailer.createTransport({
-    host: "smtp.resend.com",
-    port: 587,
-    secure: false,
-    auth: {
-        user: "resend",
-        pass: process.env.RESEND_API_KEY,
-    },
-});
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendEmail(to, subject, html, text = "") {
     try {
-        const info = await transporter.sendMail({
+        const data = await resend.emails.send({
             from: process.env.FROM_EMAIL,
             to,
             subject,
@@ -190,13 +183,15 @@ async function sendEmail(to, subject, html, text = "") {
             text: text || html.replace(/<[^>]*>/g, ""),
         });
 
-        console.log("📨 Email sent:", info.messageId);
+        console.log("📨 RESEND SENT:", data.id);
         return true;
+
     } catch (err) {
-        console.error("❌ EMAIL SEND ERROR:", err);
+        console.error("❌ RESEND SEND ERROR:", err);
         return false;
     }
 }
+
 
 /* -------------------------------------------------------------------------- */
 /*                         AUTH MIDDLEWARE (CLEAN)                            */
