@@ -4,7 +4,6 @@ const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
 const cron = require("node-cron");
-const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -176,14 +175,14 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 async function sendEmail(to, subject, html, text = "") {
     try {
         const data = await resend.emails.send({
-            from: "onboarding@resend.dev",
-            to,
-            subject,
-            html,
-            text: text || html.replace(/<[^>]*>/g, ""),
+            from: "onboarding@resend.dev", // MUST be verified domain
+            to: to,
+            subject: subject,
+            html: html,
+            text: text || html.replace(/<[^>]*>/g, "")
         });
 
-        console.log("📨 RESEND SENT:", data.id);
+        console.log("📨 RESEND SENT:", data?.id);
         return true;
 
     } catch (err) {
@@ -191,7 +190,6 @@ async function sendEmail(to, subject, html, text = "") {
         return false;
     }
 }
-
 
 /* -------------------------------------------------------------------------- */
 /*                         AUTH MIDDLEWARE (CLEAN)                            */
