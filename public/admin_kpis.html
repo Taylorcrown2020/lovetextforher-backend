@@ -134,13 +134,11 @@ async function verifyAdmin() {
         credentials: "include"
     });
 
-    // If token is invalid → redirect to login
     if (!res.ok) {
         window.location.href = "/admin_login.html";
         return;
     }
 
-    // If JSON says "loggedIn:false", redirect
     const data = await res.json();
     if (!data.admin || data.admin.role !== "admin") {
         window.location.href = "/admin_login.html";
@@ -213,7 +211,7 @@ async function loadKPIs() {
         </div>
     `;
 }
-// FIXED LOGOUT BUTTON
+
 document.getElementById("logout-admin").addEventListener("click", async () => {
     await fetch("/api/admin/logout", {
         method: "POST",
@@ -221,6 +219,7 @@ document.getElementById("logout-admin").addEventListener("click", async () => {
     });
     window.location.href = "/admin_login.html";
 });
+
 loadKPIs();
 </script>
 

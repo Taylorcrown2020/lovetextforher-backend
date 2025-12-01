@@ -960,39 +960,191 @@ app.post("/api/admin/send-now/:id", authAdmin, async (req, res) => {
 /* -------------------------------------------------------------------------- */
 /*                                ADMIN KPIs                                  */
 /* -------------------------------------------------------------------------- */
+async function logMessage(customerId, recipientId, email, message, success = true) {
+    try {
+        await pool.query(
+            `
+            INSERT INTO message_logs (customer_id, recipient_id, email, message, success)
+            VALUES ($1,$2,$3,$4,$5)
+        `,
+            [customerId, recipientId, email, message, success]
+        );
+    } catch (err) {
+        console.error("LOG MESSAGE ERROR:", err);
+    }
+}
+/* -------------------------------------------------------------------------- */
+/*                                ADMIN KPIs                                  */
+/* -------------------------------------------------------------------------- */
 
 app.get("/api/admin/kpis", authAdmin, async (req, res) => {
     try {
-        const customers = await pool.query(`SELECT COUNT(*) FROM customers`);
-        const totalRecipients = await pool.query(`SELECT COUNT(*) FROM users`);
-        const activeRecipients = await pool.query(
-            `SELECT COUNT(*) FROM users WHERE is_active=true`
-        );
-        const unsubscribed = await pool.query(
-            `SELECT COUNT(*) FROM users WHERE is_active=false`
+        /* Customers */
+        const totalCustomers = Number(
+            (await pool.query(`SELECT COUNT(*) FROM customers`)).rows[0].count
         );
 
-        const totalCarts = await pool.query(`SELECT COUNT(*) FROM carts`);
-        const activeCarts = await pool.query(`
-            SELECT COUNT(*)
-            FROM carts
-            WHERE items::text NOT IN ('[]', '', 'null')
-        `);
+        /* Recipients */
+        const totalRecipients = Number(
+            (await pool.query(`SELECT COUNT(*) FROM users`)).rows[0].count
+        );
+        const activeRecipients = Number(
+            (await pool.query(`SELECT COUNT(*) FROM users WHERE is_active=true`)).rows[0].count
+        );
+        const unsubRecipients = Number(
+            (await pool.query(`SELECT COUNT(*) FROM users WHERE is_active=false`)).rows[0].count
+        );
 
-        res.json({
-            customers: { total: Number(customers.rows[0].count) },
-            recipients: {
-                total: Number(totalRecipients.rows[0].count),
-                active: Number(activeRecipients.rows[0].count),
-                unsubscribed: Number(unsubscribed.rows[0].count),
-            },
-            carts: {
-                total: Number(totalCarts.rows[0].count),
-                active: Number(activeCarts.rows[0].count),
-            },
+        /* Net 30-day growth */
+        const recentRecipients = Number(
+            (await pool.query(`
+                SELECT COUNT(*) 
+                FROM users 
+                WHERE created_at >= NOW() - INTERVAL '30 days'
+            `)).rows[0].count
+        );
+
+        const deletedRecipients30 = Number(
+            (await pool.query(`
+                SELECT COUNT(*) 
+                FROM users
+                WHERE is_active=false 
+                AND last_sent >= NOW() - INTERVAL '30 days'
+            `)).rows[0].count
+        );
+
+        const netGrowth = recentRecipients - deletedRecipients30;
+
+        /* Subscriptions */
+        const activeSubs = Number(
+            (await pool.query(`
+                SELECT COUNT(*) 
+                FROM customers 
+                WHERE has_subscription=true
+            `)).rows[0].count
+        );
+
+        /* Basic MRR calculation */
+        const BASIC = Number(process.env.PRICE_BASIC || 4.99);
+        const PLUS = Number(process.env.PRICE_PLUS || 9.99);
+
+        const basicCount = Number(
+            (await pool.query(`
+                SELECT COUNT(*) 
+                FROM customers 
+                WHERE has_subscription=true 
+                AND stripe_customer_id IS NOT NULL
+            `)).rows[0].count
+        );
+
+        // You can expand this if you track plan type per customer
+        const mrr = (basicCount * BASIC).toFixed(2);
+
+        /* Churn (last 30 days canceled subs) */
+        const churnCount = Number(
+            (await pool.query(`
+                SELECT COUNT(*) 
+                FROM customers
+                WHERE has_subscription=false 
+                AND updated_at >= NOW() - INTERVAL '30 days'
+            `)).rows[0].count
+        );
+
+        const churnRate = activeSubs > 0 ? churnCount / activeSubs : 0;
+
+        /* Cart Metrics */
+        const cartsTotal = Number(
+            (await pool.query(`SELECT COUNT(*) FROM carts`)).rows[0].count
+        );
+
+        const activeCarts = Number(
+            (await pool.query(`
+                SELECT COUNT(*) 
+                FROM carts 
+                WHERE items::text NOT IN ('[]', '', 'null')
+            `)).rows[0].count
+        );
+
+        // Avg cart value
+        const cartValues = (
+            await pool.query(`
+                SELECT items 
+                FROM carts 
+                WHERE items::text NOT IN ('[]', '', 'null')
+            `)
+        ).rows;
+
+        let totalValue = 0;
+        cartValues.forEach(cart => {
+            let items = [];
+            try { items = JSON.parse(cart.items); } catch {}
+            items.forEach(i => {
+                if (i.productId === "love-basic") totalValue += BASIC * i.quantity;
+                if (i.productId === "love-plus") totalValue += PLUS * i.quantity;
+            });
         });
+
+        const avgCartValue =
+            activeCarts > 0 ? totalValue / activeCarts : 0;
+
+        const recoverableRevenue = totalValue;
+
+        /* Email deliverability */
+        const sentThisMonth = Number(
+            (await pool.query(`
+                SELECT COUNT(*) 
+                FROM message_logs 
+                WHERE sent_at >= DATE_TRUNC('month', NOW())
+            `)).rows[0].count
+        );
+
+        const failedThisMonth = Number(
+            (await pool.query(`
+                SELECT COUNT(*) 
+                FROM message_logs 
+                WHERE sent_at >= DATE_TRUNC('month', NOW())
+                AND success = false
+            `)).rows[0].count
+        );
+
+        const deliveryRate =
+            sentThisMonth > 0
+                ? ((sentThisMonth - failedThisMonth) / sentThisMonth)
+                : 1;
+
+        /* Final KPI Response */
+        res.json({
+            customers: { total: totalCustomers },
+
+            recipients: {
+                total: totalRecipients,
+                active: activeRecipients,
+                unsubscribed: unsubRecipients,
+                netGrowth
+            },
+
+            subscriptions: {
+                active: activeSubs,
+                mrr,
+                churnRate
+            },
+
+            carts: {
+                total: cartsTotal,
+                active: activeCarts,
+                avgCartValue,
+                recoverableRevenue
+            },
+
+            messages: {
+                sentThisMonth,
+                failedThisMonth,
+                deliveryRate
+            }
+        });
+
     } catch (err) {
-        console.error("ADMIN KPIS ERROR:", err);
+        console.error("ADMIN KPI ERROR:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
@@ -1087,6 +1239,8 @@ cron.schedule("* * * * *", async () => {
                 html,
                 msg + "\n\nUnsubscribe: " + unsubscribe
             );
+
+            await logMessage(u.customer_id, u.id, u.email, msg, true);
 
             await logMessage(u.customer_id, u.id, u.email, msg);
 
