@@ -135,19 +135,41 @@ app.post(
 
             /* ------------------------- SUBSCRIPTION CANCELED ------------------- */
             if (event.type === "customer.subscription.deleted") {
-                const cust = event.data.object.customer;
-                await pool.query(
-                    `
-                    UPDATE customers
-                    SET has_subscription=false,
-                        trial_active=false,
-                        trial_end=NULL
-                    WHERE stripe_customer_id=$1
-                `,
-                    [cust]
-                );
-                console.log("❌ Subscription canceled:", cust);
-            }
+    const cust = event.data.object.customer;
+
+    // 1. Update subscription status
+    const q = await pool.query(
+        `
+        UPDATE customers
+        SET has_subscription=false,
+            trial_active=false,
+            trial_end=NULL
+        WHERE stripe_customer_id=$1
+        RETURNING id
+        `,
+        [cust]
+    );
+
+    const customerId = q.rows[0]?.id;
+
+    if (customerId) {
+        // 2. Delete all recipients
+        await pool.query(
+            `DELETE FROM users WHERE customer_id=$1`,
+            [customerId]
+        );
+
+        // 3. Delete message logs
+        await pool.query(
+            `DELETE FROM message_logs WHERE customer_id=$1`,
+            [customerId]
+        );
+
+        console.log("🗑 Deleted all recipients & logs for customer:", customerId);
+    }
+
+    console.log("❌ Subscription canceled:", cust);
+}
 
             res.json({ received: true });
         } catch (err) {
@@ -444,20 +466,21 @@ app.post("/api/customer/recipients", authCustomer, async (req, res) => {
             });
         }
 
-        const { name, email, frequency, timings, timezone } = req.body;
+        const { name, email, frequency, timings, timezone, relationship } = req.body;
 
         const token = crypto.randomBytes(40).toString("hex");
         const next = calculateNextDelivery(frequency, timings);
 
         await pool.query(
-            `
-            INSERT INTO users
-            (email, customer_id, name, frequency, timings, timezone,
-             next_delivery, unsubscribe_token, is_active)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true)
-        `,
-            [email, req.user.id, name, frequency, timings, timezone, next, token]
-        );
+    `
+    INSERT INTO users
+    (email, customer_id, name, frequency, timings, timezone,
+     next_delivery, unsubscribe_token, relationship, is_active)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true)
+    `,
+    [email, req.user.id, name, frequency, timings, timezone, next, token, relationship]
+);
+
 
         res.json({ success: true });
     } catch (err) {

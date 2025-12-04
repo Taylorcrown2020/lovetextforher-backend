@@ -135,10 +135,9 @@
             font-weight: 600;
         }
 
-        /* Lower button — but hidden unless subscribed */
         #manageSubBtn {
-            display: none; /* ← FIX RESTORED */
-            margin: 40px auto 50px;
+            display: none;
+            margin: 40px auto 70px;
             padding: 14px 22px;
             border-radius: 12px;
             background: var(--primary);
@@ -147,6 +146,17 @@
             border: none;
             cursor: pointer;
             text-align: center;
+        }
+
+        /* Modal */
+        #messageLogModal {
+            display:none;
+            position:fixed;
+            top:0; left:0; right:0; bottom:0;
+            background:rgba(0,0,0,0.55);
+            justify-content:center;
+            align-items:center;
+            z-index:9999;
         }
     </style>
 </head>
@@ -173,6 +183,22 @@
         <input id="r_name" placeholder="Recipient Name">
         <input id="r_email" type="email" placeholder="Recipient Email">
 
+        <!-- RELATIONSHIP -->
+        <select id="r_relationship">
+            <option value="spouse">Spouse / Partner</option>
+            <option value="girlfriend">Girlfriend</option>
+            <option value="boyfriend">Boyfriend</option>
+            <option value="mom">Mom</option>
+            <option value="dad">Dad</option>
+            <option value="sister">Sister</option>
+            <option value="brother">Brother</option>
+            <option value="friend">Friend</option>
+            <option value="custom">Custom (enter below)</option>
+        </select>
+
+        <input id="r_customRel" placeholder="Enter custom relationship" style="display:none;">
+
+        <!-- PREVIOUS FIELDS -->
         <select id="r_frequency">
             <option value="daily">Daily</option>
             <option value="every-other-day">Every Other Day</option>
@@ -208,19 +234,10 @@
 
 </div>
 
-<!-- LOWER — only shows when user has subscription -->
 <button id="manageSubBtn">Manage Subscription</button>
 
 <!-- MESSAGE LOG MODAL -->
-<div id="messageLogModal" style="
-    display:none;
-    position:fixed;
-    top:0; left:0; right:0; bottom:0;
-    background:rgba(0,0,0,0.55);
-    justify-content:center;
-    align-items:center;
-    z-index:9999;
-">
+<div id="messageLogModal">
     <div style="
         background:white;
         width:420px;
@@ -252,24 +269,30 @@
 <script>
 let HAS_SUBSCRIPTION = false;
 
+/* RELATIONSHIP CUSTOM FIELD LOGIC */
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("r_relationship").addEventListener("change", function () {
+        const customInput = document.getElementById("r_customRel");
+        if (this.value === "custom") {
+            customInput.style.display = "block";
+        } else {
+            customInput.style.display = "none";
+        }
+    });
+});
+
+/* LOAD SUBSCRIPTION */
 async function loadSubscriptionStatus() {
     const res = await fetch("/api/customer/subscription", { credentials: "include" });
     const data = await res.json();
 
     HAS_SUBSCRIPTION = data.subscribed;
 
-    const banner = document.getElementById("subscriptionBanner");
-    const manageBtn = document.getElementById("manageSubBtn");
-
-    if (!HAS_SUBSCRIPTION) {
-        banner.style.display = "block";
-        manageBtn.style.display = "none";
-    } else {
-        banner.style.display = "none";
-        manageBtn.style.display = "block";
-    }
+    document.getElementById("subscriptionBanner").style.display = HAS_SUBSCRIPTION ? "none" : "block";
+    document.getElementById("manageSubBtn").style.display = HAS_SUBSCRIPTION ? "block" : "none";
 }
 
+/* LOAD RECIPIENTS */
 async function loadRecipients() {
     const res = await fetch("/api/customer/recipients", { credentials: "include" });
     const data = await res.json();
@@ -289,22 +312,19 @@ async function loadRecipients() {
 
         box.innerHTML += `
             <div class="recipient-box">
-                <strong>${r.name}</strong> (${r.email})
+                <strong>${r.name}</strong> (${r.relationship || "Unknown"})
+                <p>Email: ${r.email}</p>
                 <p>Frequency: ${r.frequency}</p>
                 <p>Timing: ${timings}</p>
 
-                <button class="delete-btn" onclick="removeRecipient(${r.id})">
-                    Delete
-                </button>
-
-                <button class="log-btn" onclick="openMessageLog(${r.id})">
-                    Message Log
-                </button>
+                <button class="delete-btn" onclick="removeRecipient(${r.id})">Delete</button>
+                <button class="log-btn" onclick="openMessageLog(${r.id})">Message Log</button>
             </div>
         `;
     });
 }
 
+/* ADD RECIPIENT */
 async function addRecipient() {
     if (!HAS_SUBSCRIPTION) {
         msg.innerText = "A subscription is required.";
@@ -318,7 +338,12 @@ async function addRecipient() {
     const timing = r_timings.value;
     const timezone = r_timezone.value;
 
-    if (!name || !email) {
+    let relationship = document.getElementById("r_relationship").value;
+    if (relationship === "custom") {
+        relationship = document.getElementById("r_customRel").value.trim();
+    }
+
+    if (!name || !email || !relationship) {
         msg.innerText = "Please fill out all fields.";
         return;
     }
@@ -327,7 +352,14 @@ async function addRecipient() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, frequency, timings: [timing], timezone })
+        body: JSON.stringify({ 
+            name, 
+            email, 
+            frequency, 
+            timings: [timing], 
+            timezone,
+            relationship
+        })
     });
 
     const data = await res.json();
@@ -342,6 +374,7 @@ async function addRecipient() {
     }
 }
 
+/* DELETE RECIPIENT */
 async function removeRecipient(id) {
     if (!confirm("Are you sure you want to remove this recipient?")) return;
 
@@ -353,6 +386,7 @@ async function removeRecipient(id) {
     loadRecipients();
 }
 
+/* MESSAGE LOG MODAL */
 function openMessageLog(recipientId) {
     fetch(`/api/message-log/${recipientId}`, { credentials: "include" })
         .then(res => res.json())
@@ -379,7 +413,6 @@ function openMessageLog(recipientId) {
                     logBox.appendChild(div);
                 });
             }
-
             document.getElementById("messageLogModal").style.display = "flex";
         });
 }
@@ -388,6 +421,7 @@ function closeMessageLog() {
     document.getElementById("messageLogModal").style.display = "none";
 }
 
+/* MANAGE SUBSCRIPTION BUTTON */
 document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const res = await fetch("/api/customer/subscription/portal", { credentials: "include" });
     const data = await res.json();
@@ -399,6 +433,7 @@ document.getElementById("manageSubBtn").addEventListener("click", async () => {
     }
 });
 
+/* INIT */
 document.addEventListener("DOMContentLoaded", () => {
     loadSubscriptionStatus();
     loadRecipients();
