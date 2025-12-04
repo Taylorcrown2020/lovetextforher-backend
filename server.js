@@ -190,13 +190,33 @@ app.get("/api/customer/logs", authCustomer, async (req, res) => {
 
 async function logMessage(customerId, recipientId, email, msg) {
     try {
-        await pool.query(
+        // Insert the new message
+        const inserted = await pool.query(
             `
             INSERT INTO message_logs (customer_id, recipient_id, email, message)
             VALUES ($1, $2, $3, $4)
+            RETURNING id
             `,
             [customerId, recipientId, email, msg]
         );
+
+        // Delete all older messages except the newest 5 for this recipient
+        await pool.query(
+            `
+            DELETE FROM message_logs
+            WHERE id NOT IN (
+                SELECT id FROM message_logs
+                WHERE customer_id = $1
+                  AND recipient_id = $2
+                ORDER BY sent_at DESC
+                LIMIT 5
+            )
+            AND customer_id = $1
+            AND recipient_id = $2
+            `,
+            [customerId, recipientId]
+        );
+
     } catch (err) {
         console.error("❌ LOGGING ERROR:", err);
     }
@@ -1258,6 +1278,36 @@ app.get(
         }
     }
 );
+/* -------------------------------------------------------------------------- */
+/*                    SPECIFIC RECIPIENT MESSAGE LOG (NEW)                   */
+/* -------------------------------------------------------------------------- */
+
+app.get("/api/message-log/:id", authCustomer, async (req, res) => {
+    try {
+        const recipientId = req.params.id;
+
+        const logs = await pool.query(
+            `
+            SELECT message AS message_text, sent_at
+            FROM message_logs
+            WHERE customer_id = $1
+              AND recipient_id = $2
+            ORDER BY sent_at DESC
+            LIMIT 5
+            `,
+            [req.user.id, recipientId]
+        );
+
+        res.json({
+            success: true,
+            messages: logs.rows
+        });
+
+    } catch (err) {
+        console.error("MESSAGE LOG ERROR:", err);
+        res.status(500).json({ success: false, error: "Error fetching message log" });
+    }
+});
 
 /* -------------------------------------------------------------------------- */
 /*                               START SERVER                                 */

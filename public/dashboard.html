@@ -12,6 +12,8 @@
             --secondary-light: #f3e9ff;
             --text-dark: #1a1a1a;
             --text-soft: #5f3a4d;
+            --danger: #c62828;
+            --secondary-btn: #6b4bb8;
         }
 
         body {
@@ -20,7 +22,6 @@
             background: linear-gradient(135deg, #fff7fa, #f6f3ff);
         }
 
-        /* Placeholder navbar for nav.js */
         #navbar {
             width: 100%;
             height: 95px;
@@ -88,7 +89,19 @@
             border-radius: 12px;
             border: none;
             cursor: pointer;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            background: var(--danger);
+            color: white;
+            font-weight: 600;
+        }
+
+        .log-btn {
+            margin-top: 14px;
+            margin-left: 10px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            background: var(--secondary-btn);
             color: white;
             font-weight: 600;
         }
@@ -122,19 +135,25 @@
             font-weight: 600;
         }
 
+        /* Lower button — but hidden unless subscribed */
         #manageSubBtn {
-            margin: 120px auto 10px;
-            display: none;
+            display: none; /* ← FIX RESTORED */
+            margin: 40px auto 50px;
+            padding: 14px 22px;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            text-align: center;
         }
     </style>
 </head>
 
 <body>
 
-<!-- Placeholder for nav.js -->
 <div id="navbar"></div>
-
-<button id="manageSubBtn" class="delete-btn">Manage Subscription</button>
 
 <div class="dashboard-container">
 
@@ -189,6 +208,45 @@
 
 </div>
 
+<!-- LOWER — only shows when user has subscription -->
+<button id="manageSubBtn">Manage Subscription</button>
+
+<!-- MESSAGE LOG MODAL -->
+<div id="messageLogModal" style="
+    display:none;
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.55);
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+">
+    <div style="
+        background:white;
+        width:420px;
+        padding:20px;
+        border-radius:22px;
+        max-height:80vh;
+        overflow-y:auto;
+        box-shadow:0 18px 40px rgba(0,0,0,0.2);
+    ">
+        <h2 style="margin-top:0; color:#d6336c;">Message Log</h2>
+
+        <div id="logContent" style="margin-top:15px;"></div>
+
+        <button onclick="closeMessageLog()" style="
+            margin-top:20px;
+            background:#d6336c;
+            color:white;
+            padding:12px 18px;
+            border:none;
+            border-radius:12px;
+            cursor:pointer;
+            font-weight:600;
+        ">Exit</button>
+    </div>
+</div>
+
 <script src="/js/nav.js" defer></script>
 
 <script>
@@ -238,6 +296,10 @@ async function loadRecipients() {
                 <button class="delete-btn" onclick="removeRecipient(${r.id})">
                     Delete
                 </button>
+
+                <button class="log-btn" onclick="openMessageLog(${r.id})">
+                    Message Log
+                </button>
             </div>
         `;
     });
@@ -256,7 +318,7 @@ async function addRecipient() {
     const timing = r_timings.value;
     const timezone = r_timezone.value;
 
-    if (!name || !email || !timezone) {
+    if (!name || !email) {
         msg.innerText = "Please fill out all fields.";
         return;
     }
@@ -291,6 +353,41 @@ async function removeRecipient(id) {
     loadRecipients();
 }
 
+function openMessageLog(recipientId) {
+    fetch(`/api/message-log/${recipientId}`, { credentials: "include" })
+        .then(res => res.json())
+        .then(data => {
+            const logBox = document.getElementById("logContent");
+            logBox.innerHTML = "";
+
+            if (!data.success || data.messages.length === 0) {
+                logBox.innerHTML = "<p>No messages found.</p>";
+            } else {
+                data.messages.forEach(msg => {
+                    const div = document.createElement("div");
+                    div.style.marginBottom = "12px";
+                    div.style.padding = "12px";
+                    div.style.border = "1px solid #eee";
+                    div.style.borderRadius = "10px";
+                    div.style.background = "#fafafa";
+
+                    div.innerHTML =
+                        "<div><strong>Message:</strong> " + msg.message_text + "</div>" +
+                        "<div style='font-size:12px; color:#666;'>Sent: " +
+                        new Date(msg.sent_at).toLocaleString() + "</div>";
+
+                    logBox.appendChild(div);
+                });
+            }
+
+            document.getElementById("messageLogModal").style.display = "flex";
+        });
+}
+
+function closeMessageLog() {
+    document.getElementById("messageLogModal").style.display = "none";
+}
+
 document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const res = await fetch("/api/customer/subscription/portal", { credentials: "include" });
     const data = await res.json();
@@ -301,29 +398,6 @@ document.getElementById("manageSubBtn").addEventListener("click", async () => {
         alert("No active subscription found.");
     }
 });
-
-async function loadLogs() {
-    const res = await fetch("/api/customer/logs");
-    const logs = await res.json();
-
-    const box = document.getElementById("logs");
-    box.innerHTML = "";
-
-    logs.forEach(log => {
-        const div = document.createElement("div");
-        div.className = "log-item";
-        div.innerHTML = `
-            <p><strong>Recipient:</strong> ${log.recipient_name}</p>
-            <p><strong>Email:</strong> ${log.email}</p>
-            <p><strong>Message:</strong> ${log.message}</p>
-            <p><strong>Sent At:</strong> ${new Date(log.sent_at).toLocaleString()}</p>
-            <hr>
-        `;
-        box.appendChild(div);
-    });
-}
-
-loadLogs();
 
 document.addEventListener("DOMContentLoaded", () => {
     loadSubscriptionStatus();
