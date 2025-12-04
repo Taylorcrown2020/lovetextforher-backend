@@ -974,7 +974,7 @@ app.post("/api/admin/send-now/:id", authAdmin, async (req, res) => {
         const u = q.rows[0];
 
         const unsubscribeLink = `${process.env.BASE_URL}/unsubscribe.html?token=${u.unsubscribe_token}`;
-        const msg = getMessage(u.name);
+        const msg = getMessage(u.name, u.relationship);
         const html = buildLoveEmailHTML(u.name, msg, unsubscribeLink);
 
         await sendEmail(
@@ -1160,16 +1160,73 @@ const deliveryRate = sentThisMonth > 0 ? 1 : 1;
 /*                        MESSAGE GENERATION HELPERS                          */
 /* -------------------------------------------------------------------------- */
 
-const LOVE_MESSAGES = [
-    "❤️ You are deeply appreciated.",
-    "💖 Thinking of you brings me joy.",
-    "💕 You are loved more than you know.",
-    "😘 You make every day brighter.",
-    "💞 You're someone's favorite person.",
-];
+ /* ------------------------------------------ */
+/*         RELATIONSHIP-BASED MESSAGES        */
+/* ------------------------------------------ */
 
-function getMessage(name) {
-    const msg = LOVE_MESSAGES[Math.floor(Math.random() * LOVE_MESSAGES.length)];
+const MESSAGE_POOLS = {
+    spouse: [
+        "you mean the world to me ❤️",
+        "my days feel brighter because of you 💕",
+        "I love you more than I could ever say 💖",
+        "you’re my heart and my happiness 💞",
+        "being with you is the best part of my life 🥰"
+    ],
+    mom: [
+        "thank you for all your love and sacrifice ❤️",
+        "you shaped me into who I am 💕",
+        "I appreciate you more than you know 💖",
+        "your love has always been my strength 💞",
+        "I am grateful for you every single day 🌷"
+    ],
+    dad: [
+        "thank you for your wisdom and support ❤️",
+        "your guidance means everything to me 💪",
+        "I appreciate all you’ve done 💖",
+        "you helped shape my life 💞",
+        "you are someone I deeply admire 🙏"
+    ],
+    sister: [
+        "you make life brighter ❤️",
+        "thank you for being there 💕",
+        "you’re loved more than you know 💖",
+        "I’m grateful for you always 💞",
+        "you’re one of a kind 🌸"
+    ],
+    brother: [
+        "thank you for always being real with me ❤️",
+        "I appreciate you more than you think 💪",
+        "you’re someone I admire 💖",
+        "your presence means a lot 💞",
+        "you are appreciated always 🙏"
+    ],
+    friend: [
+        "your friendship means the world ❤️",
+        "thanks for being someone I can count on 💕",
+        "you make life better 💖",
+        "I’m grateful for you 💞",
+        "you’re genuinely appreciated 🌟"
+    ],
+    default: [
+        "you are deeply appreciated ❤️",
+        "thinking of you brings happiness 💕",
+        "you are loved more than you know 💖",
+        "you make every day brighter 💞",
+        "you’re someone truly special 🌸"
+    ]
+};
+
+/* ------------------------------------------ */
+/*         FUNCTION: GET MESSAGE BASED ON RELATIONSHIP */
+/* ------------------------------------------ */
+
+function getMessage(name, relationship) {
+    const pool =
+        MESSAGE_POOLS[relationship?.toLowerCase()] ||
+        MESSAGE_POOLS.default;
+
+    const msg = pool[Math.floor(Math.random() * pool.length)];
+
     return name ? `${name}, ${msg}` : msg;
 }
 
@@ -1237,7 +1294,7 @@ cron.schedule("* * * * *", async () => {
 
         for (const u of due.rows) {
             const unsubscribe = `${process.env.BASE_URL}/unsubscribe.html?token=${u.unsubscribe_token}`;
-            const msg = getMessage(u.name);
+            const msg = getMessage(u.name, u.relationship);
             const html = buildLoveEmailHTML(u.name, msg, unsubscribe);
 
             await sendEmail(
