@@ -106,6 +106,19 @@
             font-weight: 600;
         }
 
+        /* FLOWER BUTTON */
+        .flower-btn {
+            margin-top: 14px;
+            margin-left: 10px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            background: #ff7ac4;
+            color: white;
+            font-weight: 600;
+        }
+
         #addForm input,
         #addForm select {
             width: 100%;
@@ -149,7 +162,8 @@
         }
 
         /* Modal */
-        #messageLogModal {
+        #messageLogModal,
+        #flowerModal {
             display:none;
             position:fixed;
             top:0; left:0; right:0; bottom:0;
@@ -158,6 +172,7 @@
             align-items:center;
             z-index:9999;
         }
+
     </style>
 </head>
 
@@ -183,7 +198,6 @@
         <input id="r_name" placeholder="Recipient Name">
         <input id="r_email" type="email" placeholder="Recipient Email">
 
-        <!-- RELATIONSHIP -->
         <select id="r_relationship">
             <option value="spouse">Spouse / Partner</option>
             <option value="girlfriend">Girlfriend</option>
@@ -198,7 +212,6 @@
 
         <input id="r_customRel" placeholder="Enter custom relationship" style="display:none;">
 
-        <!-- PREVIOUS FIELDS -->
         <select id="r_frequency">
             <option value="daily">Daily</option>
             <option value="every-other-day">Every Other Day</option>
@@ -264,24 +277,67 @@
     </div>
 </div>
 
+<!-- FLOWER MODAL -->
+<div id="flowerModal">
+    <div style="
+        background:white;
+        width:420px;
+        padding:20px;
+        border-radius:22px;
+        box-shadow:0 18px 40px rgba(0,0,0,0.2);
+    ">
+        <h2 style="margin-top:0; color:#d6336c;">Send a Flower 🌸</h2>
+
+        <label>Select Flower:</label>
+        <select id="flowerType" style="width:100%; padding:12px; margin-top:12px;">
+            <option value="🌹 Rose">🌹 Rose</option>
+            <option value="🌸 Cherry Blossom">🌸 Cherry Blossom</option>
+            <option value="🌻 Sunflower">🌻 Sunflower</option>
+            <option value="🌷 Tulip">🌷 Tulip</option>
+        </select>
+
+        <textarea id="flowerNote" placeholder="Optional note..." 
+            style="width:100%; height:90px; margin-top:12px; padding:10px; border-radius:12px;"></textarea>
+
+        <button onclick="sendFlower()" style="
+            margin-top:20px;
+            background:#ff7ac4;
+            color:white;
+            padding:12px 18px;
+            border:none;
+            border-radius:12px;
+            cursor:pointer;
+            font-weight:600;
+        ">Send Flower</button>
+
+        <button onclick="closeFlowerModal()" style="
+            margin-top:10px;
+            background:#999;
+            color:white;
+            padding:10px 16px;
+            border:none;
+            border-radius:12px;
+            cursor:pointer;
+            font-weight:600;
+        ">Cancel</button>
+    </div>
+</div>
+
 <script src="/js/nav.js" defer></script>
 
 <script>
 let HAS_SUBSCRIPTION = false;
+let CURRENT_FLOWER_RECIPIENT = null;
 
-/* RELATIONSHIP CUSTOM FIELD LOGIC */
+/* Custom Relationship Toggle */
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("r_relationship").addEventListener("change", function () {
         const customInput = document.getElementById("r_customRel");
-        if (this.value === "custom") {
-            customInput.style.display = "block";
-        } else {
-            customInput.style.display = "none";
-        }
+        customInput.style.display = this.value === "custom" ? "block" : "none";
     });
 });
 
-/* LOAD SUBSCRIPTION */
+/* Load Subscription */
 async function loadSubscriptionStatus() {
     const res = await fetch("/api/customer/subscription", { credentials: "include" });
     const data = await res.json();
@@ -292,7 +348,7 @@ async function loadSubscriptionStatus() {
     document.getElementById("manageSubBtn").style.display = HAS_SUBSCRIPTION ? "block" : "none";
 }
 
-/* LOAD RECIPIENTS */
+/* Load Recipients */
 async function loadRecipients() {
     const res = await fetch("/api/customer/recipients", { credentials: "include" });
     const data = await res.json();
@@ -319,12 +375,15 @@ async function loadRecipients() {
 
                 <button class="delete-btn" onclick="removeRecipient(${r.id})">Delete</button>
                 <button class="log-btn" onclick="openMessageLog(${r.id})">Message Log</button>
+
+                <!-- FLOWER BUTTON -->
+                <button class="flower-btn" onclick="openFlowerModal(${r.id}, '${r.name}')">Send Flower 🌸</button>
             </div>
         `;
     });
 }
 
-/* ADD RECIPIENT */
+/* Add Recipient */
 async function addRecipient() {
     if (!HAS_SUBSCRIPTION) {
         msg.innerText = "A subscription is required.";
@@ -374,7 +433,7 @@ async function addRecipient() {
     }
 }
 
-/* DELETE RECIPIENT */
+/* Delete Recipient */
 async function removeRecipient(id) {
     if (!confirm("Are you sure you want to remove this recipient?")) return;
 
@@ -386,7 +445,7 @@ async function removeRecipient(id) {
     loadRecipients();
 }
 
-/* MESSAGE LOG MODAL */
+/* Message Log Modal */
 function openMessageLog(recipientId) {
     fetch(`/api/message-log/${recipientId}`, { credentials: "include" })
         .then(res => res.json())
@@ -421,7 +480,29 @@ function closeMessageLog() {
     document.getElementById("messageLogModal").style.display = "none";
 }
 
-/* MANAGE SUBSCRIPTION BUTTON */
+/* FLOWER FEATURE */
+function openFlowerModal(recipientId, name) {
+    CURRENT_FLOWER_RECIPIENT = recipientId;
+    document.getElementById("flowerNote").value = "";
+    document.getElementById("flowerModal").style.display = "flex";
+}
+
+function closeFlowerModal() {
+    document.getElementById("flowerModal").style.display = "none";
+}
+
+function sendFlower() {
+    const flower = document.getElementById("flowerType").value;
+    const note = document.getElementById("flowerNote").value.trim();
+
+    const message = `${flower} ${note ? "— " + note : ""}`;
+
+    alert(`Flower sent! (Placeholder — backend not added)\n\n${message}`);
+
+    closeFlowerModal();
+}
+
+/* Manage Subscription */
 document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const res = await fetch("/api/customer/subscription/portal", { credentials: "include" });
     const data = await res.json();

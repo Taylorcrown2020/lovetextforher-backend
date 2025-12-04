@@ -1388,7 +1388,43 @@ app.get("/api/message-log/:id", authCustomer, async (req, res) => {
         res.status(500).json({ success: false, error: "Error fetching message log" });
     }
 });
+/* -------------------------------------------------------------------------- */
+/*                        SEND FLOWERS TO A RECIPIENT                         */
+/* -------------------------------------------------------------------------- */
 
+app.post("/api/customer/send-flowers/:id", authCustomer, async (req, res) => {
+    try {
+        const recipientId = req.params.id;
+        const { note } = req.body;
+
+        const q = await pool.query(
+            `SELECT * FROM users WHERE id=$1 AND customer_id=$2`,
+            [recipientId, req.user.id]
+        );
+
+        if (q.rows.length === 0)
+            return res.status(404).json({ error: "Recipient not found" });
+
+        const u = q.rows[0];
+
+        const message = note?.trim() || "You were sent flowers! 💐";
+
+        // LOG THE FLOWER EVENT
+        await pool.query(
+            `
+            INSERT INTO message_logs (customer_id, recipient_id, email, message)
+            VALUES ($1, $2, $3, $4)
+            `,
+            [req.user.id, recipientId, u.email, "💐 Flower Delivery: " + message]
+        );
+
+        res.json({ success: true });
+
+    } catch (err) {
+        console.error("FLOWER SEND ERROR:", err);
+        res.status(500).json({ error: "Error sending flowers" });
+    }
+});
 /* -------------------------------------------------------------------------- */
 /*                               START SERVER                                 */
 /* -------------------------------------------------------------------------- */
