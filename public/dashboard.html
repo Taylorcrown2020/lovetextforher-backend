@@ -491,15 +491,27 @@ function closeFlowerModal() {
     document.getElementById("flowerModal").style.display = "none";
 }
 
-function sendFlower() {
+async function sendFlower() {
     const flower = document.getElementById("flowerType").value;
     const note = document.getElementById("flowerNote").value.trim();
 
-    const message = `${flower} ${note ? "— " + note : ""}`;
+    const message = `${flower}${note ? " — " + note : ""}`;
 
-    alert(`Flower sent! (Placeholder — backend not added)\n\n${message}`);
+    const res = await fetch(`/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ note: message })
+    });
 
-    closeFlowerModal();
+    const data = await res.json();
+
+    if (data.success) {
+        alert("Flower sent successfully! 🌸");
+        closeFlowerModal();
+    } else {
+        alert("Error sending flower.");
+    }
 }
 
 /* Manage Subscription */
