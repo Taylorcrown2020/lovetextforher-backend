@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <title>Admin Dashboard — LoveTextForHer</title>
 
-    <!-- Prevent nav.js from modifying admin pages -->
-    <script>
-        window.SKIP_NAV_JS = true;
-    </script>
+    <!-- Disable nav.js because admin pages use their own navbar -->
+    <script> window.SKIP_NAV_JS = true; </script>
 
     <style>
         :root {
@@ -36,7 +34,7 @@
             top: 0;
             width: 100%;
             padding: 18px 0;
-            background: rgba(255, 255, 255, 0.65);
+            background: rgba(255,255,255,0.65);
             backdrop-filter: blur(18px);
             box-shadow: 0 2px 14px rgba(0,0,0,0.05);
             z-index: 1000;
@@ -127,19 +125,31 @@
 
 <body>
 
-<!-- VERIFY ADMIN SESSION BEFORE SHOWING PAGE -->
+<!-- ADMIN AUTH CHECK -->
 <script>
 async function verifyAdmin() {
-    const res = await fetch("/api/admin/me", {
-        method: "GET",
-        credentials: "include"
-    });
+    try {
+        const res = await fetch("/api/admin/me", {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store"
+        });
 
-    if (!res.ok) {
+        if (!res.ok) {
+            window.location.href = "/admin_login.html";
+            return;
+        }
+
+        const data = await res.json();
+        if (!data?.admin?.role) {
+            window.location.href = "/admin_login.html";
+            return;
+        }
+    } catch (e) {
         window.location.href = "/admin_login.html";
-        return;
     }
 }
+
 verifyAdmin();
 </script>
 
@@ -178,7 +188,7 @@ verifyAdmin();
 
 </div>
 
-<!-- FIXED LOGOUT -->
+<!-- ADMIN LOGOUT -->
 <script>
 document.getElementById("logout-admin").addEventListener("click", async () => {
     await fetch("/api/admin/logout", {

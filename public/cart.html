@@ -1,8 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Your Cart</title>
+    <title>Your Cart — LoveTextForHer</title>
+
+    <script>
+        // Use the shared customer navbar
+        window.FORCE_PUBLIC_NAV = false;
+    </script>
 
     <style>
         :root {
@@ -19,53 +24,21 @@
             min-height: 100vh;
         }
 
-        /* NAVBAR */
-        #navbar {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            padding: 18px 0;
-            background: rgba(255,255,255,0.65);
-            backdrop-filter: blur(18px);
-            box-shadow: 0 2px 14px rgba(0,0,0,0.05);
-            z-index: 1000;
-        }
-
-        #navbar-inner {
-            max-width: 1200px;
-            margin: auto;
-            padding: 0 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: 900;
-            color: var(--primary);
-        }
-
-        #navbar a {
-            margin-left: 22px;
-            text-decoration: none;
-            color: var(--text-dark);
-        }
-
         /* CART WRAPPER */
         .cart-container {
             max-width: 900px;
-            margin: 150px auto 50px;
+            margin: 160px auto 50px;
             padding: 40px;
             background: rgba(255,255,255,0.55);
             border-radius: 22px;
-            backdrop-filter: blur(18px);
-            border: 1px solid rgba(255,255,255,0.8);
-            box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.75);
+            box-shadow: 0 18px 45px rgba(0,0,0,0.08);
+            animation: fadeIn 0.5s ease-out;
         }
 
         .cart-title {
-            font-size: 32px;
+            font-size: 34px;
             font-weight: 800;
             color: var(--primary);
             margin-bottom: 25px;
@@ -73,20 +46,25 @@
 
         .item {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            background: rgba(255,255,255,0.7);
+            align-items: center;
+            background: rgba(255,255,255,0.75);
+            border-radius: 18px;
             border: 1px solid #ffe0ec;
-            border-radius: 16px;
-            padding: 16px 20px;
+            padding: 18px 20px;
             margin-bottom: 14px;
-            box-shadow: 0 8px 28px rgba(214,51,108,0.12);
+            box-shadow: 0 10px 35px rgba(214,51,108,0.10);
+            transition: 0.25s;
+        }
+
+        .item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 40px rgba(214,51,108,0.18);
         }
 
         .item-name {
             font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 4px;
+            font-weight: 700;
         }
 
         .item-price {
@@ -96,58 +74,62 @@
 
         .sub-badge {
             font-size: 12px;
-            color: white;
+            padding: 4px 8px;
             background: var(--secondary);
-            padding: 3px 8px;
             border-radius: 8px;
+            color: white;
+            margin-top: 6px;
             display: inline-block;
-            margin-top: 5px;
+            font-weight: 600;
         }
 
         .remove-btn {
+            color: var(--primary);
             background: none;
             border: none;
-            font-weight: 600;
-            color: var(--primary);
             cursor: pointer;
+            font-weight: 600;
             font-size: 15px;
         }
 
         .cart-total {
-            text-align: right;
             font-size: 22px;
             font-weight: 700;
+            text-align: right;
             margin-top: 25px;
         }
 
         .checkout-btn {
-            margin-top: 25px;
+            margin-top: 20px;
             padding: 16px 26px;
+            border: none;
             border-radius: 12px;
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             color: white;
             font-weight: 700;
-            text-decoration: none;
-            float: right;
             cursor: pointer;
+            float: right;
+            box-shadow: 0 10px 35px rgba(214,51,108,0.25);
+            transition: 0.25s;
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 45px rgba(214,51,108,0.35);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 
 <body>
 
-<!-- NAVBAR -->
-<div id="navbar">
-    <div id="navbar-inner">
-        <div class="logo">LOVETEXTFORHER</div>
-        <div>
-            <a href="/products.html">Products</a>
-            <a href="/dashboard.html">Dashboard</a>
-        </div>
-    </div>
-</div>
+<div id="navbar"></div>
+<script src="/js/nav.js" defer></script>
 
-<!-- CART -->
 <div class="cart-container">
     <div class="cart-title">Your Cart</div>
 
@@ -160,44 +142,27 @@
 </div>
 
 <script>
-/* PRODUCTS MATCH THE products.html FILE */
+// ----------------------------------------------------------------------
+// MASTER PRODUCT LIST (MATCHES products.html EXACTLY)
+// ----------------------------------------------------------------------
 const PRODUCTS = {
-    "free-trial": {
-        name: "LoveText Free Trial",
-        price: 0.00,
-        isSubscription: true
-    },
-    "love-basic": {
-        name: "LoveText Basic Subscription",
-        price: 4.99,
-        isSubscription: true
-    },
-    "love-plus": {
-        name: "LoveText Plus Subscription",
-        price: 9.99,
-        isSubscription: true
-    },
+    "free-trial": { name:"LoveText Free Trial (3 Days)", price:0, isSubscription:true },
+    "love-basic": { name:"LoveText Basic Subscription", price:4.99, isSubscription:true },
+    "love-plus": { name:"LoveText Plus Subscription", price:9.99, isSubscription:true },
 
-    /* MERCH */
-    "tee-logo-dual": { name:"Love Text Tee — Dual", price:29.99, isSubscription:false },
-    "tee-white-logo-dual": { name:"Love Text Tee — White Dual", price:29.99, isSubscription:false },
-    "tee-pink-minimal": { name:"Pink Minimal Tee", price:24.99, isSubscription:false },
-    "tee-cupid-edition": { name:"Cupid Edition Tee", price:32.99, isSubscription:false },
-
-    "hoodie-classic": { name:"Classic Hoodie", price:49.99, isSubscription:false },
+    "tee-logo-dual": { name:"Love Text Tee — Front + Back", price:29.99, isSubscription:false },
+    "tee-white-logo-dual": { name:"Love Text Tee — White Logo Set", price:29.99, isSubscription:false },
+    "hoodie-classic": { name:"Classic Logo Hoodie", price:49.99, isSubscription:false },
     "hoodie-heart": { name:"Heart Edition Hoodie", price:54.99, isSubscription:false },
-
-    "hat-logo": { name:"Logo Hat", price:24.99, isSubscription:false },
-    "hat-heart": { name:"Heart Hat", price:26.99, isSubscription:false },
-
-    "giftbox-romantic": { name:"Romantic Gift Box", price:59.99, isSubscription:false },
-    "giftbox-selfcare": { name:"Self-Care Basket", price:48.99, isSubscription:false },
-    "giftbox-couples": { name:"Couples Box", price:64.99, isSubscription:false }
+    "hat-logo": { name:"LoveText Logo Hat", price:24.99, isSubscription:false },
+    "hat-heart": { name:"Heart Embroidered Hat", price:26.99, isSubscription:false }
 };
 
-/* LOAD CART */
+// ----------------------------------------------------------------------
+// LOAD CART DATA
+// ----------------------------------------------------------------------
 async function loadCart() {
-    const res = await fetch("/api/cart", { credentials: "include" });
+    const res = await fetch("/api/cart", { credentials:"include" });
 
     if (res.status === 401) {
         window.location = "/login.html";
@@ -205,7 +170,6 @@ async function loadCart() {
     }
 
     const data = await res.json();
-
     const container = document.getElementById("cartItems");
     const totalEl = document.getElementById("cartTotal");
     const checkoutBtn = document.getElementById("checkoutBtn");
@@ -217,38 +181,41 @@ async function loadCart() {
         return;
     }
 
-    let total = 0;
-    let subscriptionProduct = null;
-
     container.innerHTML = "";
+    let total = 0;
+    let subscriptionItem = null;
 
     data.items.forEach(item => {
-        const p = PRODUCTS[item.productId];
-        if (!p) return;
+        const product = PRODUCTS[item.productId];
+        if (!product) return;
 
-        if (p.isSubscription) subscriptionProduct = item.productId;
+        if (product.isSubscription) subscriptionItem = item.productId;
 
         container.innerHTML += `
             <div class="item">
                 <div>
-                    <div class="item-name">${p.name}</div>
-                    <div class="item-price">$${p.price.toFixed(2)}</div>
-                    ${p.isSubscription ? `<div class="sub-badge">Subscription</div>` : ""}
+                    <div class="item-name">${product.name}</div>
+                    <div class="item-price">$${product.price.toFixed(2)}</div>
+                    ${product.isSubscription ? `<div class="sub-badge">Subscription</div>` : ""}
                 </div>
-                <button class="remove-btn" onclick="removeItem('${item.productId}')">Remove</button>
+                <button class="remove-btn" onclick="removeItem('${item.productId}')">
+                    Remove
+                </button>
             </div>
         `;
 
-        total += p.price;
+        total += product.price;
     });
 
     totalEl.innerHTML = `Total: $${total.toFixed(2)}`;
     checkoutBtn.style.display = "inline-block";
 
-    checkoutBtn.onclick = () => handleCheckout(subscriptionProduct, data.items);
+    checkoutBtn.onclick = () => checkout(subscriptionItem, data.items);
 }
 
-/* REMOVE ITEM */
+// ----------------------------------------------------------------------
+// REMOVE ITEM
+// ----------------------------------------------------------------------
 async function removeItem(productId) {
     await fetch("/api/cart/remove", {
         method: "POST",
@@ -260,39 +227,37 @@ async function removeItem(productId) {
     loadCart();
 }
 
-/* CHECKOUT LOGIC */
-async function handleCheckout(subscriptionProduct, items) {
+// ----------------------------------------------------------------------
+// CHECKOUT (Subscriptions OR Merch)
+// ----------------------------------------------------------------------
+async function checkout(subscriptionProductId, items) {
 
-    /* --------------------------
-       SUBSCRIPTION CHECKOUT
-    -------------------------- */
-    if (subscriptionProduct) {
+    // ---------------------------- Subscription Checkout ------------------
+    if (subscriptionProductId) {
         const res = await fetch("/api/stripe/checkout", {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ productId: subscriptionProduct })
+            body: JSON.stringify({ productId: subscriptionProductId })
         });
 
         const data = await res.json();
         if (data.url) window.location.href = data.url;
-        else alert("Subscription checkout failed.");
+        else alert("Unable to start subscription checkout.");
         return;
     }
 
-    /* --------------------------
-       MERCH CHECKOUT
-    -------------------------- */
-    const merchItems = items.map(i => {
+    // ---------------------------- Merchandise Checkout -------------------
+    const merchPayload = items.map(i => {
         const p = PRODUCTS[i.productId];
-        return { name: p.name, price: p.price };
+        return { productId: i.productId, name: p.name, price: p.price };
     });
 
     const res = await fetch("/api/stripe/merch-checkout", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: merchItems })
+        body: JSON.stringify({ items: merchPayload })
     });
 
     const data = await res.json();
@@ -301,7 +266,9 @@ async function handleCheckout(subscriptionProduct, items) {
     else alert("Unable to start merchandise checkout.");
 }
 
-/* INIT */
+// ----------------------------------------------------------------------
+// INIT
+// ----------------------------------------------------------------------
 loadCart();
 </script>
 

@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <title>Reset Password — LoveTextForHer</title>
 
+    <!-- Force visitor navbar (prevents customer/admin nav) -->
+    <script> window.FORCE_PUBLIC_NAV = true; </script>
+    <script src="/js/nav.js" defer></script>
+
     <style>
         :root {
             --primary: #d6336c;
@@ -19,55 +23,17 @@
             min-height: 100vh;
         }
 
-        /* ========================= NAVBAR ========================= */
+        /* Navbar placeholder */
         #navbar {
-            position: fixed;
-            top: 0;
             width: 100%;
-            padding: 18px 0;
-
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-
-            box-shadow: 0 2px 14px rgba(0,0,0,0.05);
-            z-index: 999;
-        }
-
-        #navbar-inner {
-            max-width: 1200px;
-            margin: auto;
-            padding: 0 28px;
-
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: 900;
-            color: var(--primary);
-            letter-spacing: 0.5px;
-        }
-
-        #navbar a {
-            margin-left: 22px;
-            text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 500;
-            transition: 0.25s;
-        }
-
-        #navbar a:hover {
-            color: var(--primary);
+            height: 95px;
         }
 
         /* ========================= RESET CARD ========================= */
         .reset-wrapper {
             max-width: 480px;
-            margin: 160px auto 0;
-            padding: 0 25px;
+            margin: 40px auto;
+            padding: 20px;
         }
 
         .reset-card {
@@ -88,11 +54,9 @@
             margin: 0 0 15px;
             font-size: 30px;
             font-weight: 800;
-
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-
             text-align: center;
         }
 
@@ -108,13 +72,10 @@
             width: 100%;
             padding: 14px;
             margin-top: 15px;
-
             font-size: 15px;
             border-radius: 12px;
-
             border: 2px solid rgba(214,51,108,0.25);
             background: rgba(255,255,255,0.9);
-
             transition: 0.25s;
         }
 
@@ -132,12 +93,10 @@
 
             border: none;
             border-radius: 12px;
-
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             color: white;
             font-size: 16px;
             font-weight: 700;
-
             cursor: pointer;
 
             box-shadow: 0 8px 22px rgba(214,51,108,0.25);
@@ -157,7 +116,6 @@
             min-height: 20px;
         }
 
-        /* ========================= ANIMATION ========================= */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(25px); }
             to { opacity: 1; transform: translateY(0); }
@@ -167,16 +125,7 @@
 
 <body>
 
-<div id="navbar">
-    <div id="navbar-inner">
-        <div class="logo">LOVETEXTFORHER</div>
-        <div>
-            <a href="/index.html">Home</a>
-            <a href="/login.html">Login</a>
-            <a href="/register.html">Register</a>
-        </div>
-    </div>
-</div>
+<div id="navbar"></div>
 
 <!-- RESET CARD -->
 <div class="reset-wrapper">
@@ -192,14 +141,12 @@
     </div>
 </div>
 
-<script src="/js/nav.js" defer></script>
-
 <script>
 async function sendReset() {
     await fetch("/api/reset/request", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ email: email.value })
+        body: JSON.stringify({ email: email.value.trim() })
     });
 
     msg.innerText = "If that email exists, a reset link has been sent.";

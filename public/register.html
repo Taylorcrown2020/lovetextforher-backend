@@ -1,8 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Create Account ❤️</title>
+
+    <!-- Use public navbar -->
+    <script> window.FORCE_PUBLIC_NAV = true; </script>
+    <script src="/js/nav.js" defer></script>
 
     <style>
         :root {
@@ -20,13 +24,11 @@
             min-height: 100vh;
         }
 
-        /* Placeholder for nav.js injected navbar */
         #navbar {
             width: 100%;
             height: 80px;
         }
 
-        /* Card */
         .box {
             max-width: 420px;
             margin: 120px auto;
@@ -104,41 +106,55 @@
     <p id="msg"></p>
 </div>
 
-<script src="/js/nav.js" defer></script>
-
 <script>
+// If logged in already → go to dashboard
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const res = await fetch("/api/customer/me", { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.id) window.location.href = "/dashboard.html";
+    } catch (err) {}
+});
+
 async function registerUser() {
-    const nameField = document.getElementById("name");
-    const emailField = document.getElementById("email");
-    const passField = document.getElementById("password");
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
     const msg = document.getElementById("msg");
 
     msg.innerText = "";
 
-    if (!emailField.value || !passField.value) {
+    if (!email || !password) {
         msg.innerText = "Email and password are required.";
         return;
     }
 
-    const res = await fetch("/api/customer/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            name: nameField.value,
-            email: emailField.value,
-            password: passField.value
-        })
-    });
+    try {
+        const res = await fetch("/api/customer/register", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password })
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    if (data.success) {
-        // New users are immediately guided to subscription options
-        window.location.href = "/products.html";
-    } else {
-        msg.innerText = data.error || "Registration failed.";
+        if (data.success) {
+            window.location.href = "/products.html";
+        } else {
+            msg.innerText = data.error || "Registration failed.";
+        }
+
+    } catch {
+        msg.innerText = "Network error. Try again.";
     }
 }
+
+// Enter key submits form
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") registerUser();
+});
 </script>
 
 </body>

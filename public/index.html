@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LoveTextForHer — Automated Messages for the People You Care About</title>
 
+    <!-- Force public navigation bar -->
+    <script> window.FORCE_PUBLIC_NAV = true; </script>
+    <script src="/js/nav.js" defer></script>
+
     <style>
         :root {
             --primary: #d6336c;
@@ -16,48 +20,17 @@
             --max-width: 1200px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Inter", sans-serif; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", sans-serif;
+        }
 
         body {
             background: #fff;
             color: var(--text-dark);
         }
-
-        /* ================= NAV ================= */
-        .nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            padding: 18px 0;
-            backdrop-filter: blur(18px);
-            background: rgba(255,255,255,0.6);
-        }
-
-        .nav-inner {
-            max-width: var(--max-width);
-            margin: auto;
-            padding: 0 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: 900;
-            color: var(--primary);
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 500;
-            margin-left: 22px;
-            transition: 0.25s ease;
-        }
-
-        .nav-links a:hover { color: var(--primary); }
 
         /* ================= HERO ================= */
         .hero {
@@ -99,9 +72,12 @@
             box-shadow: 0 12px 28px rgba(214,51,108,0.25);
         }
 
-        .cta-btn:hover { background: #b8285b; transform: translateY(-2px); }
+        .cta-btn:hover {
+            background: #b8285b;
+            transform: translateY(-2px);
+        }
 
-        /* ================= HERO CARDS ================= */
+        /* ================= HERO MOCKUP ================= */
         .hero-mockup {
             position: relative;
             width: 440px;
@@ -151,7 +127,8 @@
         }
 
         .feature svg {
-            width: 45px; height: 45px;
+            width: 45px;
+            height: 45px;
             stroke: var(--primary);
             stroke-width: 2;
             fill: none;
@@ -189,9 +166,23 @@
             box-shadow: 0 25px 45px rgba(0,0,0,0.06);
         }
 
-        .product-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-        .product-desc { color: var(--text-light); font-size: 15px; margin-bottom: 16px; }
-        .product-price { font-size: 22px; font-weight: 700; margin-bottom: 18px; }
+        .product-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .product-desc {
+            color: var(--text-light);
+            font-size: 15px;
+            margin-bottom: 16px;
+        }
+
+        .product-price {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
 
         .product-btn {
             background: var(--primary);
@@ -206,7 +197,7 @@
 
         .product-btn:hover { background: #b8285b; }
 
-        /* ================= MOBILE FIXES ================= */
+        /* ============== MOBILE ============== */
         @media (max-width: 768px) {
 
             .hero {
@@ -245,24 +236,11 @@
                 gap: 40px;
             }
         }
-
     </style>
 </head>
 <body>
 
-<!-- ========================= NAV ========================= -->
-<div class="nav">
-    <div class="nav-inner">
-        <div class="logo">LOVETEXTFORHER</div>
-
-        <div class="nav-links">
-            <a href="/index.html">Home</a>
-            <a href="/login.html">Login</a>
-            <a href="/register.html">Register</a>
-            <a href="/admin_login.html">Admin</a>
-        </div>
-    </div>
-</div>
+<div id="navbar"></div>
 
 <!-- ========================= HERO ========================= -->
 <section class="hero">
@@ -273,8 +251,8 @@
         </h1>
 
         <p class="hero-sub">
-            Whether it's your partner, mom, dad, sister, best friend, or someone special — 
-            send meaningful messages automatically, in the tone and style that fits
+            Whether it's your partner, mom, dad, sister, best friend, or someone special —
+            send meaningful messages automatically in the tone and style that fits
             your unique relationship.
         </p>
 
@@ -344,29 +322,27 @@
 
         <div class="product-card">
             <div class="product-title">LoveText Basic Subscription</div>
-            <div class="product-desc">Daily uplifting or loving messages for up to 3 people — friends, family, or partner.</div>
+            <div class="product-desc">
+                Daily uplifting or loving messages for up to 3 people.
+            </div>
             <div class="product-price">$4.99 / month</div>
-            <a href="/login.html" style="text-decoration:none;">
-                <button class="product-btn">Sign Up</button>
-            </a>
+            <button class="product-btn" onclick="location.href='/register.html'">Sign Up</button>
         </div>
 
         <div class="product-card">
             <div class="product-title">LoveText Plus Subscription</div>
-            <div class="product-desc">Unlimited recipients — perfect for families, groups, or staying connected with everyone.</div>
+            <div class="product-desc">
+                Unlimited recipients. Perfect for families or groups.
+            </div>
             <div class="product-price">$9.99 / month</div>
-            <a href="/login.html" style="text-decoration:none;">
-                <button class="product-btn">Sign Up</button>
-            </a>
+            <button class="product-btn" onclick="location.href='/register.html'">Sign Up</button>
         </div>
 
         <div class="product-card">
             <div class="product-title">LoveText Free Trial</div>
-            <div class="product-desc">Try sending unlimited messages for 3 days — no commitment.</div>
+            <div class="product-desc">Try everything free for 3 days.</div>
             <div class="product-price">$0.00</div>
-            <a href="/login.html" style="text-decoration:none;">
-                <button class="product-btn">Sign Up</button>
-            </a>
+            <button class="product-btn" onclick="location.href='/register.html'">Try Free</button>
         </div>
 
     </div>

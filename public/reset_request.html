@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Password Reset Sent ❤️</title>
 
+    <!-- Force public (visitor) navbar -->
     <script>
-        /* Force visitor navbar (prevents admin nav from showing) */
-        window.FORCE_VISITOR_NAV = true;
+        window.FORCE_PUBLIC_NAV = true;
     </script>
+    <script src="/js/nav.js" defer></script>
 
     <style>
         :root {
@@ -23,11 +24,10 @@
             font-family: "Inter", sans-serif;
             background: linear-gradient(135deg, #fff7fa, #f6f3ff);
             min-height: 100vh;
-            padding: 120px 20px; /* navbar spacing */
+            padding: 120px 20px;
             text-align: center;
         }
 
-        /* Navbar placeholder */
         #navbar {
             width: 100%;
             height: 80px;
@@ -74,8 +74,6 @@
 <p>We've sent you a link to reset your password.</p>
 
 <a href="/login.html">Return to Login</a>
-
-<script src="/js/nav.js" defer></script>
 
 </body>
 </html>

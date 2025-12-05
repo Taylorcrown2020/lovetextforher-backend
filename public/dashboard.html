@@ -71,7 +71,7 @@
         }
 
         .recipient-box {
-            background: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.75);
             border: 1px solid #ffe0ec;
             border-radius: 18px;
             padding: 22px;
@@ -79,45 +79,21 @@
             box-shadow: 0 8px 26px rgba(214,51,108,0.12);
         }
 
-        .recipient-box strong {
-            color: var(--primary);
-        }
+        .recipient-box strong { color: var(--primary); }
 
-        .delete-btn {
-            margin-top: 14px;
+        .delete-btn, .log-btn, .flower-btn {
             padding: 10px 18px;
             border-radius: 12px;
             border: none;
             cursor: pointer;
-            background: var(--danger);
             color: white;
             font-weight: 600;
+            margin-top: 14px;
         }
 
-        .log-btn {
-            margin-top: 14px;
-            margin-left: 10px;
-            padding: 10px 18px;
-            border-radius: 12px;
-            border: none;
-            cursor: pointer;
-            background: var(--secondary-btn);
-            color: white;
-            font-weight: 600;
-        }
-
-        /* FLOWER BUTTON */
-        .flower-btn {
-            margin-top: 14px;
-            margin-left: 10px;
-            padding: 10px 18px;
-            border-radius: 12px;
-            border: none;
-            cursor: pointer;
-            background: #ff7ac4;
-            color: white;
-            font-weight: 600;
-        }
+        .delete-btn { background: var(--danger); }
+        .log-btn { background: var(--secondary-btn); margin-left: 10px; }
+        .flower-btn { background: #ff7ac4; margin-left: 10px; }
 
         #addForm input,
         #addForm select {
@@ -161,9 +137,8 @@
             text-align: center;
         }
 
-        /* Modal */
-        #messageLogModal,
-        #flowerModal {
+        /* MODALS */
+        #messageLogModal, #flowerModal {
             display:none;
             position:fixed;
             top:0; left:0; right:0; bottom:0;
@@ -172,7 +147,6 @@
             align-items:center;
             z-index:9999;
         }
-
     </style>
 </head>
 
@@ -182,11 +156,7 @@
 
 <div class="dashboard-container">
 
-    <div id="subscriptionBanner">
-        You need a subscription to add recipients ❤️  
-        <br><br>
-        <a href="/products.html">View Subscription Plans</a>
-    </div>
+    <div id="subscriptionBanner"></div>
 
     <h1 class="header-title">Your Recipients</h1>
 
@@ -207,7 +177,7 @@
             <option value="sister">Sister</option>
             <option value="brother">Brother</option>
             <option value="friend">Friend</option>
-            <option value="custom">Custom (enter below)</option>
+            <option value="custom">Custom Relationship</option>
         </select>
 
         <input id="r_customRel" placeholder="Enter custom relationship" style="display:none;">
@@ -228,64 +198,36 @@
         </select>
 
         <select id="r_timezone">
-            <option value="America/Chicago">America/Chicago (Central)</option>
-            <option value="America/New_York">America/New_York (Eastern)</option>
-            <option value="America/Denver">America/Denver (Mountain)</option>
-            <option value="America/Los_Angeles">America/Los_Angeles (Pacific)</option>
-            <option value="America/Phoenix">America/Phoenix (Arizona)</option>
-            <option value="Pacific/Honolulu">Pacific/Honolulu (Hawaii)</option>
-            <option value="Europe/London">Europe/London</option>
-            <option value="Europe/Paris">Europe/Paris</option>
-            <option value="Asia/Tokyo">Asia/Tokyo</option>
-            <option value="Asia/Shanghai">Asia/Shanghai</option>
+            <option value="America/Chicago">Central (America/Chicago)</option>
+            <option value="America/New_York">Eastern (America/New_York)</option>
+            <option value="America/Denver">Mountain (America/Denver)</option>
+            <option value="America/Los_Angeles">Pacific (America/Los_Angeles)</option>
         </select>
 
         <button onclick="addRecipient()">Add Recipient</button>
     </div>
 
     <p id="msg"></p>
-
 </div>
 
 <button id="manageSubBtn">Manage Subscription</button>
 
 <!-- MESSAGE LOG MODAL -->
 <div id="messageLogModal">
-    <div style="
-        background:white;
-        width:420px;
-        padding:20px;
-        border-radius:22px;
-        max-height:80vh;
-        overflow-y:auto;
-        box-shadow:0 18px 40px rgba(0,0,0,0.2);
-    ">
+    <div style="background:white; width:420px; padding:20px; border-radius:22px; max-height:80vh; overflow-y:auto;">
         <h2 style="margin-top:0; color:#d6336c;">Message Log</h2>
+        <div id="logContent"></div>
 
-        <div id="logContent" style="margin-top:15px;"></div>
-
-        <button onclick="closeMessageLog()" style="
-            margin-top:20px;
-            background:#d6336c;
-            color:white;
-            padding:12px 18px;
-            border:none;
-            border-radius:12px;
-            cursor:pointer;
-            font-weight:600;
-        ">Exit</button>
+        <button onclick="closeMessageLog()" style="margin-top:20px; background:#d6336c; color:white;
+            padding:12px 18px; border:none; border-radius:12px; cursor:pointer;">
+            Exit
+        </button>
     </div>
 </div>
 
 <!-- FLOWER MODAL -->
 <div id="flowerModal">
-    <div style="
-        background:white;
-        width:420px;
-        padding:20px;
-        border-radius:22px;
-        box-shadow:0 18px 40px rgba(0,0,0,0.2);
-    ">
+    <div style="background:white; width:420px; padding:20px; border-radius:22px;">
         <h2 style="margin-top:0; color:#d6336c;">Send a Flower 🌸</h2>
 
         <label>Select Flower:</label>
@@ -296,110 +238,178 @@
             <option value="🌷 Tulip">🌷 Tulip</option>
         </select>
 
-        <textarea id="flowerNote" placeholder="Optional note..." 
+        <textarea id="flowerNote" placeholder="Optional note…"
             style="width:100%; height:90px; margin-top:12px; padding:10px; border-radius:12px;"></textarea>
 
-        <button onclick="sendFlower()" style="
-            margin-top:20px;
-            background:#ff7ac4;
-            color:white;
-            padding:12px 18px;
-            border:none;
-            border-radius:12px;
-            cursor:pointer;
-            font-weight:600;
-        ">Send Flower</button>
+        <button onclick="sendFlower()" style="margin-top:20px; background:#ff7ac4; color:white;
+            padding:12px 18px; border:none; border-radius:12px; cursor:pointer;">
+            Send Flower
+        </button>
 
-        <button onclick="closeFlowerModal()" style="
-            margin-top:10px;
-            background:#999;
-            color:white;
-            padding:10px 16px;
-            border:none;
-            border-radius:12px;
-            cursor:pointer;
-            font-weight:600;
-        ">Cancel</button>
+        <button onclick="closeFlowerModal()" style="margin-top:10px; background:#999; color:white;
+            padding:10px 16px; border:none; border-radius:12px; cursor:pointer;">
+            Cancel
+        </button>
     </div>
 </div>
 
 <script src="/js/nav.js" defer></script>
 
 <script>
+/* ----------------------------- */
+/* GLOBAL STATE */
+/* ----------------------------- */
 let HAS_SUBSCRIPTION = false;
-let CURRENT_FLOWER_RECIPIENT = null;
+let PLAN = "none";
+let ACTIVE_UNTIL = null;
 
-/* Custom Relationship Toggle */
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("r_relationship").addEventListener("change", function () {
-        const customInput = document.getElementById("r_customRel");
-        customInput.style.display = this.value === "custom" ? "block" : "none";
-    });
+/* ----------------------------- */
+/* Show/Hide Custom Relationship */
+/* ----------------------------- */
+document.getElementById("r_relationship").addEventListener("change", () => {
+    const customBox = document.getElementById("r_customRel");
+    customBox.style.display =
+        r_relationship.value === "custom" ? "block" : "none";
 });
 
-/* Load Subscription */
-async function loadSubscriptionStatus() {
-    const res = await fetch("/api/customer/subscription", { credentials: "include" });
-    const data = await res.json();
 
-    HAS_SUBSCRIPTION = data.subscribed;
+/* ----------------------------- */
+/* SUBSCRIPTION BANNER           */
+/* ----------------------------- */
+function updateSubscriptionBanner(data) {
+    const banner = document.getElementById("subscriptionBanner");
 
-    document.getElementById("subscriptionBanner").style.display = HAS_SUBSCRIPTION ? "none" : "block";
-    document.getElementById("manageSubBtn").style.display = HAS_SUBSCRIPTION ? "block" : "none";
-}
+    const planName =
+        data.plan === "basic" ? "LoveText Basic" :
+        data.plan === "plus" ? "LoveText Plus" :
+        data.plan === "trial" ? "Free Trial" :
+        "None";
 
-/* Load Recipients */
-async function loadRecipients() {
-    const res = await fetch("/api/customer/recipients", { credentials: "include" });
-    const data = await res.json();
-
-    const box = document.getElementById("recipients");
-    box.innerHTML = "";
-
-    if (data.length === 0) {
-        box.innerHTML = `<p style="color:var(--text-soft); text-align:center; margin-top:20px;">
-            You have no recipients yet.
-        </p>`;
+    // no subscription at all
+    if (!data.subscribed && !data.subscription_end) {
+        banner.innerHTML = `
+            You do not have a subscription.<br>
+            <a href="/products.html">Choose a Plan</a>
+        `;
+        banner.style.display = "block";
         return;
     }
 
-    data.forEach(r => {
-        const timings = Array.isArray(r.timings) ? r.timings.join(", ") : "—";
+    // active trial
+    if (data.is_trial) {
+        const end = new Date(data.trial_end).toLocaleDateString();
+        banner.innerHTML =
+            `Your Free Trial is active until <strong>${end}</strong> ❤️`;
+        banner.style.display = "block";
+        return;
+    }
 
-        box.innerHTML += `
-            <div class="recipient-box">
-                <strong>${r.name}</strong> (${r.relationship || "Unknown"})
-                <p>Email: ${r.email}</p>
-                <p>Frequency: ${r.frequency}</p>
-                <p>Timing: ${timings}</p>
-
-                <button class="delete-btn" onclick="removeRecipient(${r.id})">Delete</button>
-                <button class="log-btn" onclick="openMessageLog(${r.id})">Message Log</button>
-
-                <!-- FLOWER BUTTON -->
-                <button class="flower-btn" onclick="openFlowerModal(${r.id}, '${r.name}')">Send Flower 🌸</button>
-            </div>
+    // canceled but active until date
+    if (data.subscription_end) {
+        const end = new Date(data.subscription_end).toLocaleDateString();
+        banner.innerHTML = `
+            Your subscription is active until <strong>${end}</strong> ❤️<br>
+            You will continue to receive messages until this date.
         `;
-    });
+        banner.style.display = "block";
+        return;
+    }
+
+    // fully active plan
+    banner.innerHTML =
+        `You currently have an active <strong>${planName}</strong> subscription 💖`;
+    banner.style.display = "block";
 }
 
-/* Add Recipient */
+/* ----------------------------- */
+/* LOAD SUBSCRIPTION STATUS      */
+/* ----------------------------- */
+async function loadSubscriptionStatus() {
+    try {
+        const res = await fetch("/api/customer/subscription", {
+            credentials: "include"
+        });
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        HAS_SUBSCRIPTION =
+            data.subscribed === true ||
+            !!data.subscription_end;
+
+        PLAN = data.plan;
+        ACTIVE_UNTIL = data.subscription_end;
+
+        updateSubscriptionBanner(data);
+
+        document.getElementById("manageSubBtn").style.display =
+            HAS_SUBSCRIPTION ? "block" : "none";
+
+    } catch (err) {
+        console.error("Subscription Load Error", err);
+    }
+}
+
+/* ----------------------------- */
+/* LOAD RECIPIENTS               */
+/* ----------------------------- */
+async function loadRecipients() {
+    try {
+        const res = await fetch("/api/customer/recipients", {
+            credentials: "include"
+        });
+        const data = await res.json();
+
+        const box = document.getElementById("recipients");
+        box.innerHTML = "";
+
+        if (!data.length) {
+            box.innerHTML =
+                `<p style="text-align:center; color:var(--text-soft);">No recipients yet.</p>`;
+            return;
+        }
+
+        data.forEach(r => {
+            const timing = r.timings;   // FIXED
+
+            box.innerHTML += `
+                <div class="recipient-box">
+                    <strong>${r.name}</strong> (${r.relationship})
+                    <p>Email: ${r.email}</p>
+                    <p>Frequency: ${r.frequency}</p>
+                    <p>Timing: ${timing}</p>
+
+                    <button class="delete-btn" onclick="deleteRecipient(${r.id})">Delete</button>
+                    <button class="log-btn" onclick="openMessageLog(${r.id})">Message Log</button>
+                    <button class="flower-btn" onclick="openFlowerModal(${r.id})">Send Flower 🌸</button>
+                </div>
+            `;
+        });
+
+    } catch (err) {
+        console.error("Recipient Load Error", err);
+    }
+}
+
+/* ----------------------------- */
+/* ADD RECIPIENT                 */
+/* ----------------------------- */
 async function addRecipient() {
     if (!HAS_SUBSCRIPTION) {
-        msg.innerText = "A subscription is required.";
-        setTimeout(() => window.location = "/products.html", 1300);
+        msg.innerText = "You need a subscription.";
+        setTimeout(() => window.location = "/products.html", 1200);
         return;
     }
 
     const name = r_name.value.trim();
     const email = r_email.value.trim();
-    const frequency = r_frequency.value;
+    const freq = r_frequency.value;
     const timing = r_timings.value;
     const timezone = r_timezone.value;
 
-    let relationship = document.getElementById("r_relationship").value;
+    let relationship = r_relationship.value;
     if (relationship === "custom") {
-        relationship = document.getElementById("r_customRel").value.trim();
+        relationship = r_customRel.value.trim();
     }
 
     if (!name || !email || !relationship) {
@@ -411,13 +421,13 @@ async function addRecipient() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-            name, 
-            email, 
-            frequency, 
-            timings: [timing], 
-            timezone,
-            relationship
+        body: JSON.stringify({
+            name,
+            email,
+            relationship,
+            frequency: freq,
+            timings: timing,
+            timezone
         })
     });
 
@@ -427,15 +437,18 @@ async function addRecipient() {
         msg.innerText = "";
         r_name.value = "";
         r_email.value = "";
+        r_customRel.value = "";
         loadRecipients();
     } else {
         msg.innerText = data.error || "Error adding recipient.";
     }
 }
 
-/* Delete Recipient */
-async function removeRecipient(id) {
-    if (!confirm("Are you sure you want to remove this recipient?")) return;
+/* ----------------------------- */
+/* DELETE RECIPIENT              */
+/* ----------------------------- */
+async function deleteRecipient(id) {
+    if (!confirm("Delete this recipient?")) return;
 
     await fetch(`/api/customer/recipients/${id}`, {
         method: "DELETE",
@@ -445,45 +458,59 @@ async function removeRecipient(id) {
     loadRecipients();
 }
 
-/* Message Log Modal */
-function openMessageLog(recipientId) {
-    fetch(`/api/message-log/${recipientId}`, { credentials: "include" })
-        .then(res => res.json())
-        .then(data => {
-            const logBox = document.getElementById("logContent");
-            logBox.innerHTML = "";
+/* ----------------------------- */
+/* MESSAGE LOG MODAL             */
+/* ----------------------------- */
+async function openMessageLog(id) {
+    const modal = document.getElementById("messageLogModal");
+    const content = document.getElementById("logContent");
 
-            if (!data.success || data.messages.length === 0) {
-                logBox.innerHTML = "<p>No messages found.</p>";
-            } else {
-                data.messages.forEach(msg => {
-                    const div = document.createElement("div");
-                    div.style.marginBottom = "12px";
-                    div.style.padding = "12px";
-                    div.style.border = "1px solid #eee";
-                    div.style.borderRadius = "10px";
-                    div.style.background = "#fafafa";
+    content.innerHTML = "<p>Loading...</p>";
 
-                    div.innerHTML =
-                        "<div><strong>Message:</strong> " + msg.message_text + "</div>" +
-                        "<div style='font-size:12px; color:#666;'>Sent: " +
-                        new Date(msg.sent_at).toLocaleString() + "</div>";
+    const res = await fetch(`/api/message-log/${id}`, {
+        credentials: "include"
+    });
+    const data = await res.json();
 
-                    logBox.appendChild(div);
-                });
-            }
-            document.getElementById("messageLogModal").style.display = "flex";
+    content.innerHTML = "";
+
+    if (!data.success) {
+        content.innerHTML = "<p>Error loading messages.</p>";
+    } else if (!data.messages.length) {
+        content.innerHTML = "<p>No messages yet.</p>";
+    } else {
+        data.messages.forEach(m => {
+            content.innerHTML += `
+                <div style="
+                    padding:12px;
+                    margin-bottom:10px;
+                    border-radius:12px;
+                    background:#fafafa;
+                    border:1px solid #eee;">
+                    <strong>${m.message_text}</strong>
+                    <div style="font-size:12px; color:#777;">
+                        ${new Date(m.sent_at).toLocaleString()}
+                    </div>
+                </div>
+            `;
         });
+    }
+
+    modal.style.display = "flex";
 }
 
 function closeMessageLog() {
     document.getElementById("messageLogModal").style.display = "none";
 }
 
-/* FLOWER FEATURE */
-function openFlowerModal(recipientId, name) {
-    CURRENT_FLOWER_RECIPIENT = recipientId;
-    document.getElementById("flowerNote").value = "";
+/* ----------------------------- */
+/* FLOWER SENDER                 */
+/* ----------------------------- */
+let CURRENT_FLOWER_RECIPIENT = null;
+
+function openFlowerModal(id) {
+    CURRENT_FLOWER_RECIPIENT = id;
+    flowerNote.value = "";
     document.getElementById("flowerModal").style.display = "flex";
 }
 
@@ -492,41 +519,42 @@ function closeFlowerModal() {
 }
 
 async function sendFlower() {
-    const flower = document.getElementById("flowerType").value;
-    const note = document.getElementById("flowerNote").value.trim();
-
+    const flower = flowerType.value;
+    const note = flowerNote.value.trim();
     const message = `${flower}${note ? " — " + note : ""}`;
 
     const res = await fetch(`/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ note: message })
     });
 
     const data = await res.json();
 
     if (data.success) {
-        alert("Flower sent successfully! 🌸");
+        alert("Flower sent 🌸");
         closeFlowerModal();
     } else {
         alert("Error sending flower.");
     }
 }
 
-/* Manage Subscription */
+/* ----------------------------- */
+/* MANAGE SUBSCRIPTION           */
+/* ----------------------------- */
 document.getElementById("manageSubBtn").addEventListener("click", async () => {
-    const res = await fetch("/api/customer/subscription/portal", { credentials: "include" });
+    const res = await fetch("/api/customer/subscription/portal", {
+        credentials: "include"
+    });
     const data = await res.json();
 
-    if (data.url) {
-        window.location.href = data.url;
-    } else {
-        alert("No active subscription found.");
-    }
+    if (data.url) window.location.href = data.url;
 });
 
-/* INIT */
+/* ----------------------------- */
+/* INIT                          */
+/* ----------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
     loadSubscriptionStatus();
     loadRecipients();

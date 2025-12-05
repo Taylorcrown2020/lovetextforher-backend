@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Admin — Customers</title>
 
-    <!-- Prevent nav.js from injecting anything -->
+    <!-- Disable nav.js for admin pages -->
     <script>
         window.SKIP_NAV_JS = true;
     </script>
@@ -18,9 +18,14 @@
             --max-width: 1200px;
         }
 
-        body {
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             font-family: "Inter", sans-serif;
+        }
+
+        body {
             background: linear-gradient(135deg, #fff7fa, #f6f3ff);
             padding-top: 120px;
         }
@@ -33,7 +38,6 @@
             padding: 18px;
             background: rgba(255,255,255,0.7);
             backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
             box-shadow: 0 2px 14px rgba(0,0,0,0.08);
             z-index: 1000;
         }
@@ -57,17 +61,13 @@
             color: var(--text-dark);
             text-decoration: none;
             font-weight: 500;
-            transition: 0.25s ease;
         }
+        #navbar a:hover { color: var(--primary); }
 
-        #navbar a:hover {
-            color: var(--primary);
-        }
-
-        /* HEADER */
+        /* PAGE HEADER */
         h2 {
             text-align: center;
-            font-size: 32px;
+            font-size: 34px;
             font-weight: 800;
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
@@ -78,17 +78,18 @@
         /* CUSTOMER LIST */
         #list {
             max-width: 900px;
-            margin: 0 auto 60px auto;
+            margin: 0 auto 60px;
             padding: 0 16px;
         }
 
         .customer {
-            padding: 22px;
             background: var(--card-bg);
+            backdrop-filter: blur(20px);
             border-radius: 18px;
+            padding: 22px;
             margin: 16px 0;
             box-shadow: 0 10px 35px rgba(214,51,108,0.15);
-            transition: 0.25s ease;
+            transition: 0.25s;
         }
 
         .customer:hover {
@@ -99,22 +100,22 @@
         .email {
             color: #444;
             font-size: 15px;
+            margin-top: 4px;
         }
 
-        button {
-            margin-top: 12px;
+        .btn-delete {
+            margin-top: 14px;
             padding: 10px 18px;
             border: none;
             border-radius: 12px;
-            background: linear-gradient(90deg, #d6336c, #8b5cf6);
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
             color: white;
             cursor: pointer;
             font-weight: 600;
+            transition: 0.25s;
             box-shadow: 0 6px 20px rgba(214,51,108,0.25);
-            transition: 0.25s ease;
         }
-
-        button:hover {
+        .btn-delete:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 32px rgba(214,51,108,0.35);
         }
@@ -126,20 +127,35 @@
 <!-- ADMIN AUTH CHECK -->
 <script>
 async function verifyAdmin() {
-    const res = await fetch("/api/admin/me", {
-        method: "GET",
-        credentials: "include"
-    });
+    try {
+        const res = await fetch("/api/admin/me", {
+            credentials: "include",
+            cache: "no-store"
+        });
 
-    if (!res.ok) {
+        if (!res.ok) {
+            window.location.href = "/admin_login.html";
+            return false;
+        }
+
+        const data = await res.json();
+
+        if (!data?.admin || data.admin.role !== "admin") {
+            window.location.href = "/admin_login.html";
+            return false;
+        }
+
+        return true;
+
+    } catch {
         window.location.href = "/admin_login.html";
-        return;
+        return false;
     }
 }
-verifyAdmin();
 </script>
 
-<!-- ADMIN NAVBAR -->
+
+<!-- STATIC ADMIN NAVBAR -->
 <div id="navbar">
     <div id="navbar-inner">
         <div class="logo">LOVETEXTFORHER</div>
@@ -153,59 +169,93 @@ verifyAdmin();
     </div>
 </div>
 
-<!-- PAGE CONTENT -->
+
 <h2>Customer Accounts</h2>
-<div id="list"></div>
+
+<div id="list">
+    <p style="text-align:center; opacity:0.6;">Loading customers...</p>
+</div>
+
 
 <script>
+// -------------------------------------------------------------
+// LOAD CUSTOMERS
+// -------------------------------------------------------------
 async function loadCustomers() {
-    const res = await fetch("/api/admin/customers", {
-        credentials: "include"
-    });
+    try {
+        const res = await fetch("/api/admin/customers", {
+            credentials: "include",
+            cache: "no-store"
+        });
 
-    if (!res.ok) {
-        window.location.href = "/admin_login.html";
-        return;
+        if (!res.ok) {
+            document.getElementById("list").innerHTML =
+                "<p style='text-align:center;color:red;'>Failed to load customers.</p>";
+            return;
+        }
+
+        const customers = await res.json();
+        const box = document.getElementById("list");
+        box.innerHTML = "";
+
+        if (customers.length === 0) {
+            box.innerHTML = `<p style="color:#777;text-align:center;">No customers found.</p>`;
+            return;
+        }
+
+        customers.forEach(c => {
+            box.innerHTML += `
+                <div class="customer" id="customer-${c.id}">
+                    <strong>${c.email}</strong>
+                    <div class="email">Customer ID: ${c.id}</div>
+                    <div class="email">Name: ${c.name || "(none)"}</div>
+                    <div class="email">Has Subscription: ${c.has_subscription ? "Yes" : "No"}</div>
+                    <div class="email">Plan: ${c.current_plan}</div>
+
+                    <button class="btn-delete" onclick="deleteCustomer(${c.id})">
+                        Delete Customer
+                    </button>
+                </div>
+            `;
+        });
+
+    } catch (err) {
+        document.getElementById("list").innerHTML =
+            "<p style='text-align:center;color:red;'>Error loading customers.</p>";
     }
-
-    const customers = await res.json();
-    const box = document.getElementById("list");
-    box.innerHTML = "";
-
-    customers.forEach(c => {
-        box.innerHTML += `
-            <div class="customer" id="customer-${c.id}">
-                <strong>${c.email}</strong>
-                <div class="email">Customer ID: ${c.id}</div>
-                <div class="email">Name: ${c.name || "(none)"}</div>
-
-                <button onclick="deleteCustomer(${c.id})">
-                    Delete Customer
-                </button>
-            </div>
-        `;
-    });
 }
 
+
+// -------------------------------------------------------------
+// DELETE CUSTOMER
+// -------------------------------------------------------------
 async function deleteCustomer(id) {
-    if (!confirm("This will delete the customer AND all related recipients. Are you sure?")) return;
+    if (!confirm("Delete this customer AND all related recipients?")) return;
 
-    const res = await fetch(`/api/admin/customer/${id}`, {
-        method: "DELETE",
-        credentials: "include"
-    });
+    try {
+        const res = await fetch(`/api/admin/customer/${id}`, {
+            method: "DELETE",
+            credentials: "include"
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    if (data.success) {
-        const el = document.getElementById(`customer-${id}`);
-        if (el) el.remove();
-    } else {
-        alert("Error deleting customer.");
+        if (data.success) {
+            const el = document.getElementById(`customer-${id}`);
+            if (el) el.remove();
+        } else {
+            alert(data.error || "Error deleting customer.");
+        }
+
+    } catch {
+        alert("Network error deleting customer.");
     }
 }
 
-// FIXED LOGOUT BUTTON
+
+// -------------------------------------------------------------
+// LOGOUT ADMIN
+// -------------------------------------------------------------
 document.getElementById("logout-admin").addEventListener("click", async () => {
     await fetch("/api/admin/logout", {
         method: "POST",
@@ -214,7 +264,14 @@ document.getElementById("logout-admin").addEventListener("click", async () => {
     window.location.href = "/admin_login.html";
 });
 
-loadCustomers();
+
+// -------------------------------------------------------------
+// INIT PAGE
+// -------------------------------------------------------------
+(async () => {
+    const ok = await verifyAdmin();
+    if (ok) loadCustomers();
+})();
 </script>
 
 </body>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Admin Login — LoveTextForHer</title>
 
-    <!-- Prevent nav.js from overwriting navbar or redirecting -->
+    <!-- Disable nav.js on this page -->
     <script>
         window.SKIP_NAV_JS = true;
         window.IS_ADMIN_LOGIN_PAGE = true;
@@ -14,10 +14,7 @@
         :root {
             --primary: #d6336c;
             --secondary: #8b5cf6;
-            --primary-light: #ffe3ed;
-            --secondary-light: #ede9fe;
             --text-dark: #1a1a1a;
-            --text-light: #6a6a6a;
             --max-width: 1200px;
         }
 
@@ -29,11 +26,7 @@
         }
 
         body {
-            background: linear-gradient(
-                125deg,
-                rgba(255, 230, 240, 0.6),
-                rgba(237, 233, 254, 0.6)
-            );
+            background: linear-gradient(125deg, #ffe6f0, #ede9fe);
             min-height: 100vh;
         }
 
@@ -65,13 +58,13 @@
         }
 
         #navbar a {
-            text-decoration: none;
             margin-left: 22px;
+            text-decoration: none;
             color: var(--text-dark);
             font-weight: 500;
         }
 
-        /* LOGIN CARD */
+        /* LOGIN UI */
         .login-wrapper {
             max-width: 420px;
             margin: 160px auto;
@@ -126,6 +119,7 @@
             text-align: center;
             font-weight: 600;
             color: var(--primary);
+            min-height: 22px;
         }
     </style>
 </head>
@@ -143,12 +137,13 @@
     </div>
 </div>
 
+
 <div class="login-wrapper">
     <div class="login-card">
 
         <h2>Admin Login</h2>
 
-        <input id="email" placeholder="Admin Email">
+        <input id="email" type="email" placeholder="Admin Email">
         <input id="password" type="password" placeholder="Password">
 
         <button class="btn" onclick="adminLogin()">Login</button>
@@ -159,25 +154,67 @@
 </div>
 
 <script>
+// --------------------------------------------------------
+// Auto-redirect if admin already logged in
+// --------------------------------------------------------
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const res = await fetch("/api/admin/me", {
+            credentials: "include",
+            cache: "no-store"
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        if (data?.admin?.role === "admin") {
+            window.location.href = "/admin.html";
+        }
+    } catch {}
+});
+
+
+// --------------------------------------------------------
+// Admin Login
+// --------------------------------------------------------
 async function adminLogin() {
-    const res = await fetch("/api/admin/login", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-            email: email.value,
-            password: password.value
-        })
-    });
+    msg.innerText = "";
 
-    const data = await res.json();
+    const emailVal = email.value.trim();
+    const passVal = password.value.trim();
 
-    if (data.success) {
-        window.location.href = "/admin.html";
-    } else {
-        msg.innerText = data.error || "Login failed.";
+    if (!emailVal || !passVal) {
+        msg.innerText = "Enter email and password.";
+        return;
+    }
+
+    try {
+        const res = await fetch("/api/admin/login", {
+            method: "POST",
+            headers: { "Content-Type":"application/json" },
+            credentials: "include",
+            body: JSON.stringify({ email: emailVal, password: passVal })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            window.location.href = "/admin.html";
+        } else {
+            msg.innerText = data.error || "Login failed.";
+        }
+
+    } catch (err) {
+        msg.innerText = "Network error.";
     }
 }
+
+
+// Pressing ENTER submits form
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") adminLogin();
+});
 </script>
 
 </body>

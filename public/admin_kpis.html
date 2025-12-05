@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>KPI Dashboard — LoveTextForHer</title>
 
-    <!-- Prevent nav.js from taking over -->
+    <!-- Disable nav.js on this page -->
     <script>
         window.SKIP_NAV_JS = true;
     </script>
@@ -31,12 +31,13 @@
             color: var(--text-dark);
         }
 
+        /* NAVBAR */
         #navbar {
             position: fixed;
             top: 0;
             width: 100%;
             padding: 18px 0;
-            background: rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.65);
             backdrop-filter: blur(18px);
             box-shadow: 0 2px 14px rgba(0,0,0,0.05);
             z-index: 1000;
@@ -58,16 +59,14 @@
         }
 
         #navbar a {
-            margin-left: 22px;
             text-decoration: none;
+            margin-left: 22px;
             color: var(--text-dark);
             font-weight: 500;
         }
+        #navbar a:hover { color: var(--primary); }
 
-        #navbar a:hover {
-            color: var(--primary);
-        }
-
+        /* PAGE HEADER */
         .page-header {
             max-width: var(--max-width);
             margin: 40px auto;
@@ -84,6 +83,7 @@
             color: var(--text-light);
         }
 
+        /* KPI GRID */
         .kpi-grid {
             max-width: var(--max-width);
             margin: auto;
@@ -120,34 +120,44 @@
         .kpi-number {
             font-size: 20px;
             font-weight: 600;
+            margin-top: 6px;
         }
     </style>
 </head>
 
 <body>
 
-<!-- FIXED ADMIN AUTH GUARD -->
+<!-- AUTH CHECK -->
 <script>
 async function verifyAdmin() {
-    const res = await fetch("/api/admin/me", {
-        method: "GET",
-        credentials: "include"
-    });
+    try {
+        const res = await fetch("/api/admin/me", {
+            credentials: "include",
+            cache: "no-store"
+        });
 
-    if (!res.ok) {
-        window.location.href = "/admin_login.html";
-        return;
-    }
+        if (!res.ok) {
+            window.location.href = "/admin_login.html";
+            return false;
+        }
 
-    const data = await res.json();
-    if (!data.admin || data.admin.role !== "admin") {
+        const data = await res.json();
+
+        if (!data?.admin || data.admin.role !== "admin") {
+            window.location.href = "/admin_login.html";
+            return false;
+        }
+
+        return true;
+
+    } catch {
         window.location.href = "/admin_login.html";
+        return false;
     }
 }
-verifyAdmin();
 </script>
 
-<!-- NAV -->
+<!-- STATIC NAVBAR -->
 <div id="navbar">
     <div id="navbar-inner">
         <div class="logo">LOVETEXTFORHER</div>
@@ -161,57 +171,77 @@ verifyAdmin();
     </div>
 </div>
 
-<!-- HEADER -->
+<!-- PAGE HEADER -->
 <div class="page-header">
     <h1 class="kpi-title">System KPIs</h1>
     <p class="kpi-subtitle">Live analytics for platform performance</p>
 </div>
 
 <!-- KPI GRID -->
-<div id="kpiGrid" class="kpi-grid"></div>
+<div id="kpiGrid" class="kpi-grid">
+    <p style="font-size:18px; text-align:center; opacity:0.6;">Loading KPIs...</p>
+</div>
 
 <script>
+// ---------------------------------------------------------------------
+// LOAD KPI DATA
+// ---------------------------------------------------------------------
 async function loadKPIs() {
-    const res = await fetch("/api/admin/kpis", { credentials: "include" });
+    try {
+        const res = await fetch("/api/admin/kpis", {
+            credentials: "include",
+            cache: "no-store"
+        });
 
-    if (!res.ok) {
-        window.location.href = "/admin_login.html";
-        return;
+        if (!res.ok) {
+            document.getElementById("kpiGrid").innerHTML =
+                "<p style='text-align:center; color:red;'>Failed to load KPIs.</p>";
+            return;
+        }
+
+        const k = await res.json();
+
+        document.getElementById("kpiGrid").innerHTML = `
+
+            <div class="kpi-card">
+                <h3>Total Customers</h3>
+                <div class="kpi-number">${k.customers.total}</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Recipients</h3>
+                <div class="kpi-number">Total: ${k.recipients.total}</div>
+                <div class="kpi-number">Active: ${k.recipients.active}</div>
+                <div class="kpi-number">Unsubscribed: ${k.recipients.unsubscribed}</div>
+                <div class="kpi-number">Growth 30d: ${k.recipients.netGrowth}</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Stripe Subscriptions</h3>
+                <div class="kpi-number">Active: ${k.subscriptions.active}</div>
+                <div class="kpi-number">MRR: $${k.subscriptions.mrr}</div>
+                <div class="kpi-number">Churn: ${(k.subscriptions.churnRate * 100).toFixed(2)}%</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Cart Metrics</h3>
+                <div class="kpi-number">Total Carts: ${k.carts.total}</div>
+                <div class="kpi-number">Active Carts: ${k.carts.active}</div>
+                <div class="kpi-number">Avg Cart Value: $${k.carts.avgCartValue.toFixed(2)}</div>
+                <div class="kpi-number">Recoverable: $${k.carts.recoverableRevenue.toFixed(2)}</div>
+            </div>
+        `;
+
+    } catch (err) {
+        document.getElementById("kpiGrid").innerHTML =
+            "<p style='text-align:center; color:red;'>Error loading KPIs.</p>";
     }
-
-    const k = await res.json();
-
-    document.getElementById("kpiGrid").innerHTML = `
-        <div class="kpi-card">
-            <h3>Customers</h3>
-            <div class="kpi-number">Total: ${k.customers.total}</div>
-        </div>
-
-        <div class="kpi-card">
-            <h3>Recipients</h3>
-            <div class="kpi-number">Total: ${k.recipients.total}</div>
-            <div class="kpi-number">Active: ${k.recipients.active}</div>
-            <div class="kpi-number">Unsubscribed: ${k.recipients.unsubscribed}</div>
-            <div class="kpi-number">Net 30-Day Growth: ${k.recipients.netGrowth}</div>
-        </div>
-
-        <div class="kpi-card">
-            <h3>Stripe Subscriptions</h3>
-            <div class="kpi-number">Active: ${k.subscriptions.active}</div>
-            <div class="kpi-number">MRR: $${k.subscriptions.mrr}</div>
-            <div class="kpi-number">Churn: ${(k.subscriptions.churnRate * 100).toFixed(2)}%</div>
-        </div>
-
-        <div class="kpi-card">
-            <h3>Cart Metrics</h3>
-            <div class="kpi-number">Total Carts: ${k.carts.total}</div>
-            <div class="kpi-number">Active Carts: ${k.carts.active}</div>
-            <div class="kpi-number">Avg Cart Value: $${k.carts.avgCartValue.toFixed(2)}</div>
-            <div class="kpi-number">Recoverable Revenue: $${k.carts.recoverableRevenue.toFixed(2)}</div>
-        </div>
-    `;
 }
 
+
+// ---------------------------------------------------------------------
+// ADMIN LOGOUT
+// ---------------------------------------------------------------------
 document.getElementById("logout-admin").addEventListener("click", async () => {
     await fetch("/api/admin/logout", {
         method: "POST",
@@ -220,7 +250,14 @@ document.getElementById("logout-admin").addEventListener("click", async () => {
     window.location.href = "/admin_login.html";
 });
 
-loadKPIs();
+
+// ---------------------------------------------------------------------
+// INIT PAGE
+// ---------------------------------------------------------------------
+(async () => {
+    const ok = await verifyAdmin();
+    if (ok) loadKPIs();
+})();
 </script>
 
 </body>

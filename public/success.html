@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Payment Success ❤️</title>
 
+    <!-- Use normal nav.js rules (customer navbar will appear automatically if logged in) -->
     <script>
-        /* Force nav.js to display CUSTOMER navbar only */
-        window.FORCE_CUSTOMER_NAV = true;
-        window.FORCE_VISITOR_NAV = false; /* important: prevents visitor fallback */
+        window.FORCE_PUBLIC_NAV = false;
     </script>
 
     <style>
@@ -24,14 +23,14 @@
             font-family: "Inter", sans-serif;
             background: linear-gradient(135deg, #fff7fa, #f6f3ff);
             min-height: 100vh;
-            padding: 120px 20px; /* navbar spacing */
+            padding: 120px 20px;
             text-align: center;
         }
 
-        /* navbar placeholder for nav.js */
+        /* Navbar placeholder for nav.js */
         #navbar {
             width: 100%;
-            height: 80px;
+            height: 95px;
         }
 
         h2 {
@@ -77,5 +76,6 @@
 <a href="/dashboard.html">Go to Dashboard</a>
 
 <script src="/js/nav.js" defer></script>
+
 </body>
 </html>

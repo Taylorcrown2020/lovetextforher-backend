@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <title>Payment Canceled — LoveTextForHer</title>
 
+    <!-- Force visitor/public navbar -->
+    <script>
+        window.FORCE_PUBLIC_NAV = true;
+    </script>
+    <script src="/js/nav.js" defer></script>
+
     <style>
         :root {
             --primary: #d6336c;
@@ -23,51 +29,16 @@
             flex-direction: column;
         }
 
-        /* ========================= NAVBAR ========================= */
+        /* NAVBAR SPACER FOR nav.js */
         #navbar {
-            position: fixed;
-            top: 0;
             width: 100%;
-            padding: 18px 0;
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            box-shadow: 0 2px 14px rgba(0,0,0,0.05);
-            z-index: 1000;
+            height: 95px;
         }
 
-        #navbar-inner {
-            max-width: 1200px;
-            margin: auto;
-            padding: 0 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: 900;
-            color: var(--primary);
-            letter-spacing: 1px;
-        }
-
-        #navbar a {
-            margin-left: 22px;
-            text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 500;
-            transition: 0.25s;
-        }
-
-        #navbar a:hover {
-            color: var(--primary);
-        }
-
-        /* ========================= CARD ========================= */
+        /* CARD */
         .cancel-container {
             max-width: 540px;
-            margin: 160px auto 0;
+            margin: 40px auto 0;
             padding: 40px 34px;
             background: rgba(255,255,255,0.55);
             border-radius: 22px;
@@ -94,7 +65,7 @@
             margin-bottom: 28px;
         }
 
-        /* ========================= BUTTON ========================= */
+        /* BUTTON */
         .btn {
             display: inline-block;
             padding: 14px 26px;
@@ -104,7 +75,6 @@
             font-weight: 600;
             text-decoration: none;
             font-size: 15px;
-
             box-shadow: 0 8px 22px rgba(214,51,108,0.25);
             transition: 0.25s ease;
         }
@@ -123,17 +93,7 @@
 
 <body>
 
-<!-- NAVBAR -->
-<div id="navbar">
-    <div id="navbar-inner">
-        <div class="logo">LOVETEXTFORHER</div>
-        <div>
-            <a href="/index.html">Home</a>
-            <a href="/products.html">Products</a>
-            <a href="/login.html">Login</a>
-        </div>
-    </div>
-</div>
+<div id="navbar"></div>
 
 <!-- CONTENT CARD -->
 <div class="cancel-container">
@@ -142,8 +102,6 @@
 
     <a class="btn" href="/products.html">Return to Products</a>
 </div>
-
-<script src="/js/nav.js" defer></script>
 
 </body>
 </html>

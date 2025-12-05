@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Set New Password ❤️</title>
 
+    <!-- Force public visitor navbar -->
     <script>
-        /* Force visitor navbar — prevents admin nav showing here */
-        window.FORCE_VISITOR_NAV = true;
+        window.FORCE_PUBLIC_NAV = true;
     </script>
+    <script src="/js/nav.js" defer></script>
 
     <style>
         :root {
@@ -25,7 +26,7 @@
             min-height: 100vh;
         }
 
-        /* Navbar spacer */
+        /* navbar placeholder */
         #navbar {
             width: 100%;
             height: 80px;
@@ -106,24 +107,28 @@
     <p id="msg"></p>
 </div>
 
-<script src="/js/nav.js" defer></script>
-
 <script>
 const urlParams = new URLSearchParams(window.location.search);
 const token = urlParams.get("token");
 
 async function resetPassword() {
+    const pw = document.getElementById("password").value.trim();
+    const msg = document.getElementById("msg");
+
+    msg.innerText = "";
+
+    if (!pw) {
+        msg.innerText = "Please enter a new password.";
+        return;
+    }
+
     const res = await fetch("/api/reset/confirm", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body:JSON.stringify({
-            token,
-            password: password.value
-        })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password: pw })
     });
 
     const data = await res.json();
-    const msg = document.getElementById("msg");
 
     if (data.success) {
         msg.innerText = "Password updated ❤️ Redirecting...";

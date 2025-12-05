@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <title>Admin — Recipients</title>
 
-    <!-- Disable nav.js auto-injection -->
-    <script>
-        window.SKIP_NAV_JS = true;
-    </script>
+    <!-- Disable nav.js -->
+    <script> window.SKIP_NAV_JS = true; </script>
 
     <style>
         :root {
@@ -34,13 +32,12 @@
             padding-top: 100px;
         }
 
-        /* NAVBAR */
         #navbar {
             position: fixed;
             top: 0;
             width: 100%;
             padding: 18px 0;
-            background: rgba(255, 255, 255, 0.65);
+            background: rgba(255,255,255,0.65);
             backdrop-filter: blur(18px);
             box-shadow: 0 2px 14px rgba(0,0,0,0.05);
             z-index: 1000;
@@ -114,7 +111,35 @@
 
 <body>
 
-<!-- STATIC ADMIN NAVBAR (fixed + logout added) -->
+<!-- ADMIN AUTH CHECK -->
+<script>
+async function verifyAdmin() {
+    try {
+        const res = await fetch("/api/admin/me", {
+            credentials: "include",
+            cache: "no-store"
+        });
+
+        if (!res.ok) {
+            window.location.href = "/admin_login.html";
+            return;
+        }
+
+        const data = await res.json();
+        if (!data?.admin?.role) {
+            window.location.href = "/admin_login.html";
+        }
+
+    } catch (err) {
+        window.location.href = "/admin_login.html";
+    }
+}
+
+verifyAdmin();
+</script>
+
+
+<!-- ADMIN NAVBAR -->
 <div id="navbar">
     <div id="navbar-inner">
         <div class="logo">LOVETEXTFORHER</div>
@@ -128,14 +153,15 @@
     </div>
 </div>
 
-<!-- PAGE CONTENT -->
+
 <div class="container">
     <h2>Recipient Users</h2>
     <div id="list"></div>
 </div>
 
+
 <script>
-// FIXED LOGOUT BUTTON
+// ADMIN LOGOUT
 document.getElementById("logout-admin").addEventListener("click", async () => {
     await fetch("/api/admin/logout", {
         method: "POST",
@@ -144,9 +170,11 @@ document.getElementById("logout-admin").addEventListener("click", async () => {
     window.location.href = "/admin_login.html";
 });
 
+// LOAD RECIPIENT USERS
 async function loadUsers() {
-    const res = await fetch("/api/admin/users", {
-        credentials: "include"
+    const res = await fetch("/api/admin/recipients", {
+        credentials: "include",
+        cache: "no-store"
     });
 
     if (!res.ok) {
@@ -158,14 +186,22 @@ async function loadUsers() {
     const box = document.getElementById("list");
     box.innerHTML = "";
 
+    if (!Array.isArray(users) || users.length === 0) {
+        box.innerHTML = `<p style="text-align:center; color:var(--text-soft);">No recipients found.</p>`;
+        return;
+    }
+
     users.forEach(u => {
         box.innerHTML += `
             <div class="user" id="user-${u.id}">
+
                 <strong>${u.name}</strong>
-                <div class="email">${u.email}</div>
-                <div><b>Customer ID:</b> ${u.customer_id}</div>
+                <div><b>Email:</b> ${u.email}</div>
+                <div><b>Relationship:</b> ${u.relationship}</div>
                 <div><b>Frequency:</b> ${u.frequency}</div>
-                <div><b>Next Delivery:</b> ${u.next_delivery}</div>
+                <div><b>Timings:</b> ${Array.isArray(u.timings) ? u.timings.join(", ") : u.timings}</div>
+                <div><b>Customer ID:</b> ${u.customer_id}</div>
+                <div><b>Next Run:</b> ${u.next_run || "Pending"}</div>
 
                 <button class="btn" onclick="sendNow(${u.id})">Send Message Now</button>
                 <button class="btn btn-delete" onclick="deleteUser(${u.id})">Delete Recipient</button>
@@ -182,26 +218,31 @@ async function sendNow(id) {
 
     const data = await res.json();
 
-    if (!res.ok) {
-        alert("❌ Failed: " + (data.error || "Unknown error"));
-        return;
+    if (data.success) {
+        alert("✅ Message sent!");
+    } else {
+        alert("❌ Error: " + (data.error || "Unknown error"));
     }
-
-    alert("✅ Message sent successfully!");
 }
 
 async function deleteUser(id) {
-    if (!confirm("Delete recipient permanently?")) return;
+    if (!confirm("Delete this recipient permanently?")) return;
 
-    const res = await fetch(`/api/admin/recipient/${id}`, {
+    const res = await fetch(`/api/admin/recipients/${id}`, {
         method: "DELETE",
         credentials: "include"
     });
 
     const data = await res.json();
-    if (data.success) document.getElementById(`user-${id}`).remove();
+
+    if (data.success) {
+        document.getElementById(`user-${id}`).remove();
+    } else {
+        alert("❌ Failed to delete recipient.");
+    }
 }
 
+// INITIAL LOAD
 loadUsers();
 </script>
 

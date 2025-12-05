@@ -1,20 +1,24 @@
-// ======================================================
-// nav.js — Universal Navbar Injection + Access Control
-// ======================================================
+/********************************************************************
+ *  NAV.JS — FINAL FULLY-COMPATIBLE VERSION
+ *  Safe, stable, matches the new server.js exactly.
+ ********************************************************************/
 
-// Pages like login/register must stay public
-const FORCE_PUBLIC = window.FORCE_PUBLIC_NAV === true;
+// ================================================================
+// EARLY EXIT: Some pages explicitly disable nav.js
+// ================================================================
+if (window.SKIP_NAV_JS === true) {
+    console.log("⛔ nav.js disabled for this page");
+    throw new Error("NAV_JS_DISABLED");
+}
 
-// Skip nav injection if page disables it
-let SKIP_NAV = window.SKIP_NAV_JS === true;
-
-// ------------------------------------------------------
-// Simple API Wrapper
-// ------------------------------------------------------
+// ================================================================
+// API WRAPPER (always disable caching for auth endpoints)
+// ================================================================
 async function api(path, options = {}) {
     try {
         const res = await fetch(path, {
             credentials: "include",
+            cache: "no-store",
             headers: { "Content-Type": "application/json" },
             ...options
         });
@@ -24,43 +28,50 @@ async function api(path, options = {}) {
     }
 }
 
-// ------------------------------------------------------
+// ================================================================
 // AUTH HELPERS
-// ------------------------------------------------------
+// ================================================================
 async function getCustomer() {
-    if (FORCE_PUBLIC) return null;
-    const d = await api("/api/customer/me");
-    return d && d.id ? d : null;
+    if (window.FORCE_PUBLIC_NAV) return null;
+    try {
+        const d = await api("/api/customer/me");
+        return d?.id ? d : null;
+    } catch {
+        return null;
+    }
 }
 
-async function checkAdmin() {
-    if (FORCE_PUBLIC) return false;
-
+async function getAdmin() {
+    if (window.FORCE_PUBLIC_NAV) return false;
     try {
-        const res = await fetch("/api/admin/me", { credentials: "include" });
-
+        const res = await fetch("/api/admin/me", {
+            credentials: "include",
+            cache: "no-store"
+        });
         if (!res.ok) return false;
-
-        const d = await res.json();
-        return d && d.admin && d.admin.role === "admin";
+        const data = await res.json();
+        return data?.admin?.role === "admin";
     } catch {
         return false;
     }
 }
 
-// ------------------------------------------------------
+// ================================================================
 // CART COUNT
-// ------------------------------------------------------
+// ================================================================
 async function getCartCount() {
-    const data = await api("/api/cart");
-    if (!data.items) return 0;
-    return data.items.reduce((n, i) => n + (i.quantity || 1), 0);
+    try {
+        const d = await api("/api/cart");
+        return Array.isArray(d.items) ? d.items.length : 0;
+    } catch {
+        return 0;
+    }
 }
 
-// ------------------------------------------------------
-// ENSURE NAVBAR CONTAINER
-// ------------------------------------------------------
-function ensureNavbar() {
+// ================================================================
+// ENSURE #navbar EXISTS
+// ================================================================
+function ensureNavbarEl() {
     let el = document.getElementById("navbar");
     if (!el) {
         el = document.createElement("div");
@@ -70,30 +81,81 @@ function ensureNavbar() {
     return el;
 }
 
-// ------------------------------------------------------
-// Inject Navbar
-// ------------------------------------------------------
+// ================================================================
+// NAVBAR HTML
+// ================================================================
+function publicNav() {
+    return `
+        <div class="nav-inner">
+            <div class="nav-logo">LOVETEXTFORHER</div>
+            <div class="nav-links">
+                <a href="/index.html">Home</a>
+                <a href="/login.html">Login</a>
+                <a href="/register.html">Register</a>
+                <a href="/admin_login.html">Admin</a>
+            </div>
+        </div>`;
+}
+
+function customerNav(cartBubble) {
+    return `
+        <div class="nav-inner">
+            <div class="nav-logo">LOVETEXTFORHER</div>
+            <div class="nav-links">
+                <a href="/dashboard.html">Dashboard</a>
+                <a href="/products.html">Products</a>
+                <a href="/cart.html">Cart ${cartBubble}</a>
+                <a href="#" id="logout-customer">Logout</a>
+            </div>
+        </div>`;
+}
+
+function adminNav() {
+    return `
+        <div class="nav-inner">
+            <div class="nav-logo">ADMIN PANEL</div>
+            <div class="nav-links">
+                <a href="/admin.html">Dashboard</a>
+                <a href="/admin_users.html">Users</a>
+                <a href="/admin_customers.html">Customers</a>
+                <a href="/admin_kpis.html">KPIs</a>
+                <a href="#" id="logout-admin">Logout</a>
+            </div>
+        </div>`;
+}
+
+// ================================================================
+// LOGOUT FUNCTIONS
+// ================================================================
+async function logoutCustomer() {
+    await api("/api/customer/logout", { method: "POST" });
+    window.location.href = "/login.html";
+}
+
+async function logoutAdmin() {
+    await api("/api/admin/logout", { method: "POST" });
+    window.location.href = "/admin_login.html";
+}
+
+// ================================================================
+// BUILD NAV — MASTER FUNCTION
+// ================================================================
 async function injectNavbar() {
-    if (SKIP_NAV) return;
+    const navbar = ensureNavbarEl();
 
-    const container = ensureNavbar();
-    const user = await getCustomer();
-    const admin = await checkAdmin();
-
-    let cartCount = user ? await getCartCount() : 0;
-    const bubble = cartCount > 0 ? `<span class="cart-bubble">${cartCount}</span>` : "";
-
-    const style = `
+    // --- ALWAYS inject the CSS first ---
+    navbar.innerHTML = `
         <style>
             #navbar {
-                width: 100%;
-                background: rgba(255,255,255,0.7);
-                backdrop-filter: blur(18px);
-                box-shadow: 0 2px 14px rgba(0,0,0,0.05);
-                padding: 18px 0;
                 position: fixed;
                 top: 0;
-                z-index: 1000;
+                left: 0;
+                width: 100%;
+                padding: 18px 0;
+                background: rgba(255,255,255,0.75);
+                backdrop-filter: blur(18px);
+                box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+                z-index: 9999;
             }
             .nav-inner {
                 max-width: 1200px;
@@ -111,11 +173,13 @@ async function injectNavbar() {
             .nav-links a {
                 margin-left: 22px;
                 text-decoration: none;
-                color: #1a1a1a;
                 font-weight: 500;
+                color: #1a1a1a;
                 position: relative;
             }
-            .nav-links a:hover { color: #d6336c; }
+            .nav-links a:hover {
+                color: #d6336c;
+            }
             .cart-bubble {
                 position: absolute;
                 top: -10px;
@@ -123,135 +187,81 @@ async function injectNavbar() {
                 background: #d6336c;
                 color: white;
                 padding: 2px 7px;
-                font-size: 12px;
                 border-radius: 999px;
+                font-size: 12px;
                 font-weight: 700;
             }
         </style>
     `;
 
-    let html = style;
+    const path = window.location.pathname;
+    const admin = await getAdmin();
+    const customer = await getCustomer();
 
-    // ------------------------------------------------------
-    // PUBLIC NAV (Login/Register)
-    // ------------------------------------------------------
-    if (FORCE_PUBLIC) {
-        html += `
-        <div class="nav-inner">
-            <div class="nav-logo">LOVETEXTFORHER</div>
-            <div class="nav-links">
-                <a href="/index.html">Home</a>
-                <a href="/login.html">Login</a>
-                <a href="/register.html">Register</a>
-                <a href="/admin_login.html">Admin</a>
-            </div>
-        </div>`;
-        container.innerHTML = html;
-        return;
-    }
-
-    // ------------------------------------------------------
-    // ADMIN NAV — ONLY IF ADMIN AND PAGE STARTS WITH /admin
-    // ------------------------------------------------------
-    if (admin && window.location.pathname.startsWith("/admin")) {
-        html += `
-        <div class="nav-inner">
-            <div class="nav-logo">ADMIN PANEL</div>
-            <div class="nav-links">
-                <a href="/admin.html">Dashboard</a>
-                <a href="/admin_users.html">Users</a>
-                <a href="/admin_customers.html">Customers</a>
-                <a href="/admin_kpis.html">KPIs</a>
-                <a href="#" id="logout-admin">Logout</a>
-            </div>
-        </div>`;
-        container.innerHTML = html;
+    // ADMIN PAGES (except login)
+    if (admin && path.startsWith("/admin") && path !== "/admin_login.html") {
+        navbar.innerHTML += adminNav();
         document.getElementById("logout-admin").onclick = logoutAdmin;
         return;
     }
 
-    // ------------------------------------------------------
+    // PUBLIC MODE FORCED
+    if (window.FORCE_PUBLIC_NAV === true) {
+        navbar.innerHTML += publicNav();
+        return;
+    }
+
     // CUSTOMER NAV
-    // ------------------------------------------------------
-    if (user) {
-        html += `
-        <div class="nav-inner">
-            <div class="nav-logo">LOVETEXTFORHER</div>
-            <div class="nav-links">
-                <a href="/dashboard.html">Dashboard</a>
-                <a href="/products.html">Products</a>
-                <a href="/cart.html">Cart ${bubble}</a>
-                <a href="#" id="logout-customer">Logout</a>
-            </div>
-        </div>`;
-        container.innerHTML = html;
+    if (customer) {
+        const count = await getCartCount();
+        const bubble = count > 0 ? `<span class="cart-bubble">${count}</span>` : "";
+        navbar.innerHTML += customerNav(bubble);
         document.getElementById("logout-customer").onclick = logoutCustomer;
         return;
     }
 
-    // ------------------------------------------------------
-    // VISITOR NAV
-    // ------------------------------------------------------
-    html += `
-    <div class="nav-inner">
-        <div class="nav-logo">LOVETEXTFORHER</div>
-        <div class="nav-links">
-            <a href="/index.html">Home</a>
-            <a href="/login.html">Login</a>
-            <a href="/register.html">Register</a>
-            <a href="/admin_login.html">Admin</a>
-        </div>
-    </div>`;
-
-    container.innerHTML = html;
+    // DEFAULT → PUBLIC NAV
+    navbar.innerHTML += publicNav();
 }
 
-// ------------------------------------------------------
-// LOGOUT HANDLERS
-// ------------------------------------------------------
-async function logoutCustomer() {
-    await api("/api/customer/logout", { method: "POST" });
-    window.location.href = "/login.html";
-}
-
-async function logoutAdmin() {
-    await api("/api/admin/logout", { method: "POST" });
-    window.location.href = "/admin_login.html";
-}
-
-// ------------------------------------------------------
-// ACCESS CONTROL RULES
-// ------------------------------------------------------
+// ================================================================
+// PAGE ACCESS RULES
+// ================================================================
 async function enforcePageRules() {
+    if (window.FORCE_PUBLIC_NAV === true) return;
+
+    const customer = await getCustomer();
+    const admin = await getAdmin();
     const path = window.location.pathname;
 
-    if (FORCE_PUBLIC) return;
-
-    const user = await getCustomer();
-    const admin = await checkAdmin();
-
-    // ADMIN PROTECTED PAGES
+    // ---------------- ADMIN ACCESS CONTROL ----------------
     if (path.startsWith("/admin") && path !== "/admin_login.html") {
-        if (!admin) window.location = "/admin_login.html";
+        if (!admin) window.location.href = "/admin_login.html";
         return;
     }
 
-    // CUSTOMER PROTECTED PAGES
-    const protectedPages = ["/dashboard.html", "/products.html", "/cart.html"];
-    if (protectedPages.includes(path)) {
-        if (!user) window.location = "/login.html";
+    // ---------------- CUSTOMER PAGES ----------------
+    const protectedPages = [
+        "/dashboard.html",
+        "/products.html",
+        "/cart.html"
+    ];
+
+    if (protectedPages.includes(path) && !customer) {
+        window.location.href = "/login.html";
         return;
     }
 
-    // Prevent logged-in customers from going to login/register
-    if (user && (path === "/login.html" || path === "/register.html")) {
-        window.location = "/dashboard.html";
+    // ---------------- DISALLOW LOGIN/REGISTER IF LOGGED IN ----------------
+    if (customer && (path === "/login.html" || path === "/register.html")) {
+        window.location.href = "/dashboard.html";
+        return;
     }
 }
 
-// ------------------------------------------------------
+// ================================================================
 // INIT
-// ------------------------------------------------------
+// ================================================================
 document.addEventListener("DOMContentLoaded", () => {
     injectNavbar();
     enforcePageRules();
