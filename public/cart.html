@@ -160,7 +160,7 @@
 </div>
 
 <script>
-/* MATCHES PRODUCTS IN products.html */
+/* PRODUCTS MATCH THE products.html FILE */
 const PRODUCTS = {
     "free-trial": {
         name: "LoveText Free Trial",
@@ -169,19 +169,30 @@ const PRODUCTS = {
     },
     "love-basic": {
         name: "LoveText Basic Subscription",
-        price: 5.00,
+        price: 4.99,
         isSubscription: true
     },
     "love-plus": {
         name: "LoveText Plus Subscription",
-        price: 12.99,
+        price: 9.99,
         isSubscription: true
     },
-    "custom-pack": {
-        name: "Custom Love Message Pack",
-        price: 9.99,
-        isSubscription: false
-    }
+
+    /* MERCH */
+    "tee-logo-dual": { name:"Love Text Tee — Dual", price:29.99, isSubscription:false },
+    "tee-white-logo-dual": { name:"Love Text Tee — White Dual", price:29.99, isSubscription:false },
+    "tee-pink-minimal": { name:"Pink Minimal Tee", price:24.99, isSubscription:false },
+    "tee-cupid-edition": { name:"Cupid Edition Tee", price:32.99, isSubscription:false },
+
+    "hoodie-classic": { name:"Classic Hoodie", price:49.99, isSubscription:false },
+    "hoodie-heart": { name:"Heart Edition Hoodie", price:54.99, isSubscription:false },
+
+    "hat-logo": { name:"Logo Hat", price:24.99, isSubscription:false },
+    "hat-heart": { name:"Heart Hat", price:26.99, isSubscription:false },
+
+    "giftbox-romantic": { name:"Romantic Gift Box", price:59.99, isSubscription:false },
+    "giftbox-selfcare": { name:"Self-Care Basket", price:48.99, isSubscription:false },
+    "giftbox-couples": { name:"Couples Box", price:64.99, isSubscription:false }
 };
 
 /* LOAD CART */
@@ -207,8 +218,7 @@ async function loadCart() {
     }
 
     let total = 0;
-    let subCount = 0;
-    let subProductId = null;
+    let subscriptionProduct = null;
 
     container.innerHTML = "";
 
@@ -216,10 +226,7 @@ async function loadCart() {
         const p = PRODUCTS[item.productId];
         if (!p) return;
 
-        if (p.isSubscription) {
-            subCount++;
-            subProductId = item.productId;
-        }
+        if (p.isSubscription) subscriptionProduct = item.productId;
 
         container.innerHTML += `
             <div class="item">
@@ -228,9 +235,7 @@ async function loadCart() {
                     <div class="item-price">$${p.price.toFixed(2)}</div>
                     ${p.isSubscription ? `<div class="sub-badge">Subscription</div>` : ""}
                 </div>
-                <button class="remove-btn" onclick="removeItem('${item.productId}')">
-                    Remove
-                </button>
+                <button class="remove-btn" onclick="removeItem('${item.productId}')">Remove</button>
             </div>
         `;
 
@@ -240,7 +245,7 @@ async function loadCart() {
     totalEl.innerHTML = `Total: $${total.toFixed(2)}`;
     checkoutBtn.style.display = "inline-block";
 
-    checkoutBtn.onclick = () => handleCheckout(subCount, subProductId);
+    checkoutBtn.onclick = () => handleCheckout(subscriptionProduct, data.items);
 }
 
 /* REMOVE ITEM */
@@ -256,33 +261,44 @@ async function removeItem(productId) {
 }
 
 /* CHECKOUT LOGIC */
-async function handleCheckout(subCount, productId) {
-    if (subCount === 0) {
-        alert("Non-subscription checkout coming soon.");
+async function handleCheckout(subscriptionProduct, items) {
+
+    /* --------------------------
+       SUBSCRIPTION CHECKOUT
+    -------------------------- */
+    if (subscriptionProduct) {
+        const res = await fetch("/api/stripe/checkout", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId: subscriptionProduct })
+        });
+
+        const data = await res.json();
+        if (data.url) window.location.href = data.url;
+        else alert("Subscription checkout failed.");
         return;
     }
 
-    if (subCount > 1) {
-        alert("You can only subscribe to one plan at a time.");
-        return;
-    }
+    /* --------------------------
+       MERCH CHECKOUT
+    -------------------------- */
+    const merchItems = items.map(i => {
+        const p = PRODUCTS[i.productId];
+        return { name: p.name, price: p.price };
+    });
 
-    const res = await fetch("/api/stripe/checkout", {
+    const res = await fetch("/api/stripe/merch-checkout", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId })
+        body: JSON.stringify({ items: merchItems })
     });
-
-    if (res.status === 401) {
-        window.location.href = "/login.html";
-        return;
-    }
 
     const data = await res.json();
 
     if (data.url) window.location.href = data.url;
-    else alert("Unable to start checkout.");
+    else alert("Unable to start merchandise checkout.");
 }
 
 /* INIT */
