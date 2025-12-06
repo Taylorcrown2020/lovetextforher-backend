@@ -122,7 +122,7 @@
 
 <script>
 /* =======================================================
-   PRODUCT DEFINITIONS
+   PRODUCTS
 ======================================================= */
 const PRODUCTS = {
     "free-trial": {
@@ -202,7 +202,7 @@ const PRODUCTS = {
 };
 
 /* =======================================================
-   GET LIVE SUBSCRIPTION STATUS (Matches server)
+   GET SUBSCRIPTION FROM BACKEND (Final authority)
 ======================================================= */
 async function getSubscription() {
     try {
@@ -212,7 +212,6 @@ async function getSubscription() {
         });
 
         if (!res.ok) return null;
-
         return await res.json();
     } catch {
         return null;
@@ -220,64 +219,49 @@ async function getSubscription() {
 }
 
 /* =======================================================
-   MATCH SERVER LOGIC EXACTLY
+   SUBSCRIPTION BUTTON LOGIC — 100% MATCHES BACKEND
 ======================================================= */
-function hasActiveAccess(data) {
-    if (!data) return false;
-
-    const now = new Date();
-
-    if (data.has_subscription === true && data.subscription_end === null) return true;
-
-    if (data.subscription_end && new Date(data.subscription_end) > now) return true;
-
-    return false;
-}
-
-/* =======================================================
-   RENDER SUBSCRIPTION BUTTONS (Corrected)
-======================================================= */
-function subscriptionButton(product, sub, active) {
-    const id = product.id;
-    const currentPlan = sub?.current_plan || "none";
-
-    // NO SUBSCRIPTION
-    if (!active) {
-        if (id === "free-trial") {
+function subscriptionButton(p, sub) {
+    if (!sub || !sub.subscribed) {
+        // no subscription or expired
+        if (p.id === "free-trial") {
             return `<button class="btn btn-subscribe" onclick="subscribeNow('free-trial')">Start Free Trial</button>`;
         }
-        return `<button class="btn btn-subscribe" onclick="subscribeNow('${id}')">Subscribe</button>`;
+        return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Subscribe</button>`;
     }
 
-    // ALREADY ON THIS PLAN
-    const isCurrent =
-        (currentPlan === "basic" && id === "love-basic") ||
-        (currentPlan === "plus" && id === "love-plus") ||
-        (currentPlan === "trial" && id === "free-trial");
+    const current = sub.current_plan;
 
-    if (isCurrent) return `<button class="btn btn-subscribe btn-disabled">Current Plan</button>`;
-
-    // Trial → new plan
-    if (currentPlan === "trial" && id !== "free-trial") {
-        return `<button class="btn btn-subscribe" onclick="subscribeNow('${id}')">Upgrade from Trial</button>`;
+    // CURRENT PLAN
+    if (
+        (current === "trial" && p.id === "free-trial") ||
+        (current === "basic" && p.id === "love-basic") ||
+        (current === "plus" && p.id === "love-plus")
+    ) {
+        return `<button class="btn btn-subscribe btn-disabled">Current Plan</button>`;
     }
 
-    // Upgrade path
-    if (currentPlan === "basic" && id === "love-plus") {
-        return `<button class="btn btn-subscribe" onclick="subscribeNow('${id}')">Upgrade</button>`;
+    // TRIAL → UPGRADE
+    if (current === "trial" && p.id !== "free-trial") {
+        return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Upgrade from Trial</button>`;
     }
 
-    // Downgrade path
-    if (currentPlan === "plus" && id === "love-basic") {
-        return `<button class="btn btn-subscribe" onclick="subscribeNow('${id}')">Downgrade</button>`;
+    // BASIC → PLUS (upgrade)
+    if (current === "basic" && p.id === "love-plus") {
+        return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Upgrade</button>`;
     }
 
-    // Free trial cannot be reused
-    if (id === "free-trial") {
+    // PLUS → BASIC (downgrade)
+    if (current === "plus" && p.id === "love-basic") {
+        return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Downgrade</button>`;
+    }
+
+    // FREE TRIAL cannot be reused
+    if (p.id === "free-trial") {
         return `<button class="btn btn-subscribe btn-disabled">Unavailable</button>`;
     }
 
-    return `<button class="btn btn-subscribe" onclick="subscribeNow('${id}')">Change Plan</button>`;
+    return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Change Plan</button>`;
 }
 
 /* =======================================================
@@ -285,8 +269,6 @@ function subscriptionButton(product, sub, active) {
 ======================================================= */
 async function loadProducts() {
     const sub = await getSubscription();
-    const access = hasActiveAccess(sub);
-
     const grid = document.getElementById("productGrid");
 
     Object.values(PRODUCTS).forEach(p => {
@@ -294,13 +276,9 @@ async function loadProducts() {
             ? `<div class="dual-images"><img src="${p.images[0]}"><img src="${p.images[1]}"></div>`
             : `<img src="${p.image}" class="single-image">`;
 
-        let btn = "";
-
-        if (p.subscription) {
-            btn = subscriptionButton(p, sub, access);
-        } else {
-            btn = `<button class="btn btn-add" onclick="addToCart('${p.id}')">Add to Cart</button>`;
-        }
+        const btn = p.subscription
+            ? subscriptionButton(p, sub)
+            : `<button class="btn btn-add" onclick="addToCart('${p.id}')">Add to Cart</button>`;
 
         grid.innerHTML += `
             <div class="card">
@@ -314,7 +292,7 @@ async function loadProducts() {
 }
 
 /* =======================================================
-   CHECKOUT
+   SUBSCRIBE NOW
 ======================================================= */
 async function subscribeNow(productId) {
     const res = await fetch("/api/stripe/checkout", {
@@ -325,12 +303,11 @@ async function subscribeNow(productId) {
     });
 
     const data = await res.json();
-
     if (data.url) window.location.href = data.url;
 }
 
 /* =======================================================
-   CART
+   ADD TO CART
 ======================================================= */
 async function addToCart(id) {
     const p = PRODUCTS[id];
@@ -358,7 +335,6 @@ async function addToCart(id) {
     }
 }
 
-/* INIT */
 loadProducts();
 </script>
 
