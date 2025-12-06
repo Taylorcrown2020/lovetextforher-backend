@@ -30,6 +30,49 @@ const cron = require("node-cron");
  ***************************************************************/
 const app = express();
 const PORT = process.env.PORT || 3000;
+/***************************************************************
+ *  STRIPE WEBHOOK — MUST BE ABOVE express.json() !!!
+ ***************************************************************/
+app.post(
+    "/api/stripe/webhook",
+    express.raw({ type: "application/json" }),
+    async (req, res) => {
+
+        if (!global.__LT_stripe)
+            return res.status(500).send("Stripe not configured");
+
+        const sig = req.headers["stripe-signature"];
+        let event;
+
+        try {
+            event = global.__LT_stripe.webhooks.constructEvent(
+                req.body,
+                sig,
+                process.env.STRIPE_WEBHOOK_SECRET
+            );
+        } catch (err) {
+            console.error("❌ Webhook signature error:", err.message);
+            return res.status(400).send(`Webhook Error: ${err.message}`);
+        }
+
+        console.log("⚡ STRIPE EVENT:", event.type);
+
+        // KEEP your existing webhook handler from Part 4
+        // (do not change anything below)
+    }
+);
+
+/***************************************************************
+ *  GLOBAL MIDDLEWARE — MUST BE AFTER WEBHOOK
+ ***************************************************************/
+app.use(express.json({ limit: "5mb" }));    // <-- ONLY here
+app.use(cookieParser());
+app.use(cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true
+}));
+
+app.use(express.static(path.join(__dirname, "public")));
 
 /***************************************************************
  *  ENABLE STATIC FILES (public/)
