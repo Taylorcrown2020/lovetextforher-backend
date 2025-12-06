@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <title>Your Dashboard — LoveTextForHer</title>
 
-    <script>
-        // Protected customer page — nav.js handles authentication
-    </script>
-
     <style>
         :root {
             --primary: #d6336c;
@@ -215,7 +211,6 @@
 </div>
 
 <button id="manageSubBtn">Manage Subscription</button>
-
 <!-- MESSAGE LOG MODAL -->
 <div id="messageLogModal">
     <div style="background:white; width:420px; padding:20px; border-radius:22px; max-height:80vh; overflow-y:auto;">
@@ -261,46 +256,54 @@
 
 <script>
 
-/* ----------------------------------------------------
-   MATCHES NEW SERVER & PRODUCTS LOGIC
------------------------------------------------------ */
+/* -------------------------------
+   USE THE SAME LOGIC AS SERVER
+---------------------------------*/
 function hasActiveAccess(data) {
     if (!data) return false;
 
     const now = new Date();
 
-    // active subscription
-    if (data.has_subscription && data.subscription_end === null) return true;
+    // ACTIVE subscription
+    if (data.has_subscription === true && data.subscription_end === null) {
+        return true;
+    }
 
-    // canceled but active until
-    if (data.subscription_end && new Date(data.subscription_end) > now) return true;
+    // CANCELED but still active
+    if (data.subscription_end && new Date(data.subscription_end) > now) {
+        return true;
+    }
 
     return false;
 }
 
-/* ----------------------------------------------------
+/* -------------------------------
    SUBSCRIPTION BANNER
------------------------------------------------------ */
+---------------------------------*/
 function updateSubscriptionBanner(data) {
     const banner = document.getElementById("subscriptionBanner");
-    const active = hasActiveAccess(data);
-
     banner.style.display = "block";
 
-    if (active) {
-        const planName =
-            data.current_plan === "basic" ? "LoveText Basic" :
-            data.current_plan === "plus" ? "LoveText Plus" :
-            data.current_plan === "trial" ? "Free Trial" :
-            "Subscription";
+    const active = hasActiveAccess(data);
 
-        banner.innerHTML = `You currently have an active <strong>${planName}</strong> subscription 💖`;
+    if (active) {
+        const planMap = {
+            basic: "LoveText Basic",
+            plus: "LoveText Plus",
+            trial: "Free Trial"
+        };
+
+        banner.innerHTML = `
+            You currently have an active <strong>${planMap[data.current_plan] || "Subscription"}</strong> 💖
+        `;
         return;
     }
 
     if (data.subscription_end) {
-        const end = new Date(data.subscription_end).toLocaleDateString();
-        banner.innerHTML = `Your subscription will end on <strong>${end}</strong> ❤️`;
+        const endDate = new Date(data.subscription_end).toLocaleDateString();
+        banner.innerHTML = `
+            Your subscription ends on <strong>${endDate}</strong> ❤️
+        `;
         return;
     }
 
@@ -310,15 +313,17 @@ function updateSubscriptionBanner(data) {
     `;
 }
 
-/* ----------------------------------------------------
+/* -------------------------------
    LOAD SUBSCRIPTION STATUS
------------------------------------------------------ */
+---------------------------------*/
 let HAS_SUBSCRIPTION = false;
 
 async function loadSubscriptionStatus() {
     try {
-        const res = await fetch("/api/customer/subscription", { credentials: "include" });
-        if (!res.ok) return;
+        const res = await fetch("/api/customer/subscription", {
+            credentials: "include",
+            cache: "no-store"
+        });
 
         const data = await res.json();
 
@@ -330,36 +335,34 @@ async function loadSubscriptionStatus() {
             HAS_SUBSCRIPTION ? "block" : "none";
 
     } catch (err) {
-        console.error("SUB STATUS ERROR", err);
+        console.error("SUB LOAD ERROR", err);
     }
 }
 
-/* ----------------------------------------------------
-   LOAD RECIPIENTS
------------------------------------------------------ */
+/* -------------------------------
+   LOAD RECIPIENTS — FIXED TYPO
+---------------------------------*/
 async function loadRecipients() {
     try {
         const res = await fetch("/api/customer/recipients", { credentials: "include" });
-        const data = await res.json();
+        const list = await res.json();
 
         const box = document.getElementById("recipients");
         box.innerHTML = "";
 
-        if (!data.length) {
+        if (!list.length) {
             box.innerHTML = `<p style="text-align:center; color:var(--text-soft);">
                 You have no recipients yet.</p>`;
             return;
         }
 
-        data.forEach(r => {
-            const timing = r.timings;
-
-            boxinnerHTML += `
+        list.forEach(r => {
+            box.innerHTML += `
                 <div class="recipient-box">
                     <strong>${r.name}</strong> (${r.relationship})
                     <p>Email: ${r.email}</p>
                     <p>Frequency: ${r.frequency}</p>
-                    <p>Timing: ${timing}</p>
+                    <p>Time: ${r.timings}</p>
 
                     <button class="delete-btn" onclick="deleteRecipient(${r.id})">Delete</button>
                     <button class="log-btn" onclick="openMessageLog(${r.id})">Message Log</button>
@@ -368,14 +371,12 @@ async function loadRecipients() {
             `;
         });
 
-    } catch (error) {
-        console.error("RECIPIENT LOAD ERROR", error);
+    } catch (err) {
+        console.error("RECIPIENT ERROR", err);
     }
 }
 
-/* ----------------------------------------------------
-   ADD RECIPIENT
------------------------------------------------------ */
+/* ------------------------------- */
 async function addRecipient() {
     if (!HAS_SUBSCRIPTION) {
         msg.innerText = "You need a subscription.";
@@ -385,7 +386,9 @@ async function addRecipient() {
     const payload = {
         name: r_name.value.trim(),
         email: r_email.value.trim(),
-        relationship: r_relationship.value === "custom" ? r_customRel.value.trim() : r_relationship.value,
+        relationship: r_relationship.value === "custom"
+            ? r_customRel.value.trim()
+            : r_relationship.value,
         frequency: r_frequency.value,
         timings: r_timings.value,
         timezone: r_timezone.value
@@ -408,9 +411,7 @@ async function addRecipient() {
     }
 }
 
-/* ----------------------------------------------------
-   DELETE RECIPIENT
------------------------------------------------------ */
+/* ------------------------------- */
 async function deleteRecipient(id) {
     if (!confirm("Delete this recipient?")) return;
 
@@ -422,26 +423,23 @@ async function deleteRecipient(id) {
     loadRecipients();
 }
 
-/* ----------------------------------------------------
-   MESSAGE LOG MODAL
------------------------------------------------------ */
+/* ------------------------------- */
 async function openMessageLog(id) {
     const modal = document.getElementById("messageLogModal");
     const content = document.getElementById("logContent");
 
-    content.innerHTML = "<p>Loading...</p>";
+    content.innerHTML = "Loading...";
 
     const res = await fetch(`/api/message-log/${id}`, { credentials: "include" });
     const data = await res.json();
 
     if (!data.success) {
-        content.innerHTML = "<p>Error loading messages.</p>";
+        content.innerHTML = "<p>Error loading messages</p>";
     } else if (!data.messages.length) {
         content.innerHTML = "<p>No messages yet.</p>";
     } else {
         content.innerHTML = data.messages.map(m => `
-            <div style="padding:12px; margin-bottom:10px; border-radius:12px;
-                background:#fafafa; border:1px solid #eee;">
+            <div style="padding:12px; margin-bottom:10px; background:#fafafa; border-radius:12px;">
                 <strong>${m.message_text}</strong>
                 <div style="font-size:12px; color:#777;">
                     ${new Date(m.sent_at).toLocaleString()}
@@ -457,14 +455,11 @@ function closeMessageLog() {
     document.getElementById("messageLogModal").style.display = "none";
 }
 
-/* ----------------------------------------------------
-   FLOWER SENDER
------------------------------------------------------ */
+/* ------------------------------- */
 let CURRENT_FLOWER_RECIPIENT = null;
 
 function openFlowerModal(id) {
     CURRENT_FLOWER_RECIPIENT = id;
-    document.getElementById("flowerNote").value = "";
     document.getElementById("flowerModal").style.display = "flex";
 }
 
@@ -472,6 +467,7 @@ function closeFlowerModal() {
     document.getElementById("flowerModal").style.display = "none";
 }
 
+/* ------------------------------- */
 async function sendFlower() {
     const flower = flowerType.value;
     const note = flowerNote.value.trim();
@@ -494,26 +490,21 @@ async function sendFlower() {
     }
 }
 
-/* ----------------------------------------------------
-   MANAGE SUBSCRIPTION (Stripe Portal)
------------------------------------------------------ */
+/* ------------------------------- */
 document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const res = await fetch("/api/customer/subscription/portal", {
         credentials: "include"
     });
-
     const data = await res.json();
     if (data.url) window.location.href = data.url;
 });
 
-/* ----------------------------------------------------
-   INIT
------------------------------------------------------ */
+/* ------------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
     loadSubscriptionStatus();
     loadRecipients();
 });
-</script>
 
+</script>
 </body>
 </html>

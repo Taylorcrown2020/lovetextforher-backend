@@ -775,11 +775,22 @@ app.post("/api/stripe/checkout", global.__LT_authCustomer, async (req, res) => {
             return res.status(400).json({ error: "Invalid product" });
 
         const newPlan = global.__LT_normalizePlan(productId);
+
+        // Stripe customer
         const stripeCustomerId = await ensureStripeCustomer(customer);
-        const existingSub = customer.stripe_subscription_id;
+
+        // Try to load subscription from Stripe (if exists)
+        let stripeSub = null;
+        if (customer.stripe_subscription_id) {
+            try {
+                stripeSub = await stripe.subscriptions.retrieve(
+                    customer.stripe_subscription_id
+                );
+            } catch {}
+        }
 
         /***********************************************************
-         * TRIAL GUARD — no trial after previous subscription
+         * TRIAL GUARD
          ***********************************************************/
         if (newPlan === "trial" && customer.has_subscription === true) {
             return res.status(400).json({
@@ -787,58 +798,39 @@ app.post("/api/stripe/checkout", global.__LT_authCustomer, async (req, res) => {
             });
         }
 
-// Save Stripe customer ID if missing (safe)
-await global.__LT_pool.query(
-    `UPDATE customers
-     SET stripe_customer_id = $1
-     WHERE id = $2`,
-    [stripeCustomerId, customer.id]
-);
-
-
-
         /***********************************************************
-         * UPGRADE / DOWNGRADE
+         * CASE 1 — SUBSCRIPTION EXISTS AND IS ACTIVE
          ***********************************************************/
-        if (existingSub) {
-            const sub = await global.__LT_stripe.subscriptions.retrieve(existingSub);
-            const itemId = sub.items.data[0].id;
+        if (stripeSub && stripeSub.status !== "canceled") {
 
-            await global.__LT_stripe.subscriptions.update(existingSub, {
+            // upgrade/downgrade
+            const itemId = stripeSub.items.data[0].id;
+
+            await stripe.subscriptions.update(stripeSub.id, {
                 cancel_at_period_end: false,
                 proration_behavior: "always_invoice",
                 items: [{ id: itemId, price: priceId }]
             });
 
-            await global.__LT_pool.query(
+            // Update DB
+            await pool.query(
                 `UPDATE customers SET
                     current_plan=$1,
                     has_subscription=true,
-                    trial_active=$2,
-                    trial_end=$3,
+                    trial_active=false,
+                    trial_end=NULL,
                     subscription_end=NULL
-                 WHERE id=$4`,
-                [
-                    newPlan,
-                    newPlan === "trial",
-                    newPlan === "trial"
-                        ? new Date(Date.now() + 3 * 86400 * 1000)
-                        : null,
-                    customer.id
-                ]
+                 WHERE id=$2`,
+                [newPlan, customer.id]
             );
-
-            if (newPlan === "basic") {
-                await global.__LT_enforceRecipientLimit(customer.id, "basic");
-            }
 
             return res.json({ url: "/dashboard.html" });
         }
 
         /***********************************************************
-         * NEW SUBSCRIPTION
+         * CASE 2 — SUBSCRIPTION WAS CANCELED → CREATE A NEW ONE
          ***********************************************************/
-        const session = await global.__LT_stripe.checkout.sessions.create({
+        const session = await stripe.checkout.sessions.create({
             mode: "subscription",
             customer: stripeCustomerId,
             line_items: [{ price: priceId, quantity: 1 }],
@@ -849,10 +841,6 @@ await global.__LT_pool.query(
                     customer_id: customer.id,
                     plan: productId
                 }
-            },
-            metadata: {
-                customer_id: customer.id,
-                plan: productId
             }
         });
 
