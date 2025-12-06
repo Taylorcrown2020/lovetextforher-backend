@@ -137,38 +137,49 @@ const subscription =
             }
 
             // 3. Subscription deleted
-            else if (event.type === "customer.subscription.deleted") {
-                const sub = event.data.object;
-                const stripeCustomerId = sub.customer;
+else if (event.type === "customer.subscription.deleted") {
+    const sub = event.data.object;
+    const stripeCustomerId = sub.customer;
 
-                const q = await global.__LT_pool.query(
-                    "SELECT id FROM customers WHERE stripe_customer_id=$1",
-                    [stripeCustomerId]
-                );
+    // 🔥 Make sure the correct Stripe ID is stored for THIS customer
+    await global.__LT_pool.query(
+        "UPDATE customers SET stripe_customer_id=$1 WHERE stripe_subscription_id=$2",
+        [stripeCustomerId, sub.id]
+    );
 
-                if (!q.rows.length) return res.json({ received: true });
+    // Now lookup the customer safely
+    const q = await global.__LT_pool.query(
+        "SELECT id FROM customers WHERE stripe_customer_id=$1",
+        [stripeCustomerId]
+    );
 
-                const customerId = q.rows[0].id;
+    if (!q.rows.length) {
+        console.log("⚠ No customer found for cancellation");
+        return res.json({ received: true });
+    }
 
-                // Remove recipients
-                await global.__LT_pool.query(
-                    "DELETE FROM users WHERE customer_id=$1",
-                    [customerId]
-                );
+    const customerId = q.rows[0].id;
 
-                await global.__LT_pool.query(`
-                    UPDATE customers SET
-                        has_subscription=false,
-                        current_plan='none',
-                        trial_active=false,
-                        trial_end=NULL,
-                        stripe_subscription_id=NULL,
-                        subscription_end=NULL
-                    WHERE id=$1
-                `, [customerId]);
+    // Remove recipients
+    await global.__LT_pool.query(
+        "DELETE FROM users WHERE customer_id=$1",
+        [customerId]
+    );
 
-                console.log("❌ Subscription canceled");
-            }
+    // Reset subscription state
+    await global.__LT_pool.query(`
+        UPDATE customers SET
+            has_subscription=false,
+            current_plan='none',
+            trial_active=false,
+            trial_end=NULL,
+            stripe_subscription_id=NULL,
+            subscription_end=NULL
+        WHERE id=$1
+    `, [customerId]);
+
+    console.log("❌ Subscription canceled");
+}
 
             return res.json({ received: true });
 
@@ -913,7 +924,56 @@ app.get("/api/customer/recipients", global.__LT_authCustomer, async (req, res) =
         return res.status(500).json({ error: "Server error loading recipients" });
     }
 });
+/***************************************************************
+ *  CUSTOMER — SEND FLOWER (SIMILAR TO SEND NOW)
+ ***************************************************************/
+app.post("/api/customer/send-flowers/:id", global.__LT_authCustomer, async (req, res) => {
+    try {
+        const rid = req.params.id;
+        const { note } = req.body;
 
+        const q = await global.__LT_pool.query(
+            "SELECT * FROM users WHERE id=$1 AND customer_id=$2",
+            [rid, req.user.id]
+        );
+
+        if (!q.rows.length)
+            return res.status(404).json({ error: "Recipient not found" });
+
+        const r = q.rows[0];
+
+        const unsubscribeURL =
+            `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
+
+        const message = note || "🌸 A flower to brighten your day!";
+        const html = global.__LT_buildLoveEmailHTML(
+            r.name,
+            message,
+            unsubscribeURL
+        );
+
+        // Send email
+        await global.__LT_sendEmail(
+            r.email,
+            "You received a flower 🌸",
+            html,
+            message + "\n\nUnsubscribe: " + unsubscribeURL
+        );
+
+        // Log the send
+        await global.__LT_pool.query(
+            `INSERT INTO message_logs (customer_id, recipient_id, email, message)
+             VALUES ($1, $2, $3, $4)`,
+            [req.user.id, rid, r.email, message]
+        );
+
+        return res.json({ success: true });
+
+    } catch (err) {
+        console.error("FLOWER SEND ERROR:", err);
+        return res.status(500).json({ error: "Error sending flower." });
+    }
+});
 /***************************************************************
  *  COUNT RECIPIENTS (for plan limits)
  ***************************************************************/
