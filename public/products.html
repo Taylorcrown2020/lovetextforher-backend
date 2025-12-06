@@ -5,9 +5,7 @@
     <title>Products — LoveTextForHer</title>
 
     <script>
-        // Products is a protected customer page.
-        // nav.js enforces login before allowing access.
-        // No need for FORCE_PUBLIC or SKIP_NAV here.
+        // Protected page – nav.js redirects if not logged in
     </script>
 
     <style>
@@ -122,7 +120,7 @@
 
 <script>
 /* --------------------------------------------------
-   FULL PRODUCT LIST — MATCHES BACKEND EXACTLY
+   PRODUCTS — EXACT MATCH TO BACKEND PRODUCT IDs
 -------------------------------------------------- */
 const PRODUCTS = {
     "free-trial": {
@@ -150,7 +148,7 @@ const PRODUCTS = {
         image: "/img/love-premium.jpg"
     },
 
-    /* -------------------------- MERCH -------------------------- */
+    /* Merch */
     "tee-logo-dual": {
         id:"tee-logo-dual",
         name:"LoveText Tee — Front + Back",
@@ -202,7 +200,7 @@ const PRODUCTS = {
 };
 
 /* --------------------------------------------------
-   GET SUBSCRIPTION STATUS
+   LOAD SUBSCRIPTION STATUS (MATCHES BACKEND EXACTLY)
 -------------------------------------------------- */
 async function getSubscription() {
     try {
@@ -210,103 +208,103 @@ async function getSubscription() {
             credentials: "include",
             cache: "no-store"
         });
+
         if (!res.ok) return null;
-        return await res.json();
+
+        const data = await res.json();
+
+        return {
+            has: data.has_subscription,
+            plan: data.current_plan,
+            isTrial: data.trial_active,
+            trialEnd: data.trial_end,
+            subEnd: data.subscription_end
+        };
+
     } catch {
         return null;
     }
 }
 
 /* --------------------------------------------------
-   MAIN RENDER FUNCTION
+   RENDER PRODUCT LIST
 -------------------------------------------------- */
 async function loadProducts() {
-    const subData = await getSubscription();
-
-    const subscribed = subData?.subscribed === true;
-    const plan = subData?.plan || "none";
-    const isTrial = subData?.is_trial === true;
-    const activeUntil = subData?.subscription_end || null;
+    const sub = await getSubscription();
 
     const grid = document.getElementById("productGrid");
 
     Object.values(PRODUCTS).forEach(p => {
 
-        /* ---------- IMAGES ---------- */
         const img = p.images
             ? `<div class="dual-images">
-                   <img src="${p.images[0]}" alt="">
-                   <img src="${p.images[1]}" alt="">
+                   <img src="${p.images[0]}">
+                   <img src="${p.images[1]}">
                </div>`
-            : `<img src="${p.image}" class="single-image" alt="">`;
+            : `<img src="${p.image}" class="single-image">`;
 
         let btn = "";
 
         /* ---------- SUBSCRIPTION PRODUCTS ---------- */
         if (p.subscription) {
 
-            const hasActiveAccess = subscribed || activeUntil;
+            const hasAccess = sub?.has || sub?.subEnd;
 
-            // --- No subscription at all ---
-            if (!hasActiveAccess) {
+            // No subscription at all
+            if (!hasAccess) {
                 if (p.id === "free-trial") {
                     btn = `<button class="btn btn-subscribe"
-                                onclick="subscribeNow('free-trial')">Start Free Trial</button>`;
+                            onclick="subscribeNow('free-trial')">Start Free Trial</button>`;
                 } else {
                     btn = `<button class="btn btn-subscribe"
-                                onclick="subscribeNow('${p.id}')">Subscribe</button>`;
+                            onclick="subscribeNow('${p.id}')">Subscribe</button>`;
                 }
             }
 
-            // --- User has an active plan (trial/basic/plus OR cancellation pending) ---
             else {
-
-                // CURRENT PLAN
-                if (
-                    (plan === "basic" && p.id === "love-basic") ||
-                    (plan === "plus" && p.id === "love-plus") ||
-                    (plan === "trial" && p.id === "free-trial")
-                ) {
+                // Current plan
+                if (sub.plan === "basic" && p.id === "love-basic") {
+                    btn = `<button class="btn btn-subscribe" disabled>Current Plan</button>`;
+                }
+                else if (sub.plan === "plus" && p.id === "love-plus") {
+                    btn = `<button class="btn btn-subscribe" disabled>Current Plan</button>`;
+                }
+                else if (sub.plan === "trial" && p.id === "free-trial") {
                     btn = `<button class="btn btn-subscribe" disabled>Current Plan</button>`;
                 }
 
-                // BASIC → PLUS
-                else if (plan === "basic" && p.id === "love-plus") {
+                // Upgrades / downgrades
+                else if (sub.plan === "basic" && p.id === "love-plus") {
                     btn = `<button class="btn btn-subscribe"
-                                onclick="subscribeNow('love-plus')">Upgrade</button>`;
+                            onclick="subscribeNow('love-plus')">Upgrade</button>`;
+                }
+                else if (sub.plan === "plus" && p.id === "love-basic") {
+                    btn = `<button class="btn btn-subscribe"
+                            onclick="subscribeNow('love-basic')">Downgrade</button>`;
+                }
+                else if (sub.plan === "trial" && p.id !== "free-trial") {
+                    btn = `<button class="btn btn-subscribe"
+                            onclick="subscribeNow('${p.id}')">Upgrade from Trial</button>`;
                 }
 
-                // PLUS → BASIC
-                else if (plan === "plus" && p.id === "love-basic") {
-                    btn = `<button class="btn btn-subscribe"
-                                onclick="subscribeNow('love-basic')">Downgrade</button>`;
-                }
-
-                // TRIAL → BASIC/PLUS
-                else if (plan === "trial" && p.id !== "free-trial") {
-                    btn = `<button class="btn btn-subscribe"
-                                onclick="subscribeNow('${p.id}')">Upgrade from Trial</button>`;
-                }
-
-                // FREE TRIAL can only be used once
+                // Trial already used
                 else if (p.id === "free-trial") {
                     btn = `<button class="btn btn-subscribe" disabled>Unavailable</button>`;
                 }
 
                 else {
                     btn = `<button class="btn btn-subscribe"
-                                onclick="subscribeNow('${p.id}')">Change Plan</button>`;
+                            onclick="subscribeNow('${p.id}')">Change Plan</button>`;
                 }
             }
         }
 
-        /* ---------- MERCH PRODUCTS ---------- */
+        /* ---------- MERCH ITEMS ---------- */
         else {
             btn = `<button class="btn btn-add"
                         onclick="addToCart('${p.id}')">Add to Cart</button>`;
         }
 
-        /* ---------- ADD CARD ---------- */
         grid.innerHTML += `
             <div class="card">
                 ${img}
@@ -319,7 +317,7 @@ async function loadProducts() {
 }
 
 /* --------------------------------------------------
-   SUBSCRIBE (STRIPE CHECKOUT)
+   SUBSCRIBE (Stripe Checkout)
 -------------------------------------------------- */
 async function subscribeNow(productId) {
     const res = await fetch("/api/stripe/checkout", {
@@ -330,18 +328,25 @@ async function subscribeNow(productId) {
     });
 
     const data = await res.json();
+
     if (data.url) window.location.href = data.url;
 }
 
 /* --------------------------------------------------
-   ADD TO CART (MERCH)
+   ADD TO CART
 -------------------------------------------------- */
 async function addToCart(productId) {
+    const product = PRODUCTS[productId];
+
     const res = await fetch("/api/cart/add", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId })
+        body: JSON.stringify({
+            productId,
+            name: product.name,
+            price: product.price
+        })
     });
 
     const data = await res.json();
