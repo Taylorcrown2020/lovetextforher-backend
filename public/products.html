@@ -197,7 +197,7 @@ const PRODUCTS = {
 };
 
 /* --------------------------------------------------
-   GET SUBSCRIPTION STATUS — EXACT BACKEND STRUCTURE
+   GET SUBSCRIPTION STATUS — EXACT BACKEND FORMAT
 -------------------------------------------------- */
 async function getSubscription() {
     try {
@@ -207,31 +207,37 @@ async function getSubscription() {
         });
 
         if (!res.ok) return null;
-        return await res.json(); // subscribed, current_plan, trial_active
+        return await res.json();
+
     } catch {
         return null;
     }
 }
 
 /* --------------------------------------------------
-   SUBSCRIPTION BUTTON LOGIC — 1:1 BACKEND MIRROR
+   DETERMINE WHICH BUTTON TO SHOW
 -------------------------------------------------- */
 function getButton(p, sub) {
-
     const subscribed = sub?.subscribed === true;
     const current = sub?.current_plan || "none";
-    const trialUsed = sub?.trial_active === false && current !== "trial";
 
-    /* -------- CASE 1: Not subscribed at all -------- */
+    /* --------------------------
+       CASE 1 — User NOT subscribed
+    ---------------------------*/
     if (!subscribed) {
         if (p.id === "free-trial") {
-            if (trialUsed) return `<button class="btn btn-disabled">Trial Used</button>`;
+            // Backend: Trial allowed only if user NEVER had a subscription
+            if (current !== "none") {
+                return `<button class="btn btn-disabled">Trial Used</button>`;
+            }
             return `<button class="btn btn-subscribe" onclick="subscribeNow('free-trial')">Start Free Trial</button>`;
         }
         return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Subscribe</button>`;
     }
 
-    /* -------- CASE 2: CURRENT PLAN -------- */
+    /* --------------------------
+       CASE 2 — Current plan
+    ---------------------------*/
     if (
         (current === "trial" && p.id === "free-trial") ||
         (current === "basic" && p.id === "love-basic") ||
@@ -240,35 +246,43 @@ function getButton(p, sub) {
         return `<button class="btn btn-disabled">Current Plan</button>`;
     }
 
-    /* -------- CASE 3: TRIAL → UPGRADE -------- */
+    /* --------------------------
+       CASE 3 — Trial → Upgrade
+    ---------------------------*/
     if (current === "trial" && p.id !== "free-trial") {
         return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Upgrade</button>`;
     }
 
-    /* -------- CASE 4: BASIC → PLUS -------- */
+    /* --------------------------
+       CASE 4 — Basic → Plus
+    ---------------------------*/
     if (current === "basic" && p.id === "love-plus") {
         return `<button class="btn btn-subscribe" onclick="subscribeNow('love-plus')">Upgrade</button>`;
     }
 
-    /* -------- CASE 5: PLUS → BASIC -------- */
+    /* --------------------------
+       CASE 5 — Plus → Basic (downgrade)
+    ---------------------------*/
     if (current === "plus" && p.id === "love-basic") {
         return `<button class="btn btn-subscribe" onclick="subscribeNow('love-basic')">Downgrade</button>`;
     }
 
-    /* -------- CASE 6: Free Trial unavailable -------- */
+    /* Free trial unavailable once subscribed */
     if (p.id === "free-trial") {
         return `<button class="btn btn-disabled">Unavailable</button>`;
     }
 
+    /* Default case: Plan switch */
     return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Change Plan</button>`;
 }
 
 /* --------------------------------------------------
-   RENDER PRODUCTS
+   RENDER PRODUCTS GRID
 -------------------------------------------------- */
 async function loadProducts() {
     const sub = await getSubscription();
     const grid = document.getElementById("productGrid");
+    grid.innerHTML = "";
 
     Object.values(PRODUCTS).forEach(p => {
         const img = p.images
@@ -291,7 +305,7 @@ async function loadProducts() {
 }
 
 /* --------------------------------------------------
-   SUBSCRIBE NOW — Stripe Checkout
+   SUBSCRIBE — Stripe Checkout Endpoint
 -------------------------------------------------- */
 async function subscribeNow(productId) {
     const res = await fetch("/api/stripe/checkout", {
@@ -306,7 +320,7 @@ async function subscribeNow(productId) {
 }
 
 /* --------------------------------------------------
-   ADD TO CART
+   ADD TO CART — Matches Backend Exactly
 -------------------------------------------------- */
 async function addToCart(id) {
     const p = PRODUCTS[id];

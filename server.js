@@ -2,16 +2,10 @@
  *  LoveTextForHer — BACKEND (PART 1 OF 7)
  *  FINAL VERSION (2025)
  *  ------------------------------------------------------------
- *  ✔ Stripe Webhook (single unified)
- *  ✔ Fixed cancellation/update logic
- *  ✔ No more “cannot update canceled subscription” errors
- *  ✔ Trial = one-time forever
- *  ✔ DB-safe, Stripe-safe, dashboard-safe
- ***************************************************************/
-
-/***************************************************************
- *  LoveTextForHer — BACKEND (PART 1 OF 7)
- *  FINAL VERSION (2025)
+ *  ✔ Stripe Initialized FIRST (Recommended)
+ *  ✔ Webhook placed SECOND (before JSON body parser)
+ *  ✔ No “stripe is null” errors
+ *  ✔ No raw-body conflicts
  ***************************************************************/
 
 process.env.TZ = "UTC";
@@ -25,112 +19,144 @@ const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const cron = require("node-cron");   // <-- KEEP THIS
-// ❌ REMOVED duplicate `const { Resend } = require("resend");`
+const cron = require("node-cron");
 
+const { Resend } = require("resend");
+
+/***************************************************************
+ *  STRIPE INITIALIZATION (MUST BE FIRST)
+ ***************************************************************/
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY) {
+    stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+    console.log("⚡ Stripe Loaded");
+}
+global.__LT_stripe = stripe;
+
+/***************************************************************
+ *  EXPRESS INIT
+ ***************************************************************/
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 /***************************************************************
- *  STRIPE WEBHOOK — MUST BE FIRST (RAW BODY)
+ *  PRICE MAP — Unified (recommended)
  ***************************************************************/
-/********************************************************************
- *  STRIPE WEBHOOK — FINAL PATCHED VERSION  
- *  Fixes cancellation not updating frontend
- *  Prevents overwritten plan after cancellation
- ********************************************************************/
+global.__LT_prices = {
+    "free-trial": process.env.STRIPE_FREETRIAL_PRICE_ID,
+    "love-basic": process.env.STRIPE_BASIC_PRICE_ID,
+    "love-plus": process.env.STRIPE_PLUS_PRICE_ID
+};
+
+console.log("💰 PRICE MAP LOADED:", global.__LT_prices);
+
+/***************************************************************
+ *  STRIPE WEBHOOK (RAW BODY)
+ *  MUST COME BEFORE ANY JSON BODY PARSERS
+ ***************************************************************/
 app.post(
     "/webhook",
     express.raw({ type: "application/json" }),
     async (req, res) => {
-        const signature = req.headers["stripe-signature"];
-
-        let event;
         try {
-            event = stripe.webhooks.constructEvent(
+            const signature = req.headers["stripe-signature"];
+
+            const event = global.__LT_stripe.webhooks.constructEvent(
                 req.body,
                 signature,
                 process.env.STRIPE_WEBHOOK_SECRET
             );
-        } catch (err) {
-            console.error("❌ Webhook signature failed:", err.message);
-            return res.status(400).send(`Webhook Error: ${err.message}`);
-        }
 
-        const data = event.data.object;
+            const data = event.data.object;
 
-        const mapPrice = (price) => {
-            const map = {
-                [STRIPE_PRICES["free-trial"]]: "trial",
-                [STRIPE_PRICES["love-basic"]]: "basic",
-                [STRIPE_PRICES["love-plus"]]: "plus",
+            /************************************************************
+             * Convert price ID → normalized plan name
+             ************************************************************/
+            const mapPrice = (priceId) => {
+                const prices = global.__LT_prices;
+                if (priceId === prices["free-trial"]) return "trial";
+                if (priceId === prices["love-basic"]) return "basic";
+                if (priceId === prices["love-plus"]) return "plus";
+                return null;
             };
 
-            return map[price] || null;
-        };
+            /************************************************************
+             * SUB CREATED
+             ************************************************************/
+            if (event.type === "customer.subscription.created") {
+                const price = data.items.data[0].price.id;
+                const plan = mapPrice(price);
 
-        if (event.type === "customer.subscription.created") {
-            const price = data.items.data[0].price.id;
-            const plan = mapPrice(price);
+                console.log("⚡ SUB CREATED:", plan);
 
-            console.log("⚡ SUB CREATED:", plan);
-
-            await global.__LT_pool.query(
-                `
-                UPDATE customers 
-                SET has_subscription = TRUE,
-                    current_plan = $1,
-                    subscription_end = NULL
-                WHERE stripe_customer_id = $2
-                `,
-                [plan, data.customer]
-            );
-        }
-
-        if (event.type === "customer.subscription.updated") {
-            console.log("🔄 SUB UPDATED — status:", data.status);
-
-            if (data.status === "canceled" || data.cancel_at_period_end === true) {
-                console.log("⛔ UPDATE IGNORED — subscription canceled");
-                return res.sendStatus(200);
+                await global.__LT_pool.query(
+                    `
+                    UPDATE customers
+                    SET has_subscription = TRUE,
+                        current_plan = $1,
+                        subscription_end = NULL
+                    WHERE stripe_customer_id = $2
+                    `,
+                    [plan, data.customer]
+                );
             }
 
-            const price = data.items.data[0].price.id;
-            const plan = mapPrice(price);
+            /************************************************************
+             * SUB UPDATED — Corrected cancel logic
+             ************************************************************/
+            if (event.type === "customer.subscription.updated") {
+                console.log("🔄 SUB UPDATED — status:", data.status);
 
-            console.log("🔄 ACTIVE UPDATE — plan:", plan);
+                if (
+                    data.status === "canceled" ||
+                    data.cancel_at_period_end === true
+                ) {
+                    console.log("⛔ UPDATE IGNORED — Canceled");
+                    return res.sendStatus(200);
+                }
 
-            await global.__LT_pool.query(
-                `
-                UPDATE customers 
-                SET has_subscription = TRUE,
-                    current_plan = $1,
-                    subscription_end = NULL
-                WHERE stripe_customer_id = $2
-                `,
-                [plan, data.customer]
-            );
+                const price = data.items.data[0].price.id;
+                const plan = mapPrice(price);
+
+                console.log("🔄 ACTIVE UPDATE — plan:", plan);
+
+                await global.__LT_pool.query(
+                    `
+                    UPDATE customers
+                    SET has_subscription = TRUE,
+                        current_plan = $1,
+                        subscription_end = NULL
+                    WHERE stripe_customer_id = $2
+                    `,
+                    [plan, data.customer]
+                );
+            }
+
+            /************************************************************
+             * SUB DELETED — final cancellation
+             ************************************************************/
+            if (event.type === "customer.subscription.deleted") {
+                console.log("❌ SUB DELETED — ENDS:", data.ended_at);
+
+                await global.__LT_pool.query(
+                    `
+                    UPDATE customers
+                    SET has_subscription = FALSE,
+                        current_plan = NULL,
+                        subscription_end = to_timestamp($1)
+                    WHERE stripe_customer_id = $2
+                    `,
+                    [data.ended_at, data.customer]
+                );
+            }
+
+            res.sendStatus(200);
+        } catch (err) {
+            console.error("❌ WEBHOOK ERROR:", err.message);
+            return res.status(400).send(`Webhook Error: ${err.message}`);
         }
-
-        if (event.type === "customer.subscription.deleted") {
-            console.log("❌ SUB DELETED — ENDS:", data.ended_at);
-
-            await global.__LT_pool.query(
-                `
-                UPDATE customers
-                SET has_subscription = FALSE,
-                    current_plan = NULL,
-                    subscription_end = to_timestamp($1)
-                WHERE stripe_customer_id = $2
-                `,
-                [data.ended_at, data.customer]
-            );
-        }
-
-        res.sendStatus(200);
     }
 );
-
 
 /***************************************************************
  * EXPRESS MIDDLEWARE (after webhook)
@@ -141,7 +167,7 @@ app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
 /***************************************************************
- * POSTGRES
+ * POSTGRES INIT
  ***************************************************************/
 const pool = new Pool({
     host: process.env.DB_HOST,
@@ -159,22 +185,13 @@ pool.query("SELECT NOW()")
     .catch(err => console.error("❌ DB ERROR:", err));
 
 /***************************************************************
- * STRIPE INIT
- ***************************************************************/
-let stripe = null;
-if (process.env.STRIPE_SECRET_KEY) {
-    stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-    console.log("⚡ Stripe loaded");
-}
-global.__LT_stripe = stripe;
-
-/***************************************************************
  * HELPERS
  ***************************************************************/
 function sanitize(str) {
     if (!str || typeof str !== "string") return str;
     return str.replace(/[<>'"]/g, "");
 }
+
 function generateToken(payload) {
     return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "7d" });
 }
@@ -183,15 +200,8 @@ global.__LT_sanitize = sanitize;
 global.__LT_generateToken = generateToken;
 
 /***************************************************************
- * PRICE MAP
+ * CONTINUES IN PART 2…
  ***************************************************************/
-global.__LT_prices = {
-    "free-trial": process.env.STRIPE_FREETRIAL_PRICE_ID,
-    "love-basic": process.env.STRIPE_BASIC_PRICE_ID,
-    "love-plus": process.env.STRIPE_PLUS_PRICE_ID
-};
-
-console.log("💰 PRICE MAP LOADED:", global.__LT_prices);
 /***************************************************************
  *  LoveTextForHer — BACKEND (PART 2 OF 7)
  *  ----------------------------------------------------------
@@ -290,6 +300,9 @@ function buildLoveEmailHTML(name, message, unsubscribeURL) {
     `;
 }
 
+global.__LT_buildMessage = buildMessage;
+global.__LT_buildLoveEmailHTML = buildLoveEmailHTML;
+
 /***************************************************************
  *  DEFAULT ADMIN SEEDER
  ***************************************************************/
@@ -314,7 +327,6 @@ async function seedAdmin() {
         console.error("❌ ADMIN SEED ERROR:", err);
     }
 }
-
 seedAdmin();
 
 /***************************************************************
@@ -326,16 +338,18 @@ function normalizePlan(productId) {
     if (productId === "love-plus") return "plus";
     return "none";
 }
+global.__LT_normalizePlan = normalizePlan;
 
 /***************************************************************
  *  PLAN LIMITS
  ***************************************************************/
 function getRecipientLimit(plan) {
     if (plan === "plus") return Infinity;
-    if (plan === "trial") return Infinity;       // Trial = unlimited
-    if (plan === "basic") return 3;              // Basic = only 3
-    return 0;                                     // No plan = 0
+    if (plan === "trial") return Infinity;  // unlimited during trial
+    if (plan === "basic") return 3;         // basic = 3 recipients
+    return 0;
 }
+global.__LT_getRecipientLimit = getRecipientLimit;
 
 /***************************************************************
  *  ENFORCE LIMITS AFTER DOWNGRADE
@@ -366,14 +380,8 @@ async function enforceRecipientLimit(customerId, newPlan) {
     console.log(`⚠️ Removed ${deleteIds.length} recipients due to downgrade.`);
 }
 
-/***************************************************************
- *  EXPORT GLOBALS
- ***************************************************************/
-global.__LT_buildMessage = buildMessage;
-global.__LT_buildLoveEmailHTML = buildLoveEmailHTML;
-global.__LT_normalizePlan = normalizePlan;
-global.__LT_getRecipientLimit = getRecipientLimit;
 global.__LT_enforceRecipientLimit = enforceRecipientLimit;
+
 /***************************************************************
  *  LoveTextForHer — BACKEND (PART 3 OF 7)
  *  ----------------------------------------------------------
@@ -391,7 +399,7 @@ app.post("/api/customer/register", async (req, res) => {
         let { email, password, name } = req.body;
 
         email = global.__LT_sanitize(email);
-        name  = global.__LT_sanitize(name);
+        name = global.__LT_sanitize(name);
 
         if (!email || !password || !name)
             return res.status(400).json({ error: "All fields required" });
@@ -427,7 +435,6 @@ app.post("/api/customer/register", async (req, res) => {
         return res.status(500).json({ error: "Server error" });
     }
 });
-
 
 /***************************************************************
  *  CUSTOMER LOGIN
@@ -474,7 +481,6 @@ app.post("/api/customer/login", async (req, res) => {
     }
 });
 
-
 /***************************************************************
  *  CUSTOMER LOGOUT
  ***************************************************************/
@@ -487,7 +493,6 @@ app.post("/api/customer/logout", (req, res) => {
     });
     return res.json({ success: true });
 });
-
 
 /***************************************************************
  *  ADMIN LOGIN
@@ -534,7 +539,6 @@ app.post("/api/admin/login", async (req, res) => {
     }
 });
 
-
 /***************************************************************
  *  ADMIN LOGOUT
  ***************************************************************/
@@ -547,7 +551,6 @@ app.post("/api/admin/logout", (req, res) => {
     });
     return res.json({ success: true });
 });
-
 
 /***************************************************************
  *  CUSTOMER AUTH MIDDLEWARE
@@ -578,7 +581,6 @@ global.__LT_authCustomer = function (req, res, next) {
     }
 };
 
-
 /***************************************************************
  *  ADMIN AUTH MIDDLEWARE
  ***************************************************************/
@@ -608,7 +610,6 @@ global.__LT_authAdmin = function (req, res, next) {
     }
 };
 
-
 /***************************************************************
  *  ADMIN — /me
  ***************************************************************/
@@ -621,7 +622,6 @@ app.get("/api/admin/me", global.__LT_authAdmin, (req, res) => {
         }
     });
 });
-
 
 /***************************************************************
  *  CUSTOMER — /me
@@ -646,6 +646,10 @@ app.get("/api/customer/me", global.__LT_authCustomer, async (req, res) => {
         return res.status(500).json({ customer: null });
     }
 });
+
+/***************************************************************
+ *  CONTINUES IN PART 3…
+ ***************************************************************/
 /***************************************************************
  *  LoveTextForHer — BACKEND (PART 4 OF 7)
  *  ----------------------------------------------------------
@@ -686,199 +690,198 @@ async function ensureStripeCustomer(customer) {
 }
 
 /***************************************************************
- *  GET SUBSCRIPTION STATUS — FINAL & 100% CORRECT
+ *  GET SUBSCRIPTION STATUS — FINAL & CORRECT
  ***************************************************************/
-app.get("/api/customer/subscription",
+app.get(
+    "/api/customer/subscription",
     global.__LT_authCustomer,
     async (req, res) => {
+        try {
+            const q = await global.__LT_pool.query(
+                `SELECT 
+                    has_subscription,
+                    current_plan,
+                    trial_active,
+                    trial_end,
+                    stripe_subscription_id,
+                    subscription_end
+                 FROM customers
+                 WHERE id=$1`,
+                [req.user.id]
+            );
 
-    try {
-        const q = await global.__LT_pool.query(
-            `SELECT 
-                has_subscription,
-                current_plan,
-                trial_active,
-                trial_end,
-                stripe_subscription_id,
-                subscription_end
-             FROM customers
-             WHERE id=$1`,
-            [req.user.id]
-        );
+            if (!q.rows.length)
+                return res.status(404).json({ error: "Customer not found" });
 
-        if (!q.rows.length)
-            return res.status(404).json({ error: "Customer not found" });
+            const c = q.rows[0];
+            let subscribed = false;
 
-        const c = q.rows[0];
+            if (c.has_subscription === true) subscribed = true;
 
-        let subscribed = false;
+            if (c.subscription_end &&
+                new Date(c.subscription_end) > new Date()) {
+                subscribed = true;
+            }
 
-        // Active plan
-        if (c.has_subscription === true) subscribed = true;
+            return res.json({
+                has_subscription: c.has_subscription,
+                subscribed,
+                current_plan: c.current_plan,
+                trial_active: c.trial_active,
+                trial_end: c.trial_end,
+                stripe_subscription_id: c.stripe_subscription_id,
+                subscription_end: c.subscription_end
+            });
 
-        // Canceled but still active until a future date
-        if (c.subscription_end && new Date(c.subscription_end) > new Date())
-            subscribed = true;
-
-        return res.json({
-            has_subscription: c.has_subscription,
-            subscribed,
-            current_plan: c.current_plan,
-            trial_active: c.trial_active,
-            trial_end: c.trial_end,
-            stripe_subscription_id: c.stripe_subscription_id,
-            subscription_end: c.subscription_end
-        });
-
-    } catch (err) {
-        console.error("SUB STATUS ERROR:", err);
-        return res.status(500).json({ error: "Server error" });
+        } catch (err) {
+            console.error("SUB STATUS ERROR:", err);
+            return res.status(500).json({ error: "Server error" });
+        }
     }
-});
+);
 
 /***************************************************************
- *  STRIPE CHECKOUT — NEW SUB OR CREATE NEW AFTER CANCEL
+ *  STRIPE CHECKOUT — NEW SUB / UPGRADE / DOWNGRADE
  ***************************************************************/
-app.post("/api/stripe/checkout",
+app.post(
+    "/api/stripe/checkout",
     global.__LT_authCustomer,
     async (req, res) => {
+        const { productId } = req.body;
 
-    const { productId } = req.body;
+        try {
+            const customer = await getCustomerRecord(req.user.id);
+            if (!customer)
+                return res.status(404).json({ error: "Customer not found" });
 
-    try {
-        const customer = await getCustomerRecord(req.user.id);
-        if (!customer)
-            return res.status(404).json({ error: "Customer not found" });
+            const priceId = global.__LT_prices[productId];
+            if (!priceId)
+                return res.status(400).json({ error: "Invalid product" });
 
-        const priceId = global.__LT_prices[productId];
-        if (!priceId)
-            return res.status(400).json({ error: "Invalid product" });
+            const newPlan = global.__LT_normalizePlan(productId);
 
-        const newPlan = global.__LT_normalizePlan(productId);
+            const stripeCustomerId = await ensureStripeCustomer(customer);
 
-        // Ensure Stripe customer
-        const stripeCustomerId = await ensureStripeCustomer(customer);
+            let stripeSub = null;
+            if (customer.stripe_subscription_id) {
+                try {
+                    stripeSub = await global.__LT_stripe.subscriptions.retrieve(
+                        customer.stripe_subscription_id
+                    );
+                } catch {}
+            }
 
-        // Load Stripe subscription (if exists)
-        let stripeSub = null;
-        if (customer.stripe_subscription_id) {
-            try {
-                stripeSub = await global.__LT_stripe.subscriptions.retrieve(
-                    customer.stripe_subscription_id
+            /***********************************************************
+             * TRIAL GUARD — One trial only
+             ***********************************************************/
+            if (newPlan === "trial" && customer.has_subscription === true) {
+                return res.status(400).json({
+                    error: "Trial cannot be used after having a subscription."
+                });
+            }
+
+            /***********************************************************
+             * CASE 1 — ACTIVE SUB → CHANGE PLAN
+             ***********************************************************/
+            if (stripeSub && stripeSub.status !== "canceled") {
+
+                const itemId = stripeSub.items.data[0].id;
+
+                await global.__LT_stripe.subscriptions.update(
+                    stripeSub.id,
+                    {
+                        cancel_at_period_end: false,
+                        proration_behavior: "always_invoice",
+                        items: [{ id: itemId, price: priceId }]
+                    }
                 );
-            } catch {
-                stripeSub = null;
-            }
-        }
 
-        /***********************************************************
-         * TRIAL GUARD — Only one trial ever
-         ***********************************************************/
-        if (newPlan === "trial" && customer.has_subscription === true) {
-            return res.status(400).json({
-                error: "Trial cannot be used after a subscription existed."
+                await global.__LT_pool.query(
+                    `UPDATE customers SET
+                        current_plan=$1,
+                        has_subscription=true,
+                        trial_active=false,
+                        trial_end=NULL,
+                        subscription_end=NULL
+                     WHERE id=$2`,
+                    [newPlan, customer.id]
+                );
+
+                return res.json({ url: "/dashboard.html" });
+            }
+
+            /***********************************************************
+             * CASE 2 — PREVIOUS SUB CANCELED → CREATE NEW SESSION
+             ***********************************************************/
+            const session = await global.__LT_stripe.checkout.sessions.create({
+                mode: "subscription",
+                customer: stripeCustomerId,
+                line_items: [{ price: priceId, quantity: 1 }],
+                success_url: `${process.env.BASE_URL}/success.html`,
+                cancel_url: `${process.env.BASE_URL}/products.html`,
+                subscription_data: {
+                    metadata: {
+                        customer_id: customer.id,
+                        plan: productId
+                    }
+                }
             });
+
+            return res.json({ url: session.url });
+
+        } catch (err) {
+            console.error("CHECKOUT ERROR:", err);
+            return res.status(500).json({ error: "Checkout error" });
         }
-
-        /***********************************************************
-         * CASE 1 — ACTIVE SUB → UPGRADE / DOWNGRADE
-         ***********************************************************/
-        if (stripeSub && stripeSub.status !== "canceled") {
-
-            const itemId = stripeSub.items.data[0].id;
-
-            // Update subscription
-            await global.__LT_stripe.subscriptions.update(
-                stripeSub.id,
-                {
-                    cancel_at_period_end: false,
-                    proration_behavior: "always_invoice",
-                    items: [{ id: itemId, price: priceId }]
-                }
-            );
-
-            // Update DB
-            await global.__LT_pool.query(
-                `UPDATE customers SET
-                    current_plan=$1,
-                    has_subscription=true,
-                    trial_active=false,
-                    trial_end=NULL,
-                    subscription_end=NULL
-                 WHERE id=$2`,
-                [newPlan, customer.id]
-            );
-
-            return res.json({ url: "/dashboard.html" });
-        }
-
-        /***********************************************************
-         * CASE 2 — EXISTING SUB WAS CANCELED → CREATE A NEW ONE
-         ***********************************************************/
-        const session = await global.__LT_stripe.checkout.sessions.create({
-            mode: "subscription",
-            customer: stripeCustomerId,
-            line_items: [{ price: priceId, quantity: 1 }],
-            success_url: `${process.env.BASE_URL}/success.html`,
-            cancel_url: `${process.env.BASE_URL}/products.html`,
-            subscription_data: {
-                metadata: {
-                    customer_id: customer.id,
-                    plan: productId
-                }
-            }
-        });
-
-        return res.json({ url: session.url });
-
-    } catch (err) {
-        console.error("CHECKOUT ERROR:", err);
-        return res.status(500).json({ error: "Checkout error" });
     }
-});
+);
 
 /***************************************************************
  *  BILLING PORTAL
  ***************************************************************/
-app.get("/api/customer/subscription/portal",
-    global.__LT_authCustomer,
+app.get(
+    "/api/customer/subscription/portal",
+  .global.__LT_authCustomer,
     async (req, res) => {
+        try {
+            const q = await global.__LT_pool.query(
+                "SELECT stripe_customer_id FROM customers WHERE id=$1",
+                [req.user.id]
+            );
 
-    try {
-        const q = await global.__LT_pool.query(
-            "SELECT stripe_customer_id FROM customers WHERE id=$1",
-            [req.user.id]
-        );
+            if (!q.rows.length || !q.rows[0].stripe_customer_id)
+                return res
+                    .status(400)
+                    .json({ error: "No Stripe customer found" });
 
-        if (!q.rows.length || !q.rows[0].stripe_customer_id)
-            return res.status(400).json({ error: "No Stripe customer found" });
+            const portal =
+                await global.__LT_stripe.billingPortal.sessions.create({
+                    customer: q.rows[0].stripe_customer_id,
+                    return_url: `${process.env.BASE_URL}/dashboard.html`
+                });
 
-        const portal = await global.__LT_stripe.billingPortal.sessions.create({
-            customer: q.rows[0].stripe_customer_id,
-            return_url: `${process.env.BASE_URL}/dashboard.html`
-        });
+            return res.json({ url: portal.url });
 
-        return res.json({ url: portal.url });
-
-    } catch (err) {
-        console.error("PORTAL ERROR:", err);
-        return res.status(500).json({ error: "Failed to open billing portal" });
+        } catch (err) {
+            console.error("PORTAL ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Failed to open billing portal" });
+        }
     }
-});
+);
+
 /***************************************************************
  *  LoveTextForHer — BACKEND (PART 5 OF 7)
  *  ----------------------------------------------------------
- *  Includes:
- *      ✔ Recipients (list/add/delete)
- *      ✔ Recipient limit enforcement
- *      ✔ Message logs
- *      ✔ Public unsubscribe system
- *      ✔ Admin controls (view/delete/send-now)
- *      ✔ Send Flowers (recommended version)
+ *  ✔ Recipients (list/add/delete)
+ *  ✔ Limit enforcement
+ *  ✔ Message logs
+ *  ✔ Admin tools
  ***************************************************************/
 
 /***************************************************************
- *  LOG MESSAGE — Used by cron & manual sends
+ *  MESSAGE LOG FUNCTION
  ***************************************************************/
 async function logMessage(customerId, recipientId, email, message) {
     try {
@@ -894,30 +897,36 @@ async function logMessage(customerId, recipientId, email, message) {
 global.__LT_logMessage = logMessage;
 
 /***************************************************************
- *  GET RECIPIENTS FOR CUSTOMER
+ *  GET CUSTOMER RECIPIENTS
  ***************************************************************/
-app.get("/api/customer/recipients", global.__LT_authCustomer, async (req, res) => {
-    try {
-        const q = await global.__LT_pool.query(
-            `SELECT 
-                id, email, name, relationship, frequency, timings, timezone,
-                next_delivery, last_sent, is_active
-             FROM users
-             WHERE customer_id=$1
-             ORDER BY id DESC`,
-            [req.user.id]
-        );
+app.get(
+    "/api/customer/recipients",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            const q = await global.__LT_pool.query(
+                `SELECT 
+                    id, email, name, relationship, frequency, timings, timezone,
+                    next_delivery, last_sent, is_active
+                 FROM users
+                 WHERE customer_id=$1
+                 ORDER BY id DESC`,
+                [req.user.id]
+            );
 
-        return res.json(q.rows);
+            return res.json(q.rows);
 
-    } catch (err) {
-        console.error("RECIPIENT LIST ERROR:", err);
-        return res.status(500).json({ error: "Server error loading recipients" });
+        } catch (err) {
+            console.error("RECIPIENT LIST ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Server error loading recipients" });
+        }
     }
-});
+);
 
 /***************************************************************
- *  COUNT RECIPIENTS (for plan limits)
+ *  COUNT RECIPIENTS
  ***************************************************************/
 async function countRecipients(customerId) {
     const q = await global.__LT_pool.query(
@@ -930,165 +939,204 @@ async function countRecipients(customerId) {
 /***************************************************************
  *  ADD RECIPIENT
  ***************************************************************/
-app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) => {
-    try {
-        const customerQ = await global.__LT_pool.query(
-            "SELECT * FROM customers WHERE id=$1",
-            [req.user.id]
-        );
+app.post(
+    "/api/customer/recipients",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            const customerQ = await global.__LT_pool.query(
+                "SELECT * FROM customers WHERE id=$1",
+                [req.user.id]
+            );
 
-        if (!customerQ.rows.length)
-            return res.status(404).json({ error: "Customer not found" });
+            if (!customerQ.rows.length)
+                return res.status(404).json({ error: "Customer not found" });
 
-        const customer = customerQ.rows[0];
+            const customer = customerQ.rows[0];
 
-        // enforce plan limits
-        const maxAllowed = global.__LT_getRecipientLimit(customer.current_plan);
-        const currentCount = await countRecipients(customer.id);
+            const maxAllowed =
+                global.__LT_getRecipientLimit(customer.current_plan);
+            const currentCount =
+                await countRecipients(customer.id);
 
-        if (currentCount >= maxAllowed) {
-            return res.status(400).json({
-                error: "Your subscription plan does not allow more recipients."
-            });
+            if (currentCount >= maxAllowed) {
+                return res.status(400).json({
+                    error: "Your subscription plan does not allow more recipients."
+                });
+            }
+
+            let {
+                name,
+                email,
+                relationship,
+                frequency,
+                timings,
+                timezone
+            } = req.body;
+
+            name = global.__LT_sanitize(name);
+            email = global.__LT_sanitize(email);
+            relationship = global.__LT_sanitize(relationship);
+            frequency = global.__LT_sanitize(frequency);
+            timings = global.__LT_sanitize(timings);
+            timezone = global.__LT_sanitize(timezone);
+
+            if (!email || !name)
+                return res
+                    .status(400)
+                    .json({ error: "Name & email required" });
+
+            const unsubscribeToken =
+                crypto.randomBytes(16).toString("hex");
+
+            await global.__LT_pool.query(
+                `INSERT INTO users 
+                    (email, customer_id, name, relationship, frequency,
+                     timings, timezone, unsubscribe_token, is_active,
+                     next_delivery, created_at)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,NOW(),NOW())`,
+                [
+                    email,
+                    customer.id,
+                    name,
+                    relationship,
+                    frequency,
+                    timings,
+                    timezone,
+                    unsubscribeToken
+                ]
+            );
+
+            return res.json({ success: true });
+
+        } catch (err) {
+            console.error("ADD RECIPIENT ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Server error adding recipient" });
         }
-
-        let {
-            name,
-            email,
-            relationship,
-            frequency,
-            timings,
-            timezone
-        } = req.body;
-
-        name = global.__LT_sanitize(name);
-        email = global.__LT_sanitize(email);
-        relationship = global.__LT_sanitize(relationship);
-        frequency = global.__LT_sanitize(frequency);
-        timings = global.__LT_sanitize(timings);
-        timezone = global.__LT_sanitize(timezone);
-
-        if (!email || !name)
-            return res.status(400).json({ error: "Name & email required" });
-
-        const unsubscribeToken = crypto.randomBytes(16).toString("hex");
-
-        await global.__LT_pool.query(
-            `INSERT INTO users 
-                (email, customer_id, name, relationship, frequency,
-                 timings, timezone, unsubscribe_token, is_active,
-                 next_delivery, created_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,NOW(),NOW())`,
-            [
-                email, customer.id, name, relationship, frequency,
-                timings, timezone, unsubscribeToken
-            ]
-        );
-
-        return res.json({ success: true });
-
-    } catch (err) {
-        console.error("ADD RECIPIENT ERROR:", err);
-        return res.status(500).json({ error: "Server error adding recipient" });
     }
-});
+);
 
 /***************************************************************
  *  DELETE RECIPIENT
  ***************************************************************/
-app.delete("/api/customer/recipients/:id", global.__LT_authCustomer, async (req, res) => {
-    try {
-        await global.__LT_pool.query(
-            `DELETE FROM users WHERE id=$1 AND customer_id=$2`,
-            [req.params.id, req.user.id]
-        );
+app.delete(
+    "/api/customer/recipients/:id",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            await global.__LT_pool.query(
+                `DELETE FROM users WHERE id=$1 AND customer_id=$2`,
+                [req.params.id, req.user.id]
+            );
 
-        return res.json({ success: true });
+            return res.json({ success: true });
 
-    } catch (err) {
-        console.error("DELETE RECIPIENT ERROR:", err);
-        return res.status(500).json({ error: "Server error deleting recipient" });
+        } catch (err) {
+            console.error("DELETE RECIPIENT ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Server error deleting recipient" });
+        }
     }
-});
+);
 
 /***************************************************************
- *  MESSAGE LOG — last 5 messages
+ *  MESSAGE LOG (last 5)
  ***************************************************************/
-app.get("/api/message-log/:recipientId", global.__LT_authCustomer, async (req, res) => {
-    try {
-        const rid = req.params.recipientId;
+app.get(
+    "/api/message-log/:recipientId",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            const rid = req.params.recipientId;
 
-        const logs = await global.__LT_pool.query(
-            `SELECT message AS message_text, sent_at
-             FROM message_logs
-             WHERE customer_id=$1 AND recipient_id=$2
-             ORDER BY sent_at DESC
-             LIMIT 5`,
-            [req.user.id, rid]
-        );
+            const logs = await global.__LT_pool.query(
+                `SELECT message AS message_text, sent_at
+                 FROM message_logs
+                 WHERE customer_id=$1 AND recipient_id=$2
+                 ORDER BY sent_at DESC
+                 LIMIT 5`,
+                [req.user.id, rid]
+            );
 
-        return res.json({ success: true, messages: logs.rows });
+            return res.json({ success: true, messages: logs.rows });
 
-    } catch (err) {
-        console.error("MESSAGE LOG ERROR:", err);
-        return res.status(500).json({ error: "Error fetching message logs" });
+        } catch (err) {
+            console.error("MESSAGE LOG ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Error fetching message logs" });
+        }
     }
-});
+);
 
 /***************************************************************
- *  RECOMMENDED VERSION — SEND FLOWER
+ *  SEND FLOWERS
  ***************************************************************/
-app.post("/api/customer/send-flowers/:id", global.__LT_authCustomer, async (req, res) => {
-    try {
-        const rid = req.params.id;
-        const { note } = req.body;
+app.post(
+    "/api/customer/send-flowers/:id",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            const rid = req.params.id;
+            const { note } = req.body;
 
-        const q = await global.__LT_pool.query(
-            "SELECT * FROM users WHERE id=$1 AND customer_id=$2",
-            [rid, req.user.id]
-        );
+            const q = await global.__LT_pool.query(
+                "SELECT * FROM users WHERE id=$1 AND customer_id=$2",
+                [rid, req.user.id]
+            );
 
-        if (!q.rows.length)
-            return res.status(404).json({ error: "Recipient not found" });
+            if (!q.rows.length)
+                return res
+                    .status(404)
+                    .json({ error: "Recipient not found" });
 
-        const r = q.rows[0];
+            const r = q.rows[0];
 
-        const unsubscribeURL =
-            `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
+            const unsubscribeURL =
+                `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
 
-        // recommended formatting
-        const message =
-            `🌸 A flower for you!` +
-            (note?.trim() ? ` — ${global.__LT_sanitize(note.trim())}` : "");
+            const message =
+                `🌸 A flower for you!` +
+                (note?.trim()
+                    ? ` — ${global.__LT_sanitize(note.trim())}`
+                    : "");
 
-        const html =
-            global.__LT_buildLoveEmailHTML(r.name, message, unsubscribeURL);
+            const html =
+                global.__LT_buildLoveEmailHTML(
+                    r.name,
+                    message,
+                    unsubscribeURL
+                );
 
-        // Send email
-        await global.__LT_sendEmail(
-            r.email,
-            "You received a flower 🌸",
-            html,
-            message + "\n\nUnsubscribe: " + unsubscribeURL
-        );
+            await global.__LT_sendEmail(
+                r.email,
+                "You received a flower 🌸",
+                html,
+                message + "\n\nUnsubscribe: " + unsubscribeURL
+            );
 
-        // Log message
-        await global.__LT_pool.query(
-            `INSERT INTO message_logs (customer_id, recipient_id, email, message)
-             VALUES ($1, $2, $3, $4)`,
-            [req.user.id, rid, r.email, message]
-        );
+            await global.__LT_pool.query(
+                `INSERT INTO message_logs (customer_id, recipient_id, email, message)
+                 VALUES ($1, $2, $3, $4)`,
+                [req.user.id, rid, r.email, message]
+            );
 
-        return res.json({ success: true });
+            return res.json({ success: true });
 
-    } catch (err) {
-        console.error("FLOWER SEND ERROR:", err);
-        return res.status(500).json({ error: "Error sending flower." });
+        } catch (err) {
+            console.error("FLOWER SEND ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Error sending flower." });
+        }
     }
-});
+);
 
 /***************************************************************
- *  PUBLIC UNSUBSCRIBE LINK
+ *  PUBLIC UNSUBSCRIBE
  ***************************************************************/
 app.get("/api/unsubscribe/:token", async (req, res) => {
     try {
@@ -1119,101 +1167,129 @@ app.get("/api/unsubscribe/:token", async (req, res) => {
 });
 
 /***************************************************************
- *  ADMIN — GET ALL RECIPIENTS
+ *  ADMIN GET ALL RECIPIENTS
  ***************************************************************/
-app.get("/api/admin/recipients", global.__LT_authAdmin, async (req, res) => {
-    try {
-        const q = await global.__LT_pool.query(
-            `SELECT 
-                id, customer_id, email, name, relationship, frequency,
-                timings, timezone, next_delivery, last_sent, is_active
-             FROM users
-             ORDER BY id DESC`
-        );
+app.get(
+    "/api/admin/recipients",
+    global.__LT_authAdmin,
+    async (req, res) => {
+        try {
+            const q = await global.__LT_pool.query(
+                `SELECT 
+                    id, customer_id, email, name, relationship, frequency,
+                    timings, timezone, next_delivery, last_sent, is_active
+                 FROM users
+                 ORDER BY id DESC`
+            );
 
-        return res.json(q.rows);
+            return res.json(q.rows);
 
-    } catch (err) {
-        console.error("ADMIN RECIPIENTS ERROR:", err);
-        return res.status(500).json({ error: "Server error loading recipients" });
+        } catch (err) {
+            console.error("ADMIN RECIPIENTS ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Server error loading recipients" });
+        }
     }
-});
+);
 
 /***************************************************************
- *  ADMIN — DELETE RECIPIENT
+ *  ADMIN DELETE RECIPIENT
  ***************************************************************/
-app.delete("/api/admin/recipients/:id", global.__LT_authAdmin, async (req, res) => {
-    try {
-        await global.__LT_pool.query(
-            "DELETE FROM users WHERE id=$1",
-            [req.params.id]
-        );
+app.delete(
+    "/api/admin/recipients/:id",
+    global.__LT_authAdmin,
+    async (req, res) => {
+        try {
+            await global.__LT_pool.query(
+                "DELETE FROM users WHERE id=$1",
+                [req.params.id]
+            );
 
-        return res.json({ success: true });
+            return res.json({ success: true });
 
-    } catch (err) {
-        console.error("ADMIN DELETE ERROR:", err);
-        return res.status(500).json({ error: "Server error deleting recipient" });
+        } catch (err) {
+            console.error("ADMIN DELETE ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Server error deleting recipient" });
+        }
     }
-});
+);
 
 /***************************************************************
- *  ADMIN — SEND NOW (manual)
+ *  ADMIN SEND NOW
  ***************************************************************/
-app.post("/api/admin/send-now/:id", global.__LT_authAdmin, async (req, res) => {
-    try {
-        const rid = req.params.id;
+app.post(
+    "/api/admin/send-now/:id",
+    global.__LT_authAdmin,
+    async (req, res) => {
+        try {
+            const rid = req.params.id;
 
-        const q = await global.__LT_pool.query(
-            "SELECT * FROM users WHERE id=$1",
-            [rid]
-        );
+            const q = await global.__LT_pool.query(
+                "SELECT * FROM users WHERE id=$1",
+                [rid]
+            );
 
-        if (!q.rows.length)
-            return res.status(404).json({ error: "Recipient not found" });
+            if (!q.rows.length)
+                return res
+                    .status(404)
+                    .json({ error: "Recipient not found" });
 
-        const r = q.rows[0];
+            const r = q.rows[0];
 
-        const unsubscribeURL =
-            `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
+            const unsubscribeURL =
+                `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
 
-        const message =
-            global.__LT_buildMessage(r.name, r.relationship);
+            const message =
+                global.__LT_buildMessage(r.name, r.relationship);
 
-        const html =
-            global.__LT_buildLoveEmailHTML(r.name, message, unsubscribeURL);
+            const html =
+                global.__LT_buildLoveEmailHTML(
+                    r.name,
+                    message,
+                    unsubscribeURL
+                );
 
-        await global.__LT_sendEmail(
-            r.email,
-            "Your Love Message ❤️",
-            html,
-            message + "\n\nUnsubscribe: " + unsubscribeURL
-        );
+            await global.__LT_sendEmail(
+                r.email,
+                "Your Love Message ❤️",
+                html,
+                message + "\n\nUnsubscribe: " + unsubscribeURL
+            );
 
-        await logMessage(r.customer_id, r.id, r.email, message);
+            await logMessage(
+                r.customer_id,
+                r.id,
+                r.email,
+                message
+            );
 
-        return res.json({ success: true });
+            return res.json({ success: true });
 
-    } catch (err) {
-        console.error("ADMIN SEND-NOW ERROR:", err);
-        return res.status(500).json({ error: "Failed to send now" });
+        } catch (err) {
+            console.error("ADMIN SEND-NOW ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Failed to send now" });
+        }
     }
-});
+);
+
 /***************************************************************
  *  LoveTextForHer — BACKEND (PART 6 OF 7)
  *  ----------------------------------------------------------
- *  Includes:
- *      ✔ Resend email integration
- *      ✔ Universal email sender
- *      ✔ Customer cart
- *      ✔ One-time Stripe merch checkout
- *      ✔ Password reset system
+ *  ✔ Resend email integration
+ *  ✔ Universal email sender
+ *  ✔ Cart
+ *  ✔ Merch checkout
+ *  ✔ Password reset system
  ***************************************************************/
 
 /***************************************************************
  *  RESEND EMAIL CLIENT
  ***************************************************************/
-const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 /***************************************************************
@@ -1238,100 +1314,123 @@ global.__LT_sendEmail = async function (to, subject, html, textVersion) {
 /***************************************************************
  *  GET CART ITEMS
  ***************************************************************/
-app.get("/api/cart", global.__LT_authCustomer, async (req, res) => {
-    try {
-        const q = await global.__LT_pool.query(
-            "SELECT items FROM carts WHERE customer_id=$1",
-            [req.user.id]
-        );
+app.get(
+    "/api/cart",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            const q = await global.__LT_pool.query(
+                "SELECT items FROM carts WHERE customer_id=$1",
+                [req.user.id]
+            );
 
-        if (!q.rows.length) {
-            return res.json({ items: [] });
+            if (!q.rows.length) {
+                return res.json({ items: [] });
+            }
+
+            return res.json({ items: q.rows[0].items || [] });
+
+        } catch (err) {
+            console.error("CART LOAD ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Server error loading cart" });
         }
-
-        return res.json({ items: q.rows[0].items || [] });
-
-    } catch (err) {
-        console.error("CART LOAD ERROR:", err);
-        return res.status(500).json({ error: "Server error loading cart" });
     }
-});
+);
 
 /***************************************************************
  *  ADD ITEM TO CART
  ***************************************************************/
-app.post("/api/cart/add", global.__LT_authCustomer, async (req, res) => {
-    try {
-        let { productId, name, price } = req.body;
+app.post(
+    "/api/cart/add",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            let { productId, name, price } = req.body;
 
-        productId = global.__LT_sanitize(productId);
-        name = global.__LT_sanitize(name);
-        price = Number(price);
+            productId = global.__LT_sanitize(productId);
+            name = global.__LT_sanitize(name);
+            price = Number(price);
 
-        if (!productId || !name || !price) {
-            return res.status(400).json({ error: "Invalid product" });
+            if (!productId || !name || !price) {
+                return res.status(400).json({ error: "Invalid product" });
+            }
+
+            const existing = await global.__LT_pool.query(
+                "SELECT items FROM carts WHERE customer_id=$1",
+                [req.user.id]
+            );
+
+            const items =
+                existing.rows.length
+                    ? existing.rows[0].items || []
+                    : [];
+
+            items.push({ productId, name, price });
+
+            await global.__LT_pool.query(
+                `INSERT INTO carts (customer_id, items)
+                 VALUES ($1, $2)
+                 ON CONFLICT (customer_id)
+                 DO UPDATE SET items=$2`,
+                [req.user.id, JSON.stringify(items)]
+            );
+
+            return res.json({ success: true });
+
+        } catch (err) {
+            console.error("CART ADD ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Server error adding to cart" });
         }
-
-        const existing = await global.__LT_pool.query(
-            "SELECT items FROM carts WHERE customer_id=$1",
-            [req.user.id]
-        );
-
-        const items = existing.rows.length ? existing.rows[0].items || [] : [];
-        items.push({ productId, name, price });
-
-        await global.__LT_pool.query(
-            `INSERT INTO carts (customer_id, items)
-             VALUES ($1, $2)
-             ON CONFLICT (customer_id)
-             DO UPDATE SET items=$2`,
-            [req.user.id, JSON.stringify(items)]
-        );
-
-        return res.json({ success: true });
-
-    } catch (err) {
-        console.error("CART ADD ERROR:", err);
-        return res.status(500).json({ error: "Server error adding to cart" });
     }
-});
+);
 
 /***************************************************************
  *  REMOVE ITEM FROM CART
  ***************************************************************/
-app.post("/api/cart/remove", global.__LT_authCustomer, async (req, res) => {
-    try {
-        let { productId } = req.body;
-        productId = global.__LT_sanitize(productId);
+app.post(
+    "/api/cart/remove",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            let { productId } = req.body;
+            productId = global.__LT_sanitize(productId);
 
-        const q = await global.__LT_pool.query(
-            "SELECT items FROM carts WHERE customer_id=$1",
-            [req.user.id]
-        );
+            const q = await global.__LT_pool.query(
+                "SELECT items FROM carts WHERE customer_id=$1",
+                [req.user.id]
+            );
 
-        if (!q.rows.length) {
+            if (!q.rows.length) {
+                return res.json({ success: true });
+            }
+
+            const filtered =
+                (q.rows[0].items || []).filter(
+                    item => item.productId !== productId
+                );
+
+            await global.__LT_pool.query(
+                "UPDATE carts SET items=$1 WHERE customer_id=$2",
+                [JSON.stringify(filtered), req.user.id]
+            );
+
             return res.json({ success: true });
+
+        } catch (err) {
+            console.error("CART REMOVE ERROR:", err);
+            return res
+                .status(500)
+                .json({ error: "Server error removing product" });
         }
-
-        const filtered = (q.rows[0].items || []).filter(
-            item => item.productId !== productId
-        );
-
-        await global.__LT_pool.query(
-            "UPDATE carts SET items=$1 WHERE customer_id=$2",
-            [JSON.stringify(filtered), req.user.id]
-        );
-
-        return res.json({ success: true });
-
-    } catch (err) {
-        console.error("CART REMOVE ERROR:", err);
-        return res.status(500).json({ error: "Server error removing product" });
     }
-});
+);
 
 /***************************************************************
- *  PASSWORD RESET — REQUEST RESET TOKEN
+ *  PASSWORD RESET — REQUEST TOKEN
  ***************************************************************/
 app.post("/api/password/request", async (req, res) => {
     try {
@@ -1346,13 +1445,11 @@ app.post("/api/password/request", async (req, res) => {
             [email]
         );
 
-        // ALWAYS act like success (security)
         if (!q.rows.length)
             return res.json({ success: true });
 
         const customerId = q.rows[0].id;
 
-        // Invalidate older tokens
         await global.__LT_pool.query(
             `UPDATE password_reset_tokens SET used=true WHERE customer_id=$1`,
             [customerId]
@@ -1389,7 +1486,9 @@ app.post("/api/password/request", async (req, res) => {
 
     } catch (err) {
         console.error("PASSWORD REQUEST ERROR:", err);
-        return res.status(500).json({ error: "Server error requesting reset" });
+        return res
+            .status(500)
+            .json({ error: "Server error requesting reset" });
     }
 });
 
@@ -1413,7 +1512,9 @@ app.post("/api/password/reset", async (req, res) => {
         );
 
         if (!q.rows.length)
-            return res.status(400).json({ error: "Invalid or expired token" });
+            return res
+                .status(400)
+                .json({ error: "Invalid or expired token" });
 
         const record = q.rows[0];
 
@@ -1436,62 +1537,76 @@ app.post("/api/password/reset", async (req, res) => {
 
     } catch (err) {
         console.error("PASSWORD RESET ERROR:", err);
-        return res.status(500).json({ error: "Server error resetting password" });
+        return res
+            .status(500)
+            .json({ error: "Server error resetting password" });
     }
 });
 
 /***************************************************************
- *  MERCH CHECKOUT — ONE-TIME STRIPE PAYMENT
+ *  MERCH CHECKOUT — ONE-TIME PAYMENT
  ***************************************************************/
-app.post("/api/stripe/merch-checkout", global.__LT_authCustomer, async (req, res) => {
-    try {
-        if (!global.__LT_stripe)
-            return res.status(500).json({ error: "Stripe not configured" });
+app.post(
+    "/api/stripe/merch-checkout",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            if (!global.__LT_stripe)
+                return res
+                    .status(500)
+                    .json({ error: "Stripe not configured" });
 
-        const { items } = req.body;
+            const { items } = req.body;
 
-        if (!items || !Array.isArray(items) || items.length === 0)
-            return res.status(400).json({ error: "No items provided" });
+            if (!items || !Array.isArray(items) || items.length === 0)
+                return res
+                    .status(400)
+                    .json({ error: "No items provided" });
 
-        const lineItems = items.map(item => ({
-            price_data: {
-                currency: "usd",
-                product_data: { name: item.name },
-                unit_amount: Math.round(Number(item.price) * 100)
-            },
-            quantity: 1
-        }));
+            const lineItems = items.map(item => ({
+                price_data: {
+                    currency: "usd",
+                    product_data: { name: item.name },
+                    unit_amount: Math.round(Number(item.price) * 100)
+                },
+                quantity: 1
+            }));
 
-        const session = await global.__LT_stripe.checkout.sessions.create({
-            mode: "payment",
-            line_items: lineItems,
-            success_url: `${process.env.BASE_URL}/success.html`,
-            cancel_url: `${process.env.BASE_URL}/cart.html`,
-            metadata: { customer_id: req.user.id }
-        });
+            const session =
+                await global.__LT_stripe.checkout.sessions.create({
+                    mode: "payment",
+                    line_items: lineItems,
+                    success_url: `${process.env.BASE_URL}/success.html`,
+                    cancel_url: `${process.env.BASE_URL}/cart.html`,
+                    metadata: { customer_id: req.user.id }
+                });
 
-        // clear cart after checkout session is created
-        await global.__LT_pool.query(
-            "UPDATE carts SET items='[]' WHERE customer_id=$1",
-            [req.user.id]
-        );
+            await global.__LT_pool.query(
+                "UPDATE carts SET items='[]' WHERE customer_id=$1",
+                [req.user.id]
+            );
 
-        return res.json({ url: session.url });
+            return res.json({ url: session.url });
 
-    } catch (err) {
-        console.error("❌ MERCH CHECKOUT ERROR:", err);
-        return res.status(500).json({ error: "Server error processing merch checkout" });
+        } catch (err) {
+            console.error("❌ MERCH CHECKOUT ERROR:", err);
+            return res
+                .status(500)
+                .json({
+                    error: "Server error processing merch checkout"
+                });
+        }
     }
-});
+);
+
 /***************************************************************
  *  LoveTextForHer — BACKEND (PART 7 OF 7)
  *  ----------------------------------------------------------
- *  Includes:
- *      ✔ Next delivery calculator
- *      ✔ Cron job (runs every minute)
- *      ✔ Automated message sender
- *      ✔ Logging of sent messages
- *      ✔ Server start
+ *  ✔ Next-delivery calculator
+ *  ✔ Cron job (every minute)
+ *  ✔ Automated message sender
+ *  ✔ Logging
+ *  ✔ Server start
  ***************************************************************/
 
 /***************************************************************
@@ -1501,37 +1616,39 @@ function calculateNextDelivery(freq, timing) {
     const now = new Date();
     const next = new Date(now);
 
-    // TIME OF DAY
     switch (timing) {
-        case "morning":    next.setHours(9, 0, 0); break;
-        case "afternoon":  next.setHours(13, 0, 0); break;
-        case "evening":    next.setHours(18, 0, 0); break;
-        case "night":      next.setHours(22, 0, 0); break;
-        default:           next.setHours(12, 0, 0); break;
+        case "morning":
+            next.setHours(9, 0, 0);
+            break;
+        case "afternoon":
+            next.setHours(13, 0, 0);
+            break;
+        case "evening":
+            next.setHours(18, 0, 0);
+            break;
+        case "night":
+            next.setHours(22, 0, 0);
+            break;
+        default:
+            next.setHours(12, 0, 0);
     }
 
-    // FREQUENCY
     switch (freq) {
         case "daily":
             next.setDate(now.getDate() + 1);
             break;
-
         case "every-other-day":
             next.setDate(now.getDate() + 2);
             break;
-
         case "three-times-week":
             next.setDate(now.getDate() + 2);
             break;
-
         case "weekly":
             next.setDate(now.getDate() + 7);
             break;
-
         case "bi-weekly":
             next.setDate(now.getDate() + 14);
             break;
-
         default:
             next.setDate(now.getDate() + 1);
     }
@@ -1540,7 +1657,7 @@ function calculateNextDelivery(freq, timing) {
 }
 
 /***************************************************************
- *  CRON JOB — AUTOMATIC MESSAGE SENDER (EVERY MINUTE)
+ *  CRON JOB — AUTO MESSAGE SENDER (EVERY MINUTE)
  ***************************************************************/
 cron.schedule("* * * * *", async () => {
     console.log("⏱  CRON: scanning for due messages…");
@@ -1550,13 +1667,15 @@ cron.schedule("* * * * *", async () => {
     try {
         const now = new Date();
 
-        // Get all recipients due for a message
-        const due = await client.query(`
+        const due = await client.query(
+            `
             SELECT *
             FROM users
             WHERE is_active = true
               AND next_delivery <= $1
-        `, [now]);
+            `,
+            [now]
+        );
 
         for (const r of due.rows) {
             try {
@@ -1567,9 +1686,12 @@ cron.schedule("* * * * *", async () => {
                     global.__LT_buildMessage(r.name, r.relationship);
 
                 const html =
-                    global.__LT_buildLoveEmailHTML(r.name, message, unsubscribeURL);
+                    global.__LT_buildLoveEmailHTML(
+                        r.name,
+                        message,
+                        unsubscribeURL
+                    );
 
-                // SEND EMAIL
                 await global.__LT_sendEmail(
                     r.email,
                     "Your Love Message ❤️",
@@ -1577,7 +1699,6 @@ cron.schedule("* * * * *", async () => {
                     message + "\n\nUnsubscribe: " + unsubscribeURL
                 );
 
-                // LOG MESSAGE
                 await global.__LT_logMessage(
                     r.customer_id,
                     r.id,
@@ -1585,14 +1706,17 @@ cron.schedule("* * * * *", async () => {
                     message
                 );
 
-                // CALCULATE NEXT DELIVERY
-                const next = calculateNextDelivery(r.frequency, r.timings);
+                const next =
+                    calculateNextDelivery(r.frequency, r.timings);
 
-                await client.query(`
+                await client.query(
+                    `
                     UPDATE users
                     SET next_delivery=$1, last_sent=NOW()
                     WHERE id=$2
-                `, [next, r.id]);
+                    `,
+                    [next, r.id]
+                );
 
                 console.log(`💘 Love message sent → ${r.email}`);
 
@@ -1616,5 +1740,5 @@ app.listen(PORT, () => {
 });
 
 /***************************************************************
- *  🎉 END OF PART 7 — BACKEND COMPLETE
+ *  🎉 END OF BACKEND — COMPLETE
  ***************************************************************/

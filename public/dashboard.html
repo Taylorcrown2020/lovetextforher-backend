@@ -22,7 +22,10 @@
             background: linear-gradient(135deg, #fff7fa, #f6f3ff);
         }
 
-        #navbar { width: 100%; height: 95px; }
+        #navbar {
+            width: 100%;
+            height: 95px;
+        }
 
         .dashboard-container {
             max-width: 950px;
@@ -76,7 +79,9 @@
             box-shadow: 0 8px 26px rgba(214,51,108,0.12);
         }
 
-        .recipient-box strong { color: var(--primary); }
+        .recipient-box strong {
+            color: var(--primary);
+        }
 
         .delete-btn, .log-btn, .flower-btn {
             padding: 10px 18px;
@@ -133,6 +138,7 @@
             text-align: center;
         }
 
+        /* Modals */
         #messageLogModal, #flowerModal {
             display:none;
             position:fixed;
@@ -225,7 +231,6 @@
     <div style="background:white; width:420px; padding:20px; border-radius:22px;">
         <h2 style="margin-top:0; color:#d6336c;">Send a Flower 🌸</h2>
 
-        <label>Select Flower:</label>
         <select id="flowerType" style="width:100%; padding:12px; margin-top:12px;">
             <option value="🌹 Rose">🌹 Rose</option>
             <option value="🌸 Cherry Blossom">🌸 Cherry Blossom</option>
@@ -249,19 +254,22 @@
 </div>
 
 <script src="/js/nav.js" defer></script>
-
 <script>
 /* ============================================================
-   MATCHES YOUR SERVER SUBSCRIPTION LOGIC EXACTLY
+   EASY ACCESS SUBSCRIPTION CHECK (matches server exactly)
 ============================================================ */
-function hasActiveAccess(data) {
-    if (!data) return false;
+function hasActiveAccess(sub) {
+    if (!sub) return false;
 
     const now = new Date();
 
-    if (data.has_subscription === true && data.subscription_end === null) return true;
+    // Case 1 — Fully active subscription
+    if (sub.has_subscription === true && sub.subscription_end === null)
+        return true;
 
-    if (data.subscription_end && new Date(data.subscription_end) > now) return true;
+    // Case 2 — Canceled but still active until a future date
+    if (sub.subscription_end && new Date(sub.subscription_end) > now)
+        return true;
 
     return false;
 }
@@ -269,33 +277,33 @@ function hasActiveAccess(data) {
 /* ============================================================
    UPDATE SUBSCRIPTION BANNER
 ============================================================ */
-function updateSubscriptionBanner(data) {
+function updateSubscriptionBanner(sub) {
     const banner = document.getElementById("subscriptionBanner");
     banner.style.display = "block";
 
-    const active = hasActiveAccess(data);
+    const active = hasActiveAccess(sub);
 
     if (active) {
-        const planNames = {
+        const planName = {
             basic: "LoveText Basic ❤️",
             plus: "LoveText Plus 💜",
             trial: "Free Trial 💖"
-        };
+        }[sub.current_plan] || "Active Plan";
 
-        banner.innerHTML = `
-            You currently have an active <strong>${planNames[data.current_plan] || "subscription"}</strong>.
-        `;
+        banner.innerHTML = `You currently have an active <strong>${planName}</strong>.`;
         return;
     }
 
-    if (data.subscription_end) {
-        const end = new Date(data.subscription_end).toLocaleDateString();
+    // If canceled but ends later
+    if (sub.subscription_end) {
+        const end = new Date(sub.subscription_end).toLocaleDateString();
         banner.innerHTML = `
             Your subscription ends on <strong>${end}</strong>.
         `;
         return;
     }
 
+    // No subscription at all
     banner.innerHTML = `
         You do not have a subscription.<br><br>
         <a href="/products.html">Choose a Plan</a>
@@ -303,7 +311,7 @@ function updateSubscriptionBanner(data) {
 }
 
 /* ============================================================
-   LOAD SUB STATUS (CONTROLS EVERYTHING)
+   LOAD SUBSCRIPTION STATUS
 ============================================================ */
 let HAS_ACCESS = false;
 
@@ -313,17 +321,19 @@ async function loadSubscriptionStatus() {
             credentials: "include",
             cache: "no-store"
         });
-        const data = await res.json();
 
-        HAS_ACCESS = hasActiveAccess(data);
+        const sub = await res.json();
 
-        updateSubscriptionBanner(data);
+        HAS_ACCESS = hasActiveAccess(sub);
 
+        updateSubscriptionBanner(sub);
+
+        // Billing portal button only shows if user can manage their plan
         document.getElementById("manageSubBtn").style.display =
             HAS_ACCESS ? "block" : "none";
 
     } catch (err) {
-        console.error("SUB LOAD ERROR", err);
+        console.error("SUB STATUS ERROR:", err);
     }
 }
 
@@ -341,7 +351,8 @@ async function loadRecipients() {
         box.innerHTML = "";
 
         if (!list.length) {
-            box.innerHTML = `<p style="text-align:center; color:var(--text-soft);">You have no recipients yet.</p>`;
+            box.innerHTML =
+                `<p style="text-align:center; color:var(--text-soft);">You have no recipients yet.</p>`;
             return;
         }
 
@@ -361,12 +372,12 @@ async function loadRecipients() {
         });
 
     } catch (err) {
-        console.error("RECIPIENT LOAD ERROR", err);
+        console.error("RECIPIENT LOAD ERROR:", err);
     }
 }
 
 /* ============================================================
-   ADD RECIPIENT — BLOCKS IF NO ACTIVE ACCESS
+   ADD RECIPIENT — (blocks if no subscription)
 ============================================================ */
 async function addRecipient() {
     if (!HAS_ACCESS) {
@@ -375,13 +386,21 @@ async function addRecipient() {
         return;
     }
 
+    const relationship =
+        r_relationship.value === "custom"
+            ? r_customRel.value.trim()
+            : r_relationship.value;
+
+    if (relationship === "") {
+        document.getElementById("msg").innerText =
+            "Please enter a custom relationship.";
+        return;
+    }
+
     const payload = {
         name: r_name.value.trim(),
         email: r_email.value.trim(),
-        relationship:
-            r_relationship.value === "custom"
-                ? r_customRel.value.trim()
-                : r_relationship.value,
+        relationship,
         frequency: r_frequency.value,
         timings: r_timings.value,
         timezone: r_timezone.value
@@ -459,7 +478,7 @@ function closeMessageLog() {
 }
 
 /* ============================================================
-   FLOWER SENDING
+   FLOWER SENDING (MATCHES FINAL BACKEND)
 ============================================================ */
 let CURRENT_FLOWER_RECIPIENT = null;
 
@@ -474,15 +493,19 @@ function closeFlowerModal() {
 }
 
 async function sendFlower() {
-    const flower = flowerType.value;
+    const rawFlower = flowerType.value;
     const note = flowerNote.value.trim();
-    const message = `${flower}${note ? " — " + note : ""}`;
+
+    // Build correct payload for backend
+    const payload = {
+        note: note ? `${rawFlower} — ${note}` : rawFlower
+    };
 
     const res = await fetch(`/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: message })
+        body: JSON.stringify(payload)
     });
 
     const data = await res.json();
@@ -496,7 +519,7 @@ async function sendFlower() {
 }
 
 /* ============================================================
-   STRIPE BILLING PORTAL (Manage Subscription)
+   BILLING PORTAL
 ============================================================ */
 document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const res = await fetch("/api/customer/subscription/portal", {
