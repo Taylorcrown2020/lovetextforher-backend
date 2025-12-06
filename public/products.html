@@ -46,6 +46,16 @@
             box-shadow: 0 10px 35px rgba(214,51,108,0.15);
         }
 
+        .single-image,
+        .dual-images img {
+            width: 100%;
+            max-height: 260px;
+            object-fit: contain;
+            border-radius: 12px;
+            background: #f1f1f1;
+            padding: 8px;
+        }
+
         .dual-images {
             display: flex;
             justify-content: center;
@@ -54,20 +64,6 @@
 
         .dual-images img {
             width: 50%;
-            max-height: 260px;
-            object-fit: contain;
-            border-radius: 12px;
-            background: #f1f1f1;
-            padding: 8px;
-        }
-
-        .single-image {
-            width: 100%;
-            max-height: 260px;
-            object-fit: contain;
-            border-radius: 12px;
-            background: #f1f1f1;
-            padding: 8px;
         }
 
         .name {
@@ -103,8 +99,7 @@
         }
 
         .btn-disabled {
-            background: #cccccc !important;
-            color: #666 !important;
+            background: #ccc !important;
             cursor: default !important;
         }
     </style>
@@ -121,9 +116,9 @@
 </div>
 
 <script>
-/* =======================================================
-   PRODUCTS
-======================================================= */
+/* --------------------------------------------------
+   PRODUCT DEFINITIONS
+-------------------------------------------------- */
 const PRODUCTS = {
     "free-trial": {
         id: "free-trial",
@@ -201,9 +196,9 @@ const PRODUCTS = {
     }
 };
 
-/* =======================================================
-   GET SUBSCRIPTION FROM BACKEND (Final authority)
-======================================================= */
+/* --------------------------------------------------
+   GET SUBSCRIPTION STATUS — EXACT BACKEND STRUCTURE
+-------------------------------------------------- */
 async function getSubscription() {
     try {
         const res = await fetch("/api/customer/subscription", {
@@ -212,61 +207,65 @@ async function getSubscription() {
         });
 
         if (!res.ok) return null;
-        return await res.json();
+        return await res.json(); // subscribed, current_plan, trial_active
     } catch {
         return null;
     }
 }
 
-/* =======================================================
-   SUBSCRIPTION BUTTON LOGIC — 100% MATCHES BACKEND
-======================================================= */
-function subscriptionButton(p, sub) {
-    if (!sub || !sub.subscribed) {
-        // no subscription or expired
+/* --------------------------------------------------
+   SUBSCRIPTION BUTTON LOGIC — 1:1 BACKEND MIRROR
+-------------------------------------------------- */
+function getButton(p, sub) {
+
+    const subscribed = sub?.subscribed === true;
+    const current = sub?.current_plan || "none";
+    const trialUsed = sub?.trial_active === false && current !== "trial";
+
+    /* -------- CASE 1: Not subscribed at all -------- */
+    if (!subscribed) {
         if (p.id === "free-trial") {
+            if (trialUsed) return `<button class="btn btn-disabled">Trial Used</button>`;
             return `<button class="btn btn-subscribe" onclick="subscribeNow('free-trial')">Start Free Trial</button>`;
         }
         return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Subscribe</button>`;
     }
 
-    const current = sub.current_plan;
-
-    // CURRENT PLAN
+    /* -------- CASE 2: CURRENT PLAN -------- */
     if (
         (current === "trial" && p.id === "free-trial") ||
         (current === "basic" && p.id === "love-basic") ||
         (current === "plus" && p.id === "love-plus")
     ) {
-        return `<button class="btn btn-subscribe btn-disabled">Current Plan</button>`;
+        return `<button class="btn btn-disabled">Current Plan</button>`;
     }
 
-    // TRIAL → UPGRADE
+    /* -------- CASE 3: TRIAL → UPGRADE -------- */
     if (current === "trial" && p.id !== "free-trial") {
-        return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Upgrade from Trial</button>`;
-    }
-
-    // BASIC → PLUS (upgrade)
-    if (current === "basic" && p.id === "love-plus") {
         return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Upgrade</button>`;
     }
 
-    // PLUS → BASIC (downgrade)
-    if (current === "plus" && p.id === "love-basic") {
-        return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Downgrade</button>`;
+    /* -------- CASE 4: BASIC → PLUS -------- */
+    if (current === "basic" && p.id === "love-plus") {
+        return `<button class="btn btn-subscribe" onclick="subscribeNow('love-plus')">Upgrade</button>`;
     }
 
-    // FREE TRIAL cannot be reused
+    /* -------- CASE 5: PLUS → BASIC -------- */
+    if (current === "plus" && p.id === "love-basic") {
+        return `<button class="btn btn-subscribe" onclick="subscribeNow('love-basic')">Downgrade</button>`;
+    }
+
+    /* -------- CASE 6: Free Trial unavailable -------- */
     if (p.id === "free-trial") {
-        return `<button class="btn btn-subscribe btn-disabled">Unavailable</button>`;
+        return `<button class="btn btn-disabled">Unavailable</button>`;
     }
 
     return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Change Plan</button>`;
 }
 
-/* =======================================================
+/* --------------------------------------------------
    RENDER PRODUCTS
-======================================================= */
+-------------------------------------------------- */
 async function loadProducts() {
     const sub = await getSubscription();
     const grid = document.getElementById("productGrid");
@@ -277,7 +276,7 @@ async function loadProducts() {
             : `<img src="${p.image}" class="single-image">`;
 
         const btn = p.subscription
-            ? subscriptionButton(p, sub)
+            ? getButton(p, sub)
             : `<button class="btn btn-add" onclick="addToCart('${p.id}')">Add to Cart</button>`;
 
         grid.innerHTML += `
@@ -291,9 +290,9 @@ async function loadProducts() {
     });
 }
 
-/* =======================================================
-   SUBSCRIBE NOW
-======================================================= */
+/* --------------------------------------------------
+   SUBSCRIBE NOW — Stripe Checkout
+-------------------------------------------------- */
 async function subscribeNow(productId) {
     const res = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -306,9 +305,9 @@ async function subscribeNow(productId) {
     if (data.url) window.location.href = data.url;
 }
 
-/* =======================================================
+/* --------------------------------------------------
    ADD TO CART
-======================================================= */
+-------------------------------------------------- */
 async function addToCart(id) {
     const p = PRODUCTS[id];
 
