@@ -841,7 +841,7 @@ app.post(
  ***************************************************************/
 app.get(
     "/api/customer/subscription/portal",
-  .global.__LT_authCustomer,
+  global.__LT_authCustomer,
     async (req, res) => {
         try {
             const q = await global.__LT_pool.query(
