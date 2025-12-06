@@ -48,10 +48,16 @@ app.post(
             // 1. Checkout complete → new subscription
             if (event.type === "checkout.session.completed") {
                 const session = event.data.object;
-                const subscriptionId = session.subscription;
+const subscriptionId = session.subscription;
 
-                const subscription =
-                    await stripe.subscriptions.retrieve(subscriptionId);
+if (!subscriptionId) {
+    console.log("⚠️ No subscription ID yet. Waiting for subscription.created event.");
+    return res.json({ received: true });
+}
+
+const subscription =
+    await stripe.subscriptions.retrieve(subscriptionId);
+
 
                 const customerId = Number(subscription.metadata.customer_id);
                 const plan = subscription.metadata.plan;
