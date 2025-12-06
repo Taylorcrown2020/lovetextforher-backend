@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <title>KPI Dashboard — LoveTextForHer</title>
 
-    <!-- Disable nav.js on this page -->
-    <script>
-        window.SKIP_NAV_JS = true;
-    </script>
+    <!-- Disable customer nav.js -->
+    <script> window.SKIP_NAV_JS = true; </script>
 
     <style>
         :root {
@@ -66,7 +64,7 @@
         }
         #navbar a:hover { color: var(--primary); }
 
-        /* PAGE HEADER */
+        /* HEADER */
         .page-header {
             max-width: var(--max-width);
             margin: 40px auto;
@@ -127,7 +125,7 @@
 
 <body>
 
-<!-- AUTH CHECK -->
+<!-- ADMIN AUTH CHECK -->
 <script>
 async function verifyAdmin() {
     try {
@@ -157,13 +155,13 @@ async function verifyAdmin() {
 }
 </script>
 
-<!-- STATIC NAVBAR -->
+<!-- NAVBAR -->
 <div id="navbar">
     <div id="navbar-inner">
         <div class="logo">LOVETEXTFORHER</div>
         <div>
             <a href="/admin.html">Dashboard</a>
-            <a href="/admin_users.html">Users</a>
+            <a href="/admin_users.html">Recipients</a>
             <a href="/admin_customers.html">Customers</a>
             <a href="/admin_kpis.html">KPIs</a>
             <a href="#" id="logout-admin">Logout</a>
@@ -171,7 +169,7 @@ async function verifyAdmin() {
     </div>
 </div>
 
-<!-- PAGE HEADER -->
+<!-- HEADER -->
 <div class="page-header">
     <h1 class="kpi-title">System KPIs</h1>
     <p class="kpi-subtitle">Live analytics for platform performance</p>
@@ -183,9 +181,9 @@ async function verifyAdmin() {
 </div>
 
 <script>
-// ---------------------------------------------------------------------
-// LOAD KPI DATA
-// ---------------------------------------------------------------------
+// ----------------------------------------------------------
+// LOAD KPI RESULTS FROM NEW BACKEND
+// ----------------------------------------------------------
 async function loadKPIs() {
     try {
         const res = await fetch("/api/admin/kpis", {
@@ -195,12 +193,13 @@ async function loadKPIs() {
 
         if (!res.ok) {
             document.getElementById("kpiGrid").innerHTML =
-                "<p style='text-align:center; color:red;'>Failed to load KPIs.</p>";
+                "<p style='text-align:center; color:red;'>Failed to load KPI data.</p>";
             return;
         }
 
         const k = await res.json();
 
+        // Builds correct response based on new KPI schema
         document.getElementById("kpiGrid").innerHTML = `
 
             <div class="kpi-card">
@@ -213,7 +212,7 @@ async function loadKPIs() {
                 <div class="kpi-number">Total: ${k.recipients.total}</div>
                 <div class="kpi-number">Active: ${k.recipients.active}</div>
                 <div class="kpi-number">Unsubscribed: ${k.recipients.unsubscribed}</div>
-                <div class="kpi-number">Growth 30d: ${k.recipients.netGrowth}</div>
+                <div class="kpi-number">30d Growth: ${k.recipients.netGrowth}</div>
             </div>
 
             <div class="kpi-card">
@@ -228,20 +227,18 @@ async function loadKPIs() {
                 <div class="kpi-number">Total Carts: ${k.carts.total}</div>
                 <div class="kpi-number">Active Carts: ${k.carts.active}</div>
                 <div class="kpi-number">Avg Cart Value: $${k.carts.avgCartValue.toFixed(2)}</div>
-                <div class="kpi-number">Recoverable: $${k.carts.recoverableRevenue.toFixed(2)}</div>
+                <div class="kpi-number">Recoverable Revenue: $${k.carts.recoverableRevenue.toFixed(2)}</div>
             </div>
         `;
-
     } catch (err) {
         document.getElementById("kpiGrid").innerHTML =
             "<p style='text-align:center; color:red;'>Error loading KPIs.</p>";
     }
 }
 
-
-// ---------------------------------------------------------------------
-// ADMIN LOGOUT
-// ---------------------------------------------------------------------
+// ----------------------------------------------------------
+// LOGOUT
+// ----------------------------------------------------------
 document.getElementById("logout-admin").addEventListener("click", async () => {
     await fetch("/api/admin/logout", {
         method: "POST",
@@ -250,10 +247,9 @@ document.getElementById("logout-admin").addEventListener("click", async () => {
     window.location.href = "/admin_login.html";
 });
 
-
-// ---------------------------------------------------------------------
-// INIT PAGE
-// ---------------------------------------------------------------------
+// ----------------------------------------------------------
+// INIT
+// ----------------------------------------------------------
 (async () => {
     const ok = await verifyAdmin();
     if (ok) loadKPIs();

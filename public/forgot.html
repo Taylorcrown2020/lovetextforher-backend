@@ -143,13 +143,29 @@
 
 <script>
 async function sendReset() {
-    await fetch("/api/reset/request", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ email: email.value.trim() })
-    });
+    const emailVal = email.value.trim();
+    const msgEl = document.getElementById("msg");
 
-    msg.innerText = "If that email exists, a reset link has been sent.";
+    msgEl.innerText = "";
+
+    if (!emailVal) {
+        msgEl.innerText = "Please enter your email.";
+        return;
+    }
+
+    try {
+        await fetch("/api/reset/request", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify({ email: emailVal })
+        });
+
+        // SECURITY: Always show same message, never reveal if email exists
+        msgEl.innerText = "If that email exists, a reset link has been sent ❤️";
+
+    } catch (err) {
+        msgEl.innerText = "Something went wrong. Try again.";
+    }
 }
 </script>
 

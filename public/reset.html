@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Set New Password ❤️</title>
 
-    <!-- Force public visitor navbar -->
+    <!-- Public navbar (no login required) -->
     <script>
         window.FORCE_PUBLIC_NAV = true;
     </script>
@@ -24,23 +24,29 @@
             font-family: "Inter", sans-serif;
             background: linear-gradient(135deg, #fff7fa, #f6f3ff);
             min-height: 100vh;
+            animation: fadeIn 0.4s ease-out;
         }
 
-        /* navbar placeholder */
         #navbar {
             width: 100%;
-            height: 80px;
+            height: 90px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .box {
             max-width: 420px;
-            margin: 120px auto;
-            background: rgba(255,255,255,0.70);
+            margin: 140px auto;
+            background: rgba(255,255,255,0.75);
             padding: 32px;
             border-radius: 18px;
             border: 1px solid #f8cde6;
-            box-shadow: 0 10px 35px rgba(214,51,108,0.15);
-            backdrop-filter: blur(12px);
+            box-shadow: 0 12px 38px rgba(214,51,108,0.18);
+            backdrop-filter: blur(14px);
+            animation: fadeIn 0.5s ease-out;
         }
 
         h2 {
@@ -48,6 +54,7 @@
             text-align: center;
             margin-bottom: 22px;
             font-weight: 800;
+            font-size: 28px;
         }
 
         input {
@@ -55,18 +62,20 @@
             padding: 12px 14px;
             margin-top: 12px;
             border: 2px solid #fbcfe8;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 15px;
+            background: white;
         }
 
         input:focus {
             outline: none;
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(214,51,108,0.25);
         }
 
         button {
             width: 100%;
-            padding: 14px;
+            padding: 15px;
             margin-top: 22px;
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             border: none;
@@ -74,14 +83,14 @@
             border-radius: 12px;
             font-weight: 700;
             font-size: 16px;
-            box-shadow: 0 8px 18px rgba(214,51,108,0.25);
+            box-shadow: 0 10px 26px rgba(214,51,108,0.25);
             cursor: pointer;
-            transition: 0.25s;
+            transition: 0.25s ease;
         }
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(214,51,108,0.35);
+            box-shadow: 0 14px 38px rgba(214,51,108,0.35);
         }
 
         #msg {
@@ -89,6 +98,7 @@
             margin-top: 15px;
             color: #c81e59;
             font-weight: 600;
+            min-height: 22px;
         }
     </style>
 </head>
@@ -108,9 +118,21 @@
 </div>
 
 <script>
+// ------------------------------------------------------------
+// Extract token from URL ?token=xxxx
+// ------------------------------------------------------------
 const urlParams = new URLSearchParams(window.location.search);
 const token = urlParams.get("token");
 
+// No token = invalid link
+if (!token) {
+    document.getElementById("msg").innerText =
+        "Invalid password reset link.";
+}
+
+// ------------------------------------------------------------
+// Reset password handler
+// ------------------------------------------------------------
 async function resetPassword() {
     const pw = document.getElementById("password").value.trim();
     const msg = document.getElementById("msg");
@@ -122,21 +144,35 @@ async function resetPassword() {
         return;
     }
 
-    const res = await fetch("/api/reset/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password: pw })
-    });
+    try {
+        const res = await fetch("/api/reset/confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, password: pw })
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    if (data.success) {
-        msg.innerText = "Password updated ❤️ Redirecting...";
-        setTimeout(() => window.location.href = "/login.html", 1500);
-    } else {
-        msg.innerText = data.error || "Invalid or expired link.";
+        if (data.success) {
+            msg.style.color = "green";
+            msg.innerText = "Password updated ❤️ Redirecting...";
+
+            setTimeout(() => {
+                window.location.href = "/login.html";
+            }, 1500);
+        } else {
+            msg.innerText = data.error || "Invalid or expired reset link.";
+        }
+
+    } catch (err) {
+        msg.innerText = "Network error. Please try again.";
     }
 }
+
+// Press ENTER to submit
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") resetPassword();
+});
 </script>
 
 </body>

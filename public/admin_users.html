@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Admin — Recipients</title>
 
-    <!-- Disable nav.js -->
+    <!-- Disable customer nav.js on admin pages -->
     <script> window.SKIP_NAV_JS = true; </script>
 
     <style>
@@ -15,7 +15,7 @@
             --secondary-light: #efeaff;
             --text-dark: #1a1a1a;
             --text-soft: #575757;
-            --card-bg: rgba(255, 255, 255, 0.55);
+            --card-bg: rgba(255,255,255,0.55);
             --max-width: 1200px;
         }
 
@@ -29,9 +29,10 @@
         body {
             background: linear-gradient(125deg, #fff7fa, #f8f6ff);
             min-height: 100vh;
-            padding-top: 100px;
+            padding-top: 110px;
         }
 
+        /* NAVBAR */
         #navbar {
             position: fixed;
             top: 0;
@@ -64,6 +65,7 @@
             color: var(--text-dark);
             font-weight: 500;
         }
+
         #navbar a:hover { color: var(--primary); }
 
         .container {
@@ -126,18 +128,17 @@ async function verifyAdmin() {
         }
 
         const data = await res.json();
-        if (!data?.admin?.role) {
+
+        if (!data?.admin || data.admin.role !== "admin") {
             window.location.href = "/admin_login.html";
         }
 
-    } catch (err) {
+    } catch {
         window.location.href = "/admin_login.html";
     }
 }
-
 verifyAdmin();
 </script>
-
 
 <!-- ADMIN NAVBAR -->
 <div id="navbar">
@@ -145,14 +146,13 @@ verifyAdmin();
         <div class="logo">LOVETEXTFORHER</div>
         <div>
             <a href="/admin.html">Dashboard</a>
-            <a href="/admin_users.html">Users</a>
+            <a href="/admin_users.html">Recipients</a>
             <a href="/admin_customers.html">Customers</a>
             <a href="/admin_kpis.html">KPIs</a>
             <a href="#" id="logout-admin">Logout</a>
         </div>
     </div>
 </div>
-
 
 <div class="container">
     <h2>Recipient Users</h2>
@@ -170,7 +170,9 @@ document.getElementById("logout-admin").addEventListener("click", async () => {
     window.location.href = "/admin_login.html";
 });
 
-// LOAD RECIPIENT USERS
+/* ------------------------------------------------------
+   LOAD RECIPIENT USERS (matches new server.js format)
+------------------------------------------------------ */
 async function loadUsers() {
     const res = await fetch("/api/admin/recipients", {
         credentials: "include",
@@ -182,34 +184,40 @@ async function loadUsers() {
         return;
     }
 
-    const users = await res.json();
+    const recipients = await res.json();
     const box = document.getElementById("list");
+
     box.innerHTML = "";
 
-    if (!Array.isArray(users) || users.length === 0) {
+    if (!Array.isArray(recipients) || recipients.length === 0) {
         box.innerHTML = `<p style="text-align:center; color:var(--text-soft);">No recipients found.</p>`;
         return;
     }
 
-    users.forEach(u => {
+    recipients.forEach(r => {
         box.innerHTML += `
-            <div class="user" id="user-${u.id}">
+            <div class="user" id="recipient-${r.id}">
+                <strong>${r.name}</strong>
 
-                <strong>${u.name}</strong>
-                <div><b>Email:</b> ${u.email}</div>
-                <div><b>Relationship:</b> ${u.relationship}</div>
-                <div><b>Frequency:</b> ${u.frequency}</div>
-                <div><b>Timings:</b> ${Array.isArray(u.timings) ? u.timings.join(", ") : u.timings}</div>
-                <div><b>Customer ID:</b> ${u.customer_id}</div>
-                <div><b>Next Run:</b> ${u.next_run || "Pending"}</div>
+                <div><b>Email:</b> ${r.email}</div>
+                <div><b>Relationship:</b> ${r.relationship}</div>
+                <div><b>Frequency:</b> ${r.frequency}</div>
+                <div><b>Timings:</b> ${r.timings}</div>
+                <div><b>Timezone:</b> ${r.timezone}</div>
+                <div><b>Customer ID:</b> ${r.customer_id}</div>
+                <div><b>Next Scheduled Run:</b> ${r.next_run || "Pending"}</div>
 
-                <button class="btn" onclick="sendNow(${u.id})">Send Message Now</button>
-                <button class="btn btn-delete" onclick="deleteUser(${u.id})">Delete Recipient</button>
+                <button class="btn" onclick="sendNow(${r.id})">Send Message Now</button>
+                <button class="btn btn-delete" onclick="deleteRecipient(${r.id})">Delete Recipient</button>
             </div>
         `;
     });
 }
 
+/* ------------------------------------------------------
+   ADMIN → TRIGGER A MESSAGE IMMEDIATELY
+   Matches: POST /api/admin/send-now/:id
+------------------------------------------------------ */
 async function sendNow(id) {
     const res = await fetch(`/api/admin/send-now/${id}`, {
         method: "POST",
@@ -219,13 +227,17 @@ async function sendNow(id) {
     const data = await res.json();
 
     if (data.success) {
-        alert("✅ Message sent!");
+        alert("✅ Message sent successfully!");
     } else {
         alert("❌ Error: " + (data.error || "Unknown error"));
     }
 }
 
-async function deleteUser(id) {
+/* ------------------------------------------------------
+   DELETE RECIPIENT
+   Matches: DELETE /api/admin/recipients/:id
+------------------------------------------------------ */
+async function deleteRecipient(id) {
     if (!confirm("Delete this recipient permanently?")) return;
 
     const res = await fetch(`/api/admin/recipients/${id}`, {
@@ -236,13 +248,13 @@ async function deleteUser(id) {
     const data = await res.json();
 
     if (data.success) {
-        document.getElementById(`user-${id}`).remove();
+        document.getElementById(`recipient-${id}`).remove();
     } else {
         alert("❌ Failed to delete recipient.");
     }
 }
 
-// INITIAL LOAD
+/* INIT */
 loadUsers();
 </script>
 

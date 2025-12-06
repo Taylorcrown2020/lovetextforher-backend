@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Payment Success ❤️</title>
 
-    <!-- Use normal nav.js rules (customer navbar will appear automatically if logged in) -->
+    <!-- Customer navbar loads normally -->
     <script>
         window.FORCE_PUBLIC_NAV = false;
     </script>
@@ -25,25 +25,31 @@
             min-height: 100vh;
             padding: 120px 20px;
             text-align: center;
+            animation: fadeIn 0.6s ease-out;
         }
 
-        /* Navbar placeholder for nav.js */
         #navbar {
             width: 100%;
             height: 95px;
         }
 
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
         h2 {
             color: var(--primary);
-            font-size: 32px;
+            font-size: 34px;
             font-weight: 800;
             margin-bottom: 15px;
         }
 
         p {
             color: var(--text-soft);
-            font-size: 16px;
-            margin-bottom: 30px;
+            font-size: 17px;
+            margin-bottom: 35px;
+            line-height: 1.5;
         }
 
         a {
@@ -71,11 +77,34 @@
 <div id="navbar"></div>
 
 <h2>❤️ Thank You for Your Purchase!</h2>
-<p>Your subscription or product is now active.</p>
+<p>
+    Your subscription or merchandise order has been processed successfully.<br>
+    You can now continue using all premium features.
+</p>
 
 <a href="/dashboard.html">Go to Dashboard</a>
 
 <script src="/js/nav.js" defer></script>
+
+<script>
+/* ---------------------------------------------------------
+   After successful purchase:
+   - Clear the cart on customer side (merch only)
+   - Refresh subscription data (Stripe webhook already updates DB)
+---------------------------------------------------------- */
+async function finalize() {
+    try {
+        await fetch("/api/cart/clear", {
+            method: "POST",
+            credentials: "include"
+        });
+    } catch (err) {
+        console.warn("Cart clear failed (probably no cart):", err);
+    }
+}
+
+finalize();
+</script>
 
 </body>
 </html>

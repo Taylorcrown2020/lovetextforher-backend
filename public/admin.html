@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Admin Dashboard — LoveTextForHer</title>
 
-    <!-- Disable nav.js because admin pages use their own navbar -->
+    <!-- Disable nav.js for admin because admin uses its own navbar -->
     <script> window.SKIP_NAV_JS = true; </script>
 
     <style>
@@ -32,12 +32,13 @@
         #navbar {
             position: fixed;
             top: 0;
+            left: 0;
             width: 100%;
             padding: 18px 0;
             background: rgba(255,255,255,0.65);
             backdrop-filter: blur(18px);
             box-shadow: 0 2px 14px rgba(0,0,0,0.05);
-            z-index: 1000;
+            z-index: 10000;
         }
 
         #navbar-inner {
@@ -107,6 +108,7 @@
             color: var(--primary);
             font-size: 22px;
             margin-bottom: 12px;
+            font-weight: 700;
         }
 
         .btn {
@@ -130,33 +132,31 @@
 async function verifyAdmin() {
     try {
         const res = await fetch("/api/admin/me", {
-            method: "GET",
             credentials: "include",
             cache: "no-store"
         });
 
-        if (!res.ok) {
-            window.location.href = "/admin_login.html";
-            return;
-        }
+        if (!res.ok) return window.location.href = "/admin_login.html";
 
         const data = await res.json();
-        if (!data?.admin?.role) {
-            window.location.href = "/admin_login.html";
-            return;
+
+        if (!data?.admin?.id || data?.admin?.role !== "admin") {
+            return window.location.href = "/admin_login.html";
         }
-    } catch (e) {
+    } catch (err) {
         window.location.href = "/admin_login.html";
     }
 }
 
-verifyAdmin();
+// Enforce admin access on page load
+document.addEventListener("DOMContentLoaded", verifyAdmin);
 </script>
 
-<!-- STATIC ADMIN NAVBAR -->
+<!-- ADMIN NAVBAR -->
 <div id="navbar">
     <div id="navbar-inner">
-        <div class="logo">LOVETEXTFORHER</div>
+        <div class="logo">ADMIN PANEL</div>
+
         <div>
             <a href="/admin.html">Dashboard</a>
             <a href="/admin_users.html">Users</a>
@@ -191,10 +191,12 @@ verifyAdmin();
 <!-- ADMIN LOGOUT -->
 <script>
 document.getElementById("logout-admin").addEventListener("click", async () => {
-    await fetch("/api/admin/logout", {
-        method: "POST",
-        credentials: "include"
-    });
+    try {
+        await fetch("/api/admin/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+    } catch {}
     window.location.href = "/admin_login.html";
 });
 </script>

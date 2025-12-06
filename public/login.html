@@ -115,8 +115,9 @@
 
 <body>
 
-<!-- Force nav.js to treat this page as PUBLIC -->
+<!-- Login must always show PUBLIC navbar -->
 <script> window.FORCE_PUBLIC_NAV = true; </script>
+<script src="/js/nav.js" defer></script>
 
 <div id="navbar"></div>
 
@@ -127,7 +128,7 @@
         <input id="email" type="email" placeholder="Email Address">
         <input id="password" type="password" placeholder="Password">
 
-        <button onclick="login()">Login</button>
+        <button id="login-btn">Login</button>
 
         <div class="links">
             <a href="/register.html">Create an account</a><br>
@@ -138,35 +139,16 @@
     </div>
 </div>
 
-<script src="/js/nav.js" defer></script>
-
 <script>
 /* ------------------------------------------------------
-   AUTO-REDIRECT IF ALREADY LOGGED IN
------------------------------------------------------- */
-document.addEventListener("DOMContentLoaded", async () => {
-    try {
-        const res = await fetch("/api/customer/me", {
-            credentials: "include"
-        });
-
-        if (res.ok) {
-            const user = await res.json();
-            if (user?.id) {
-                window.location.href = "/dashboard.html";
-            }
-        }
-    } catch {}
-});
-
-/* ------------------------------------------------------
-   LOGIN FUNCTION — FULLY COMPATIBLE WITH server.js
+   LOGIN FUNCTION — MATCHES NEW SERVER.JS EXACTLY
 ------------------------------------------------------ */
 async function login() {
+    const msg = document.getElementById("msg");
     msg.innerText = "";
 
-    const emailVal = email.value.trim();
-    const passVal = password.value.trim();
+    const emailVal = document.getElementById("email").value.trim();
+    const passVal = document.getElementById("password").value.trim();
 
     if (!emailVal || !passVal) {
         msg.innerText = "Enter email & password.";
@@ -193,6 +175,9 @@ async function login() {
         msg.innerText = "Network error. Try again.";
     }
 }
+
+/* Click button */
+document.getElementById("login-btn").addEventListener("click", login);
 
 /* Enter key triggers login */
 document.addEventListener("keydown", (e) => {

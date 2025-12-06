@@ -5,7 +5,7 @@
     <title>Your Cart — LoveTextForHer</title>
 
     <script>
-        // Use the shared customer navbar
+        // Customer page — nav.js will enforce login.
         window.FORCE_PUBLIC_NAV = false;
     </script>
 
@@ -24,7 +24,6 @@
             min-height: 100vh;
         }
 
-        /* CART WRAPPER */
         .cart-container {
             max-width: 900px;
             margin: 160px auto 50px;
@@ -34,7 +33,6 @@
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.75);
             box-shadow: 0 18px 45px rgba(0,0,0,0.08);
-            animation: fadeIn 0.5s ease-out;
         }
 
         .cart-title {
@@ -42,6 +40,7 @@
             font-weight: 800;
             color: var(--primary);
             margin-bottom: 25px;
+            text-align: center;
         }
 
         .item {
@@ -54,12 +53,6 @@
             padding: 18px 20px;
             margin-bottom: 14px;
             box-shadow: 0 10px 35px rgba(214,51,108,0.10);
-            transition: 0.25s;
-        }
-
-        .item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 16px 40px rgba(214,51,108,0.18);
         }
 
         .item-name {
@@ -79,8 +72,8 @@
             border-radius: 8px;
             color: white;
             margin-top: 6px;
-            display: inline-block;
             font-weight: 600;
+            display: inline-block;
         }
 
         .remove-btn {
@@ -110,17 +103,6 @@
             cursor: pointer;
             float: right;
             box-shadow: 0 10px 35px rgba(214,51,108,0.25);
-            transition: 0.25s;
-        }
-
-        .checkout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 14px 45px rgba(214,51,108,0.35);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -142,9 +124,9 @@
 </div>
 
 <script>
-// ----------------------------------------------------------------------
-// MASTER PRODUCT LIST (MATCHES products.html EXACTLY)
-// ----------------------------------------------------------------------
+/* ----------------------------------------------------------------------
+   MASTER PRODUCT CATALOG — Matches products.html + server.js 100%
+---------------------------------------------------------------------- */
 const PRODUCTS = {
     "free-trial": { name:"LoveText Free Trial (3 Days)", price:0, isSubscription:true },
     "love-basic": { name:"LoveText Basic Subscription", price:4.99, isSubscription:true },
@@ -158,9 +140,9 @@ const PRODUCTS = {
     "hat-heart": { name:"Heart Embroidered Hat", price:26.99, isSubscription:false }
 };
 
-// ----------------------------------------------------------------------
-// LOAD CART DATA
-// ----------------------------------------------------------------------
+/* ----------------------------------------------------------------------
+   LOAD CART
+---------------------------------------------------------------------- */
 async function loadCart() {
     const res = await fetch("/api/cart", { credentials:"include" });
 
@@ -170,52 +152,53 @@ async function loadCart() {
     }
 
     const data = await res.json();
-    const container = document.getElementById("cartItems");
+    const itemsEl = document.getElementById("cartItems");
     const totalEl = document.getElementById("cartTotal");
     const checkoutBtn = document.getElementById("checkoutBtn");
 
     if (!data.items || data.items.length === 0) {
-        container.innerHTML = `<p>Your cart is empty.</p>`;
+        itemsEl.innerHTML = `<p>Your cart is empty.</p>`;
         totalEl.innerHTML = "";
         checkoutBtn.style.display = "none";
         return;
     }
 
-    container.innerHTML = "";
+    itemsEl.innerHTML = "";
     let total = 0;
-    let subscriptionItem = null;
+    let subscriptionProduct = null;
 
     data.items.forEach(item => {
-        const product = PRODUCTS[item.productId];
-        if (!product) return;
+        const p = PRODUCTS[item.productId];
+        if (!p) return;
 
-        if (product.isSubscription) subscriptionItem = item.productId;
+        if (p.isSubscription) subscriptionProduct = item.productId;
 
-        container.innerHTML += `
+        itemsEl.innerHTML += `
             <div class="item">
                 <div>
-                    <div class="item-name">${product.name}</div>
-                    <div class="item-price">$${product.price.toFixed(2)}</div>
-                    ${product.isSubscription ? `<div class="sub-badge">Subscription</div>` : ""}
+                    <div class="item-name">${p.name}</div>
+                    <div class="item-price">$${p.price.toFixed(2)}</div>
+                    ${p.isSubscription ? `<div class="sub-badge">Subscription</div>` : ""}
                 </div>
+
                 <button class="remove-btn" onclick="removeItem('${item.productId}')">
                     Remove
                 </button>
             </div>
         `;
 
-        total += product.price;
+        total += p.price;
     });
 
     totalEl.innerHTML = `Total: $${total.toFixed(2)}`;
     checkoutBtn.style.display = "inline-block";
 
-    checkoutBtn.onclick = () => checkout(subscriptionItem, data.items);
+    checkoutBtn.onclick = () => checkout(subscriptionProduct, data.items);
 }
 
-// ----------------------------------------------------------------------
-// REMOVE ITEM
-// ----------------------------------------------------------------------
+/* ----------------------------------------------------------------------
+   REMOVE ITEM
+---------------------------------------------------------------------- */
 async function removeItem(productId) {
     await fetch("/api/cart/remove", {
         method: "POST",
@@ -227,18 +210,20 @@ async function removeItem(productId) {
     loadCart();
 }
 
-// ----------------------------------------------------------------------
-// CHECKOUT (Subscriptions OR Merch)
-// ----------------------------------------------------------------------
-async function checkout(subscriptionProductId, items) {
+/* ----------------------------------------------------------------------
+   CHECKOUT LOGIC
+---------------------------------------------------------------------- */
+async function checkout(subscriptionProduct, items) {
 
-    // ---------------------------- Subscription Checkout ------------------
-    if (subscriptionProductId) {
+    /* ----------------------------------------------------------
+       SUBSCRIPTION CHECKOUT
+    ---------------------------------------------------------- */
+    if (subscriptionProduct) {
         const res = await fetch("/api/stripe/checkout", {
             method: "POST",
-            credentials: "include",
+            credentials:"include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ productId: subscriptionProductId })
+            body: JSON.stringify({ productId: subscriptionProduct })
         });
 
         const data = await res.json();
@@ -247,17 +232,19 @@ async function checkout(subscriptionProductId, items) {
         return;
     }
 
-    // ---------------------------- Merchandise Checkout -------------------
-    const merchPayload = items.map(i => {
+    /* ----------------------------------------------------------
+       MERCH CHECKOUT
+    ---------------------------------------------------------- */
+    const merchList = items.map(i => {
         const p = PRODUCTS[i.productId];
         return { productId: i.productId, name: p.name, price: p.price };
     });
 
     const res = await fetch("/api/stripe/merch-checkout", {
         method: "POST",
-        credentials: "include",
+        credentials:"include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: merchPayload })
+        body: JSON.stringify({ items: merchList })
     });
 
     const data = await res.json();
@@ -266,9 +253,9 @@ async function checkout(subscriptionProductId, items) {
     else alert("Unable to start merchandise checkout.");
 }
 
-// ----------------------------------------------------------------------
-// INIT
-// ----------------------------------------------------------------------
+/* ----------------------------------------------------------------------
+   INIT
+---------------------------------------------------------------------- */
 loadCart();
 </script>
 

@@ -178,9 +178,9 @@ async function verifyAdmin() {
 
 
 <script>
-// -------------------------------------------------------------
-// LOAD CUSTOMERS
-// -------------------------------------------------------------
+// ---------------------------------------------
+// LOAD CUSTOMERS (Matches New Server Response)
+// ---------------------------------------------
 async function loadCustomers() {
     try {
         const res = await fetch("/api/admin/customers", {
@@ -207,10 +207,17 @@ async function loadCustomers() {
             box.innerHTML += `
                 <div class="customer" id="customer-${c.id}">
                     <strong>${c.email}</strong>
+
                     <div class="email">Customer ID: ${c.id}</div>
                     <div class="email">Name: ${c.name || "(none)"}</div>
-                    <div class="email">Has Subscription: ${c.has_subscription ? "Yes" : "No"}</div>
-                    <div class="email">Plan: ${c.current_plan}</div>
+
+                    <div class="email">
+                        Subscription: ${c.has_subscription ? "Active" : "None"}
+                    </div>
+
+                    <div class="email">
+                        Current Plan: ${c.current_plan || "None"}
+                    </div>
 
                     <button class="btn-delete" onclick="deleteCustomer(${c.id})">
                         Delete Customer
@@ -226,9 +233,9 @@ async function loadCustomers() {
 }
 
 
-// -------------------------------------------------------------
-// DELETE CUSTOMER
-// -------------------------------------------------------------
+// ---------------------------------------------
+// DELETE CUSTOMER (Backend also deletes recipients)
+// ---------------------------------------------
 async function deleteCustomer(id) {
     if (!confirm("Delete this customer AND all related recipients?")) return;
 
@@ -253,9 +260,9 @@ async function deleteCustomer(id) {
 }
 
 
-// -------------------------------------------------------------
+// ---------------------------------------------
 // LOGOUT ADMIN
-// -------------------------------------------------------------
+// ---------------------------------------------
 document.getElementById("logout-admin").addEventListener("click", async () => {
     await fetch("/api/admin/logout", {
         method: "POST",
@@ -265,9 +272,9 @@ document.getElementById("logout-admin").addEventListener("click", async () => {
 });
 
 
-// -------------------------------------------------------------
+// ---------------------------------------------
 // INIT PAGE
-// -------------------------------------------------------------
+// ---------------------------------------------
 (async () => {
     const ok = await verifyAdmin();
     if (ok) loadCustomers();

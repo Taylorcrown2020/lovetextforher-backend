@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <title>Admin Login — LoveTextForHer</title>
 
-    <!-- Disable nav.js on this page -->
+    <!-- Disable nav.js (admin pages run standalone) -->
     <script>
         window.SKIP_NAV_JS = true;
-        window.IS_ADMIN_LOGIN_PAGE = true;
     </script>
 
     <style>
@@ -36,7 +35,7 @@
             top: 0;
             width: 100%;
             padding: 18px 0;
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255,255,255,0.6);
             backdrop-filter: blur(18px);
             box-shadow: 0 2px 14px rgba(0,0,0,0.05);
             z-index: 1000;
@@ -64,7 +63,7 @@
             font-weight: 500;
         }
 
-        /* LOGIN UI */
+        /* LOGIN BOX */
         .login-wrapper {
             max-width: 420px;
             margin: 160px auto;
@@ -72,7 +71,7 @@
         }
 
         .login-card {
-            background: rgba(255, 255, 255, 0.55);
+            background: rgba(255,255,255,0.55);
             backdrop-filter: blur(20px);
             border-radius: 22px;
             padding: 40px;
@@ -98,12 +97,19 @@
             border: 2px solid #f7d2e4;
             background: #fff;
             font-size: 16px;
+            transition: 0.25s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(214,51,108,0.25);
         }
 
         .btn {
             width: 100%;
-            margin-top: 26px;
             padding: 14px;
+            margin-top: 26px;
             border-radius: 12px;
             border: none;
             cursor: pointer;
@@ -112,6 +118,12 @@
             color: white;
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             box-shadow: 0 10px 25px rgba(214, 51, 108, 0.25);
+            transition: 0.25s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 32px rgba(214,51,108,0.35);
         }
 
         #msg {
@@ -137,7 +149,6 @@
     </div>
 </div>
 
-
 <div class="login-wrapper">
     <div class="login-card">
 
@@ -146,7 +157,7 @@
         <input id="email" type="email" placeholder="Admin Email">
         <input id="password" type="password" placeholder="Password">
 
-        <button class="btn" onclick="adminLogin()">Login</button>
+        <button class="btn" id="login-btn">Login</button>
 
         <p id="msg"></p>
 
@@ -155,7 +166,7 @@
 
 <script>
 // --------------------------------------------------------
-// Auto-redirect if admin already logged in
+// Redirect if already logged in as admin
 // --------------------------------------------------------
 document.addEventListener("DOMContentLoaded", async () => {
     try {
@@ -174,15 +185,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch {}
 });
 
-
 // --------------------------------------------------------
-// Admin Login
+// Admin Login Handler — 100% matches new server.js
 // --------------------------------------------------------
 async function adminLogin() {
+    const msg = document.getElementById("msg");
     msg.innerText = "";
 
-    const emailVal = email.value.trim();
-    const passVal = password.value.trim();
+    const emailVal = document.getElementById("email").value.trim();
+    const passVal = document.getElementById("password").value.trim();
 
     if (!emailVal || !passVal) {
         msg.innerText = "Enter email and password.";
@@ -192,8 +203,8 @@ async function adminLogin() {
     try {
         const res = await fetch("/api/admin/login", {
             method: "POST",
-            headers: { "Content-Type":"application/json" },
             credentials: "include",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: emailVal, password: passVal })
         });
 
@@ -205,14 +216,16 @@ async function adminLogin() {
             msg.innerText = data.error || "Login failed.";
         }
 
-    } catch (err) {
+    } catch {
         msg.innerText = "Network error.";
     }
 }
 
+// Bind login button
+document.getElementById("login-btn").addEventListener("click", adminLogin);
 
-// Pressing ENTER submits form
-document.addEventListener("keydown", (e) => {
+// ENTER submits form
+document.addEventListener("keydown", e => {
     if (e.key === "Enter") adminLogin();
 });
 </script>

@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <title>Your Dashboard — LoveTextForHer</title>
 
+    <script>
+        // Dashboard is a protected customer page
+        // nav.js handles redirecting if not logged in
+    </script>
+
     <style>
         :root {
             --primary: #d6336c;
@@ -198,10 +203,10 @@
         </select>
 
         <select id="r_timezone">
-            <option value="America/Chicago">Central (America/Chicago)</option>
-            <option value="America/New_York">Eastern (America/New_York)</option>
-            <option value="America/Denver">Mountain (America/Denver)</option>
-            <option value="America/Los_Angeles">Pacific (America/Los_Angeles)</option>
+            <option value="America/Chicago">Central</option>
+            <option value="America/New_York">Eastern</option>
+            <option value="America/Denver">Mountain</option>
+            <option value="America/Los_Angeles">Pacific</option>
         </select>
 
         <button onclick="addRecipient()">Add Recipient</button>
@@ -256,28 +261,27 @@
 <script src="/js/nav.js" defer></script>
 
 <script>
-/* ----------------------------- */
-/* GLOBAL STATE */
-/* ----------------------------- */
+/* ----------------------------------------------------
+   GLOBAL STATE
+----------------------------------------------------- */
 let HAS_SUBSCRIPTION = false;
 let PLAN = "none";
 let ACTIVE_UNTIL = null;
 
-/* ----------------------------- */
-/* Show/Hide Custom Relationship */
-/* ----------------------------- */
+/* ----------------------------------------------------
+   Custom Relationship Field Toggle
+----------------------------------------------------- */
 document.getElementById("r_relationship").addEventListener("change", () => {
-    const customBox = document.getElementById("r_customRel");
-    customBox.style.display =
+    document.getElementById("r_customRel").style.display =
         r_relationship.value === "custom" ? "block" : "none";
 });
 
-
-/* ----------------------------- */
-/* SUBSCRIPTION BANNER           */
-/* ----------------------------- */
+/* ----------------------------------------------------
+   SUBSCRIPTION BANNER LOGIC
+----------------------------------------------------- */
 function updateSubscriptionBanner(data) {
     const banner = document.getElementById("subscriptionBanner");
+    banner.style.display = "block";
 
     const planName =
         data.plan === "basic" ? "LoveText Basic" :
@@ -285,56 +289,45 @@ function updateSubscriptionBanner(data) {
         data.plan === "trial" ? "Free Trial" :
         "None";
 
-    // no subscription at all
     if (!data.subscribed && !data.subscription_end) {
         banner.innerHTML = `
             You do not have a subscription.<br>
             <a href="/products.html">Choose a Plan</a>
         `;
-        banner.style.display = "block";
         return;
     }
 
-    // active trial
     if (data.is_trial) {
         const end = new Date(data.trial_end).toLocaleDateString();
-        banner.innerHTML =
-            `Your Free Trial is active until <strong>${end}</strong> ❤️`;
-        banner.style.display = "block";
+        banner.innerHTML = `Your Free Trial is active until <strong>${end}</strong> ❤️`;
         return;
     }
 
-    // canceled but active until date
     if (data.subscription_end) {
         const end = new Date(data.subscription_end).toLocaleDateString();
         banner.innerHTML = `
-            Your subscription is active until <strong>${end}</strong> ❤️<br>
-            You will continue to receive messages until this date.
+            Your subscription remains active until <strong>${end}</strong> ❤️<br>
+            You will continue to receive messages until then.
         `;
-        banner.style.display = "block";
         return;
     }
 
-    // fully active plan
     banner.innerHTML =
         `You currently have an active <strong>${planName}</strong> subscription 💖`;
-    banner.style.display = "block";
 }
 
-/* ----------------------------- */
-/* LOAD SUBSCRIPTION STATUS      */
-/* ----------------------------- */
+/* ----------------------------------------------------
+   LOAD SUBSCRIPTION STATUS
+----------------------------------------------------- */
 async function loadSubscriptionStatus() {
     try {
-        const res = await fetch("/api/customer/subscription", {
-            credentials: "include"
-        });
+        const res = await fetch("/api/customer/subscription", { credentials: "include" });
         if (!res.ok) return;
 
         const data = await res.json();
 
         HAS_SUBSCRIPTION =
-            data.subscribed === true ||
+            data.subscribed ||
             !!data.subscription_end;
 
         PLAN = data.plan;
@@ -346,31 +339,29 @@ async function loadSubscriptionStatus() {
             HAS_SUBSCRIPTION ? "block" : "none";
 
     } catch (err) {
-        console.error("Subscription Load Error", err);
+        console.error("SUB STATUS ERROR", err);
     }
 }
 
-/* ----------------------------- */
-/* LOAD RECIPIENTS               */
-/* ----------------------------- */
+/* ----------------------------------------------------
+   LOAD RECIPIENTS
+----------------------------------------------------- */
 async function loadRecipients() {
     try {
-        const res = await fetch("/api/customer/recipients", {
-            credentials: "include"
-        });
+        const res = await fetch("/api/customer/recipients", { credentials: "include" });
         const data = await res.json();
 
         const box = document.getElementById("recipients");
         box.innerHTML = "";
 
         if (!data.length) {
-            box.innerHTML =
-                `<p style="text-align:center; color:var(--text-soft);">No recipients yet.</p>`;
+            box.innerHTML = `<p style="text-align:center; color:var(--text-soft);">
+                You have no recipients yet.</p>`;
             return;
         }
 
         data.forEach(r => {
-            const timing = r.timings;   // FIXED
+            const timing = Array.isArray(r.timings) ? r.timings.join(", ") : r.timings;
 
             box.innerHTML += `
                 <div class="recipient-box">
@@ -387,27 +378,26 @@ async function loadRecipients() {
         });
 
     } catch (err) {
-        console.error("Recipient Load Error", err);
+        console.error("RECIPIENT LOAD ERROR", err);
     }
 }
 
-/* ----------------------------- */
-/* ADD RECIPIENT                 */
-/* ----------------------------- */
+/* ----------------------------------------------------
+   ADD RECIPIENT
+----------------------------------------------------- */
 async function addRecipient() {
     if (!HAS_SUBSCRIPTION) {
         msg.innerText = "You need a subscription.";
-        setTimeout(() => window.location = "/products.html", 1200);
         return;
     }
 
     const name = r_name.value.trim();
     const email = r_email.value.trim();
+    let relationship = r_relationship.value;
     const freq = r_frequency.value;
     const timing = r_timings.value;
     const timezone = r_timezone.value;
 
-    let relationship = r_relationship.value;
     if (relationship === "custom") {
         relationship = r_customRel.value.trim();
     }
@@ -444,9 +434,9 @@ async function addRecipient() {
     }
 }
 
-/* ----------------------------- */
-/* DELETE RECIPIENT              */
-/* ----------------------------- */
+/* ----------------------------------------------------
+   DELETE RECIPIENT
+----------------------------------------------------- */
 async function deleteRecipient(id) {
     if (!confirm("Delete this recipient?")) return;
 
@@ -458,35 +448,28 @@ async function deleteRecipient(id) {
     loadRecipients();
 }
 
-/* ----------------------------- */
-/* MESSAGE LOG MODAL             */
-/* ----------------------------- */
+/* ----------------------------------------------------
+   MESSAGE LOG
+----------------------------------------------------- */
 async function openMessageLog(id) {
     const modal = document.getElementById("messageLogModal");
     const content = document.getElementById("logContent");
 
     content.innerHTML = "<p>Loading...</p>";
 
-    const res = await fetch(`/api/message-log/${id}`, {
-        credentials: "include"
-    });
+    const res = await fetch(`/api/message-log/${id}`, { credentials: "include" });
     const data = await res.json();
-
-    content.innerHTML = "";
 
     if (!data.success) {
         content.innerHTML = "<p>Error loading messages.</p>";
     } else if (!data.messages.length) {
         content.innerHTML = "<p>No messages yet.</p>";
     } else {
+        content.innerHTML = "";
         data.messages.forEach(m => {
             content.innerHTML += `
-                <div style="
-                    padding:12px;
-                    margin-bottom:10px;
-                    border-radius:12px;
-                    background:#fafafa;
-                    border:1px solid #eee;">
+                <div style="padding:12px; margin-bottom:10px; border-radius:12px;
+                    background:#fafafa; border:1px solid #eee;">
                     <strong>${m.message_text}</strong>
                     <div style="font-size:12px; color:#777;">
                         ${new Date(m.sent_at).toLocaleString()}
@@ -503,9 +486,9 @@ function closeMessageLog() {
     document.getElementById("messageLogModal").style.display = "none";
 }
 
-/* ----------------------------- */
-/* FLOWER SENDER                 */
-/* ----------------------------- */
+/* ----------------------------------------------------
+   FLOWER SENDER
+----------------------------------------------------- */
 let CURRENT_FLOWER_RECIPIENT = null;
 
 function openFlowerModal(id) {
@@ -540,9 +523,9 @@ async function sendFlower() {
     }
 }
 
-/* ----------------------------- */
-/* MANAGE SUBSCRIPTION           */
-/* ----------------------------- */
+/* ----------------------------------------------------
+   MANAGE SUBSCRIPTION (Stripe Portal)
+----------------------------------------------------- */
 document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const res = await fetch("/api/customer/subscription/portal", {
         credentials: "include"
@@ -552,9 +535,9 @@ document.getElementById("manageSubBtn").addEventListener("click", async () => {
     if (data.url) window.location.href = data.url;
 });
 
-/* ----------------------------- */
-/* INIT                          */
-/* ----------------------------- */
+/* ----------------------------------------------------
+   INIT
+----------------------------------------------------- */
 document.addEventListener("DOMContentLoaded", () => {
     loadSubscriptionStatus();
     loadRecipients();
