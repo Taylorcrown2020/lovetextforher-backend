@@ -39,11 +39,10 @@ const PORT = process.env.PORT || 3000;
  *  Fixes cancellation not updating frontend
  *  Prevents overwritten plan after cancellation
  ********************************************************************/
-router.post(
+app.post(
     "/webhook",
     express.raw({ type: "application/json" }),
     async (req, res) => {
-
         const signature = req.headers["stripe-signature"];
 
         let event;
@@ -60,9 +59,6 @@ router.post(
 
         const data = event.data.object;
 
-        /************************************************************
-         * HELPER: Convert price ID → plan name
-         ************************************************************/
         const mapPrice = (price) => {
             const map = {
                 [STRIPE_PRICES["free-trial"]]: "trial",
@@ -73,9 +69,6 @@ router.post(
             return map[price] || null;
         };
 
-        /************************************************************
-         * SUB CREATED
-         ************************************************************/
         if (event.type === "customer.subscription.created") {
             const price = data.items.data[0].price.id;
             const plan = mapPrice(price);
@@ -94,18 +87,10 @@ router.post(
             );
         }
 
-        /************************************************************
-         * SUB UPDATED — PATCHED 🔥
-         * Prevents overwriting cancellation
-         ************************************************************/
         if (event.type === "customer.subscription.updated") {
             console.log("🔄 SUB UPDATED — status:", data.status);
 
-            // If canceled or scheduled to cancel → do NOT overwrite
-            if (
-                data.status === "canceled" ||
-                data.cancel_at_period_end === true
-            ) {
+            if (data.status === "canceled" || data.cancel_at_period_end === true) {
                 console.log("⛔ UPDATE IGNORED — subscription canceled");
                 return res.sendStatus(200);
             }
@@ -127,10 +112,6 @@ router.post(
             );
         }
 
-        /************************************************************
-         * SUB DELETED — PATCHED ✔
-         * Properly finalize cancellation
-         ************************************************************/
         if (event.type === "customer.subscription.deleted") {
             console.log("❌ SUB DELETED — ENDS:", data.ended_at);
 
@@ -149,6 +130,7 @@ router.post(
         res.sendStatus(200);
     }
 );
+
 
 /***************************************************************
  * EXPRESS MIDDLEWARE (after webhook)
