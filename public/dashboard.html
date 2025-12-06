@@ -260,6 +260,23 @@
 <script src="/js/nav.js" defer></script>
 
 <script>
+function computeSubscriptionState(data) {
+    const now = new Date();
+
+    const hasActiveSubscription =
+        data.has_subscription === true &&
+        data.subscription_end === null;
+
+    const canceledButStillActive =
+        data.subscription_end !== null &&
+        new Date(data.subscription_end) > now;
+
+    return {
+        active: hasActiveSubscription,
+        canceled: canceledButStillActive,
+        expired: data.subscription_end !== null && new Date(data.subscription_end) <= now
+    };
+}
 /* ----------------------------------------------------
    GLOBAL STATE
 ----------------------------------------------------- */
@@ -279,43 +296,34 @@ document.getElementById("r_relationship").addEventListener("change", () => {
    SUBSCRIPTION BANNER LOGIC (FIXED!)
 ----------------------------------------------------- */
 function updateSubscriptionBanner(data) {
+    const state = computeSubscriptionState(data);
     const banner = document.getElementById("subscriptionBanner");
     banner.style.display = "block";
 
-    const planName =
-        data.plan === "basic" ? "LoveText Basic" :
-        data.plan === "plus" ? "LoveText Plus" :
-        data.plan === "trial" ? "Free Trial" :
-        "None";
+    if (state.active) {
+        const planName =
+            data.plan === "basic" ? "LoveText Basic" :
+            data.plan === "plus" ? "LoveText Plus" :
+            data.plan === "trial" ? "Free Trial" :
+            "None";
 
-    // No subscription
-    if (!data.subscribed && !data.subscription_end) {
-        banner.innerHTML = `
-            You do not have a subscription.<br>
-            <a href="/products.html">Choose a Plan</a>
-        `;
+        banner.innerHTML =
+            `You currently have an active <strong>${planName}</strong> subscription 💖`;
         return;
     }
 
-    // Trial
-    if (data.is_trial) {
-        const end = new Date(data.trial_end).toLocaleDateString();
-        banner.innerHTML = `Your Free Trial is active until <strong>${end}</strong> ❤️`;
+    if (state.canceled) {
+        const endDate = new Date(data.subscription_end).toLocaleDateString();
+        banner.innerHTML =
+            `Your subscription will end on <strong>${endDate}</strong> ❤️`;
         return;
     }
 
-    // Canceled but active until date
-    if (data.subscription_end) {
-        const end = new Date(data.subscription_end).toLocaleDateString();
-        banner.innerHTML = `
-            Your subscription remains active until <strong>${end}</strong> ❤️
-        `;
-        return;
-    }
-
-    // Active subscription
-    banner.innerHTML =
-        `You currently have an active <strong>${planName}</strong> subscription 💖`;
+    // fully expired
+    banner.innerHTML = `
+        You do not have a subscription.<br>
+        <a href="/products.html">Choose a Plan</a>
+    `;
 }
 
 /* ----------------------------------------------------
@@ -328,7 +336,8 @@ async function loadSubscriptionStatus() {
 
         const data = await res.json();
 
-        HAS_SUBSCRIPTION = data.has_subscription;
+        const state = computeSubscriptionState(data);
+        HAS_SUBSCRIPTION = state.active || state.canceled;
         PLAN = data.current_plan;
         ACTIVE_UNTIL = data.subscription_end;
 
