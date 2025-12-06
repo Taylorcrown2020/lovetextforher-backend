@@ -1237,6 +1237,7 @@ app.post("/api/admin/send-now/:id", global.__LT_authAdmin, async (req, res) => {
 /***************************************************************
  *  RESEND EMAIL CLIENT
  ***************************************************************/
+const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 /***************************************************************
