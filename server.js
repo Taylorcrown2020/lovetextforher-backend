@@ -34,125 +34,119 @@ const PORT = process.env.PORT || 3000;
 /***************************************************************
  *  STRIPE WEBHOOK — MUST BE FIRST (RAW BODY)
  ***************************************************************/
-app.post(
-    "/api/stripe/webhook",
+/********************************************************************
+ *  STRIPE WEBHOOK — FINAL PATCHED VERSION  
+ *  Fixes cancellation not updating frontend
+ *  Prevents overwritten plan after cancellation
+ ********************************************************************/
+router.post(
+    "/webhook",
     express.raw({ type: "application/json" }),
     async (req, res) => {
-        if (!process.env.STRIPE_SECRET_KEY) {
-            return res.status(200).send("Stripe disabled");
-        }
 
-        const stripe = global.__LT_stripe;
-        const sig = req.headers["stripe-signature"];
+        const signature = req.headers["stripe-signature"];
 
         let event;
         try {
             event = stripe.webhooks.constructEvent(
                 req.body,
-                sig,
+                signature,
                 process.env.STRIPE_WEBHOOK_SECRET
             );
         } catch (err) {
-            console.error("❌ Webhook signature error:", err.message);
+            console.error("❌ Webhook signature failed:", err.message);
             return res.status(400).send(`Webhook Error: ${err.message}`);
         }
 
-        const db = global.__LT_pool;
-        const type = event.type;
-        const obj = event.data.object;
+        const data = event.data.object;
 
-        console.log(`⚡ WEBHOOK: ${type}`);
+        /************************************************************
+         * HELPER: Convert price ID → plan name
+         ************************************************************/
+        const mapPrice = (price) => {
+            const map = {
+                [STRIPE_PRICES["free-trial"]]: "trial",
+                [STRIPE_PRICES["love-basic"]]: "basic",
+                [STRIPE_PRICES["love-plus"]]: "plus",
+            };
 
-        try {
-            /***********************************************************
-             * CHECKOUT COMPLETED
-             * (Trial OR Paid subscription created fresh)
-             ***********************************************************/
-            if (type === "checkout.session.completed") {
-                const customerId = obj.customer;
-                const subId = obj.subscription;
-                if (!subId) return res.json({ received: true });
+            return map[price] || null;
+        };
 
-                const sub = await stripe.subscriptions.retrieve(subId);
-                const priceId = sub.items.data[0].price.id;
+        /************************************************************
+         * SUB CREATED
+         ************************************************************/
+        if (event.type === "customer.subscription.created") {
+            const price = data.items.data[0].price.id;
+            const plan = mapPrice(price);
 
-                let plan = "none";
-                if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
-                if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
-                if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+            console.log("⚡ SUB CREATED:", plan);
 
-                // trial_end exists only for trial
-                const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
-
-                await db.query(`
-                    UPDATE customers
-                    SET 
-                        has_subscription = true,
-                        current_plan = $1,
-                        stripe_subscription_id = $2,
-                        stripe_customer_id = $3,
-                        trial_active = ($1 = 'trial'),
-                        trial_end = $4,
-                        subscription_end = NULL
-                    WHERE stripe_customer_id = $3
-                `, [plan, subId, customerId, trialEnd]);
-
-                console.log(`🎉 Subscription started: ${plan}`);
-            }
-
-            /***********************************************************
-             * SUBSCRIPTION UPDATED (renewal / price change)
-             ***********************************************************/
-            if (type === "customer.subscription.updated") {
-                const customerId = obj.customer;
-                const priceId = obj.items.data[0].price.id;
-
-                let plan = "none";
-                if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
-                if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
-                if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
-
-                await db.query(`
-                    UPDATE customers
-                    SET
-                        has_subscription = true,
-                        current_plan = $1,
-                        subscription_end = NULL
-                    WHERE stripe_customer_id=$2
-                `, [plan, customerId]);
-
-                console.log(`🔄 Subscription updated: ${plan}`);
-            }
-
-            /***********************************************************
-             * SUBSCRIPTION CANCELED
-             ***********************************************************/
-            if (type === "customer.subscription.deleted") {
-                const customerId = obj.customer;
-
-                const activeUntil = obj.cancel_at_period_end
-                    ? new Date(obj.current_period_end * 1000)
-                    : null; // canceled immediately
-
-                await db.query(`
-                    UPDATE customers
-                    SET 
-                        has_subscription = false,
-                        current_plan = 'none',
-                        stripe_subscription_id = NULL,
-                        trial_active = false,
-                        subscription_end = $1
-                    WHERE stripe_customer_id=$2
-                `, [activeUntil, customerId]);
-
-                console.log("❌ Subscription canceled");
-            }
-
-        } catch (err) {
-            console.error("❌ Webhook handler error:", err);
+            await global.__LT_pool.query(
+                `
+                UPDATE customers 
+                SET has_subscription = TRUE,
+                    current_plan = $1,
+                    subscription_end = NULL
+                WHERE stripe_customer_id = $2
+                `,
+                [plan, data.customer]
+            );
         }
 
-        return res.json({ received: true });
+        /************************************************************
+         * SUB UPDATED — PATCHED 🔥
+         * Prevents overwriting cancellation
+         ************************************************************/
+        if (event.type === "customer.subscription.updated") {
+            console.log("🔄 SUB UPDATED — status:", data.status);
+
+            // If canceled or scheduled to cancel → do NOT overwrite
+            if (
+                data.status === "canceled" ||
+                data.cancel_at_period_end === true
+            ) {
+                console.log("⛔ UPDATE IGNORED — subscription canceled");
+                return res.sendStatus(200);
+            }
+
+            const price = data.items.data[0].price.id;
+            const plan = mapPrice(price);
+
+            console.log("🔄 ACTIVE UPDATE — plan:", plan);
+
+            await global.__LT_pool.query(
+                `
+                UPDATE customers 
+                SET has_subscription = TRUE,
+                    current_plan = $1,
+                    subscription_end = NULL
+                WHERE stripe_customer_id = $2
+                `,
+                [plan, data.customer]
+            );
+        }
+
+        /************************************************************
+         * SUB DELETED — PATCHED ✔
+         * Properly finalize cancellation
+         ************************************************************/
+        if (event.type === "customer.subscription.deleted") {
+            console.log("❌ SUB DELETED — ENDS:", data.ended_at);
+
+            await global.__LT_pool.query(
+                `
+                UPDATE customers
+                SET has_subscription = FALSE,
+                    current_plan = NULL,
+                    subscription_end = to_timestamp($1)
+                WHERE stripe_customer_id = $2
+                `,
+                [data.ended_at, data.customer]
+            );
+        }
+
+        res.sendStatus(200);
     }
 );
 
