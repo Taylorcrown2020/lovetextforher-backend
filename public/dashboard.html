@@ -5,7 +5,7 @@
     <title>Your Dashboard — LoveTextForHer</title>
 
     <script>
-        // Protected customer page — nav.js handles session/auth
+        // Protected customer page — nav.js handles authentication
     </script>
 
     <style>
@@ -260,66 +260,50 @@
 <script src="/js/nav.js" defer></script>
 
 <script>
-function computeSubscriptionState(data) {
+
+/* ----------------------------------------------------
+   MATCHES NEW SERVER & PRODUCTS LOGIC
+----------------------------------------------------- */
+function hasActiveAccess(data) {
+    if (!data) return false;
+
     const now = new Date();
 
-    const hasActiveSubscription =
-        data.has_subscription === true &&
-        data.subscription_end === null;
+    // active subscription
+    if (data.has_subscription && data.subscription_end === null) return true;
 
-    const canceledButStillActive =
-        data.subscription_end !== null &&
-        new Date(data.subscription_end) > now;
+    // canceled but active until
+    if (data.subscription_end && new Date(data.subscription_end) > now) return true;
 
-    return {
-        active: hasActiveSubscription,
-        canceled: canceledButStillActive,
-        expired: data.subscription_end !== null && new Date(data.subscription_end) <= now
-    };
+    return false;
 }
-/* ----------------------------------------------------
-   GLOBAL STATE
------------------------------------------------------ */
-let HAS_SUBSCRIPTION = false;
-let PLAN = "none";
-let ACTIVE_UNTIL = null;
 
 /* ----------------------------------------------------
-   Custom Relationship Field Toggle
------------------------------------------------------ */
-document.getElementById("r_relationship").addEventListener("change", () => {
-    document.getElementById("r_customRel").style.display =
-        r_relationship.value === "custom" ? "block" : "none";
-});
-
-/* ----------------------------------------------------
-   SUBSCRIPTION BANNER LOGIC (FIXED!)
+   SUBSCRIPTION BANNER
 ----------------------------------------------------- */
 function updateSubscriptionBanner(data) {
-    const state = computeSubscriptionState(data);
     const banner = document.getElementById("subscriptionBanner");
+    const active = hasActiveAccess(data);
+
     banner.style.display = "block";
 
-    if (state.active) {
+    if (active) {
         const planName =
-            data.plan === "basic" ? "LoveText Basic" :
-            data.plan === "plus" ? "LoveText Plus" :
-            data.plan === "trial" ? "Free Trial" :
-            "None";
+            data.current_plan === "basic" ? "LoveText Basic" :
+            data.current_plan === "plus" ? "LoveText Plus" :
+            data.current_plan === "trial" ? "Free Trial" :
+            "Subscription";
 
-        banner.innerHTML =
-            `You currently have an active <strong>${planName}</strong> subscription 💖`;
+        banner.innerHTML = `You currently have an active <strong>${planName}</strong> subscription 💖`;
         return;
     }
 
-    if (state.canceled) {
-        const endDate = new Date(data.subscription_end).toLocaleDateString();
-        banner.innerHTML =
-            `Your subscription will end on <strong>${endDate}</strong> ❤️`;
+    if (data.subscription_end) {
+        const end = new Date(data.subscription_end).toLocaleDateString();
+        banner.innerHTML = `Your subscription will end on <strong>${end}</strong> ❤️`;
         return;
     }
 
-    // fully expired
     banner.innerHTML = `
         You do not have a subscription.<br>
         <a href="/products.html">Choose a Plan</a>
@@ -327,8 +311,10 @@ function updateSubscriptionBanner(data) {
 }
 
 /* ----------------------------------------------------
-   LOAD SUBSCRIPTION STATUS (FIXED!)
+   LOAD SUBSCRIPTION STATUS
 ----------------------------------------------------- */
+let HAS_SUBSCRIPTION = false;
+
 async function loadSubscriptionStatus() {
     try {
         const res = await fetch("/api/customer/subscription", { credentials: "include" });
@@ -336,18 +322,9 @@ async function loadSubscriptionStatus() {
 
         const data = await res.json();
 
-        const state = computeSubscriptionState(data);
-        HAS_SUBSCRIPTION = state.active || state.canceled;
-        PLAN = data.current_plan;
-        ACTIVE_UNTIL = data.subscription_end;
+        HAS_SUBSCRIPTION = hasActiveAccess(data);
 
-        updateSubscriptionBanner({
-            subscribed: data.has_subscription,
-            plan: data.current_plan,
-            is_trial: data.trial_active,
-            trial_end: data.trial_end,
-            subscription_end: data.subscription_end
-        });
+        updateSubscriptionBanner(data);
 
         document.getElementById("manageSubBtn").style.display =
             HAS_SUBSCRIPTION ? "block" : "none";
@@ -375,9 +352,9 @@ async function loadRecipients() {
         }
 
         data.forEach(r => {
-            const timing = Array.isArray(r.timings) ? r.timings.join(", ") : r.timings;
+            const timing = r.timings;
 
-            box.innerHTML += `
+            boxinnerHTML += `
                 <div class="recipient-box">
                     <strong>${r.name}</strong> (${r.relationship})
                     <p>Email: ${r.email}</p>
@@ -391,8 +368,8 @@ async function loadRecipients() {
             `;
         });
 
-    } catch (err) {
-        console.error("RECIPIENT LOAD ERROR", err);
+    } catch (error) {
+        console.error("RECIPIENT LOAD ERROR", error);
     }
 }
 
@@ -405,43 +382,26 @@ async function addRecipient() {
         return;
     }
 
-    const name = r_name.value.trim();
-    const email = r_email.value.trim();
-    let relationship = r_relationship.value;
-    const freq = r_frequency.value;
-    const timing = r_timings.value;
-    const timezone = r_timezone.value;
-
-    if (relationship === "custom") {
-        relationship = r_customRel.value.trim();
-    }
-
-    if (!name || !email || !relationship) {
-        msg.innerText = "Please fill out all fields.";
-        return;
-    }
+    const payload = {
+        name: r_name.value.trim(),
+        email: r_email.value.trim(),
+        relationship: r_relationship.value === "custom" ? r_customRel.value.trim() : r_relationship.value,
+        frequency: r_frequency.value,
+        timings: r_timings.value,
+        timezone: r_timezone.value
+    };
 
     const res = await fetch("/api/customer/recipients", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            name,
-            email,
-            relationship,
-            frequency: freq,
-            timings: timing,
-            timezone
-        })
+        body: JSON.stringify(payload)
     });
 
     const data = await res.json();
 
     if (data.success) {
         msg.innerText = "";
-        r_name.value = "";
-        r_email.value = "";
-        r_customRel.value = "";
         loadRecipients();
     } else {
         msg.innerText = data.error || "Error adding recipient.";
@@ -463,7 +423,7 @@ async function deleteRecipient(id) {
 }
 
 /* ----------------------------------------------------
-   MESSAGE LOG
+   MESSAGE LOG MODAL
 ----------------------------------------------------- */
 async function openMessageLog(id) {
     const modal = document.getElementById("messageLogModal");
@@ -479,18 +439,15 @@ async function openMessageLog(id) {
     } else if (!data.messages.length) {
         content.innerHTML = "<p>No messages yet.</p>";
     } else {
-        content.innerHTML = "";
-        data.messages.forEach(m => {
-            content.innerHTML += `
-                <div style="padding:12px; margin-bottom:10px; border-radius:12px;
-                    background:#fafafa; border:1px solid #eee;">
-                    <strong>${m.message_text}</strong>
-                    <div style="font-size:12px; color:#777;">
-                        ${new Date(m.sent_at).toLocaleString()}
-                    </div>
+        content.innerHTML = data.messages.map(m => `
+            <div style="padding:12px; margin-bottom:10px; border-radius:12px;
+                background:#fafafa; border:1px solid #eee;">
+                <strong>${m.message_text}</strong>
+                <div style="font-size:12px; color:#777;">
+                    ${new Date(m.sent_at).toLocaleString()}
                 </div>
-            `;
-        });
+            </div>
+        `).join("");
     }
 
     modal.style.display = "flex";
@@ -507,7 +464,7 @@ let CURRENT_FLOWER_RECIPIENT = null;
 
 function openFlowerModal(id) {
     CURRENT_FLOWER_RECIPIENT = id;
-    flowerNote.value = "";
+    document.getElementById("flowerNote").value = "";
     document.getElementById("flowerModal").style.display = "flex";
 }
 
@@ -544,8 +501,8 @@ document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const res = await fetch("/api/customer/subscription/portal", {
         credentials: "include"
     });
-    const data = await res.json();
 
+    const data = await res.json();
     if (data.url) window.location.href = data.url;
 });
 

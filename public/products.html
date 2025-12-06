@@ -105,6 +105,7 @@
             background: linear-gradient(90deg, #8b5cf6, #d6336c);
             color: white;
         }
+        
     </style>
 </head>
 
@@ -120,7 +121,7 @@
 
 <script>
 /* --------------------------------------------------
-   PRODUCTS — EXACT MATCH TO BACKEND PRODUCT IDs
+   PRODUCT DEFINITIONS
 -------------------------------------------------- */
 const PRODUCTS = {
     "free-trial": {
@@ -200,7 +201,7 @@ const PRODUCTS = {
 };
 
 /* --------------------------------------------------
-   LOAD SUBSCRIPTION STATUS (MATCHES BACKEND EXACTLY)
+   GET SUBSCRIPTION STATUS
 -------------------------------------------------- */
 async function getSubscription() {
     try {
@@ -218,7 +219,7 @@ async function getSubscription() {
             plan: data.current_plan,
             isTrial: data.trial_active,
             trialEnd: data.trial_end,
-            subEnd: data.subscription_end
+            subEnd: data.subscription_end // string OR null
         };
 
     } catch {
@@ -227,10 +228,26 @@ async function getSubscription() {
 }
 
 /* --------------------------------------------------
-   RENDER PRODUCT LIST
+   CORRECT "HAS ACCESS" CHECK
+-------------------------------------------------- */
+function hasActiveAccess(sub) {
+    if (!sub) return false;
+
+    // Active subscription
+    if (sub.has === true) return true;
+
+    // Canceled but active until a date
+    if (sub.subEnd && sub.subEnd !== null && sub.subEnd !== "null") return true;
+
+    return false;
+}
+
+/* --------------------------------------------------
+   RENDER PRODUCTS
 -------------------------------------------------- */
 async function loadProducts() {
     const sub = await getSubscription();
+    const access = hasActiveAccess(sub);
 
     const grid = document.getElementById("productGrid");
 
@@ -248,21 +265,19 @@ async function loadProducts() {
         /* ---------- SUBSCRIPTION PRODUCTS ---------- */
         if (p.subscription) {
 
-            const hasAccess = sub?.has || sub?.subEnd;
-
-            // No subscription at all
-            if (!hasAccess) {
+            if (!access) {
+                // No subscription yet
                 if (p.id === "free-trial") {
                     btn = `<button class="btn btn-subscribe"
-                            onclick="subscribeNow('free-trial')">Start Free Trial</button>`;
+                                    onclick="subscribeNow('free-trial')">Start Free Trial</button>`;
                 } else {
                     btn = `<button class="btn btn-subscribe"
-                            onclick="subscribeNow('${p.id}')">Subscribe</button>`;
+                                    onclick="subscribeNow('${p.id}')">Subscribe</button>`;
                 }
             }
 
             else {
-                // Current plan
+                // CURRENT PLAN
                 if (sub.plan === "basic" && p.id === "love-basic") {
                     btn = `<button class="btn btn-subscribe" disabled>Current Plan</button>`;
                 }
@@ -273,33 +288,35 @@ async function loadProducts() {
                     btn = `<button class="btn btn-subscribe" disabled>Current Plan</button>`;
                 }
 
-                // Upgrades / downgrades
+                // UPGRADE / DOWNGRADE
                 else if (sub.plan === "basic" && p.id === "love-plus") {
                     btn = `<button class="btn btn-subscribe"
-                            onclick="subscribeNow('love-plus')">Upgrade</button>`;
+                                    onclick="subscribeNow('love-plus')">Upgrade</button>`;
                 }
                 else if (sub.plan === "plus" && p.id === "love-basic") {
                     btn = `<button class="btn btn-subscribe"
-                            onclick="subscribeNow('love-basic')">Downgrade</button>`;
-                }
-                else if (sub.plan === "trial" && p.id !== "free-trial") {
-                    btn = `<button class="btn btn-subscribe"
-                            onclick="subscribeNow('${p.id}')">Upgrade from Trial</button>`;
+                                    onclick="subscribeNow('love-basic')">Downgrade</button>`;
                 }
 
-                // Trial already used
+                // TRIAL → ANY PLAN
+                else if (sub.plan === "trial" && p.id !== "free-trial") {
+                    btn = `<button class="btn btn-subscribe"
+                                    onclick="subscribeNow('${p.id}')">Upgrade from Trial</button>`;
+                }
+
+                // Trial cannot be reused
                 else if (p.id === "free-trial") {
                     btn = `<button class="btn btn-subscribe" disabled>Unavailable</button>`;
                 }
 
                 else {
                     btn = `<button class="btn btn-subscribe"
-                            onclick="subscribeNow('${p.id}')">Change Plan</button>`;
+                                    onclick="subscribeNow('${p.id}')">Change Plan</button>`;
                 }
             }
         }
 
-        /* ---------- MERCH ITEMS ---------- */
+        /* ---------- MERCH ---------- */
         else {
             btn = `<button class="btn btn-add"
                         onclick="addToCart('${p.id}')">Add to Cart</button>`;
@@ -317,7 +334,7 @@ async function loadProducts() {
 }
 
 /* --------------------------------------------------
-   SUBSCRIBE (Stripe Checkout)
+   CHECKOUT
 -------------------------------------------------- */
 async function subscribeNow(productId) {
     const res = await fetch("/api/stripe/checkout", {
@@ -333,7 +350,7 @@ async function subscribeNow(productId) {
 }
 
 /* --------------------------------------------------
-   ADD TO CART
+   ADD MERCH TO CART
 -------------------------------------------------- */
 async function addToCart(productId) {
     const product = PRODUCTS[productId];
