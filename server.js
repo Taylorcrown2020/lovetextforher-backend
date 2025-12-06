@@ -9,6 +9,11 @@
  *  ✔ DB-safe, Stripe-safe, dashboard-safe
  ***************************************************************/
 
+/***************************************************************
+ *  LoveTextForHer — BACKEND (PART 1 OF 7)
+ *  FINAL VERSION (2025)
+ ***************************************************************/
+
 process.env.TZ = "UTC";
 require("dotenv").config();
 
@@ -20,8 +25,8 @@ const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const cron = require("node-cron");
-const { Resend } = require("resend");
+const cron = require("node-cron");   // <-- KEEP THIS
+// ❌ REMOVED duplicate `const { Resend } = require("resend");`
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1229,8 +1234,6 @@ app.post("/api/admin/send-now/:id", global.__LT_authAdmin, async (req, res) => {
  *      ✔ Password reset system
  ***************************************************************/
 
-const { Resend } = require("resend");
-
 /***************************************************************
  *  RESEND EMAIL CLIENT
  ***************************************************************/
@@ -1514,8 +1517,6 @@ app.post("/api/stripe/merch-checkout", global.__LT_authCustomer, async (req, res
  *      ✔ Server start
  ***************************************************************/
 
-const cron = require("node-cron");
-
 /***************************************************************
  *  NEXT DELIVERY TIME CALCULATOR
  ***************************************************************/
@@ -1607,7 +1608,7 @@ cron.schedule("* * * * *", async () => {
                     message
                 );
 
-                // SET NEXT DELIVERY TIME
+                // CALCULATE NEXT DELIVERY
                 const next = calculateNextDelivery(r.frequency, r.timings);
 
                 await client.query(`
