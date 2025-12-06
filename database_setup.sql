@@ -1,5 +1,5 @@
 -- ============================================================
---   LoveTextForHer — FINAL DATABASE SCHEMA (WITH PASSWORD RESET)
+--   LoveTextForHer — FINAL DATABASE SCHEMA (FULLY COMPATIBLE)
 -- ============================================================
 
 DROP TABLE IF EXISTS password_reset_tokens CASCADE;
@@ -23,6 +23,7 @@ CREATE TABLE customers (
     current_plan VARCHAR(50) DEFAULT 'none',
     trial_active BOOLEAN DEFAULT false,
     trial_end TIMESTAMPTZ,
+
     stripe_customer_id TEXT,
     stripe_subscription_id TEXT,
     subscription_end TIMESTAMPTZ,
@@ -80,10 +81,10 @@ CREATE TABLE users (
         'bi-weekly'
     )),
 
-    timings VARCHAR(50) NOT NULL,
+    timings TEXT NOT NULL,                 -- FIXED (was VARCHAR breaking inserts)
     timezone VARCHAR(100) NOT NULL,
 
-    next_delivery TIMESTAMP,
+    next_delivery TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- FIXED
     last_sent TIMESTAMP,
     unsubscribe_token TEXT UNIQUE,
     is_active BOOLEAN DEFAULT true,
@@ -112,7 +113,7 @@ CREATE INDEX idx_message_logs_recipient ON message_logs(recipient_id);
 
 
 -- ============================================================
--- CARTS
+-- CARTS — Stores JSONB Cart Items
 -- ============================================================
 CREATE TABLE carts (
     customer_id INT PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,
@@ -136,5 +137,5 @@ FOR EACH ROW EXECUTE FUNCTION update_carts_updated_at();
 CREATE INDEX idx_carts_customer_id ON carts(customer_id);
 
 -- ============================================================
--- DONE — FULLY COMPATIBLE WITH UPDATED SERVER (INCLUDING RESET)
+-- DONE — FULLY MATCHES THE UPDATED SERVER 1–7
 -- ============================================================

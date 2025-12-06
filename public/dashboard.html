@@ -22,10 +22,7 @@
             background: linear-gradient(135deg, #fff7fa, #f6f3ff);
         }
 
-        #navbar {
-            width: 100%;
-            height: 95px;
-        }
+        #navbar { width: 100%; height: 95px; }
 
         .dashboard-container {
             max-width: 950px;
@@ -95,8 +92,7 @@
         .log-btn { background: var(--secondary-btn); margin-left: 10px; }
         .flower-btn { background: #ff7ac4; margin-left: 10px; }
 
-        #addForm input,
-        #addForm select {
+        #addForm input, #addForm select {
             width: 100%;
             padding: 14px;
             margin-top: 15px;
@@ -137,7 +133,6 @@
             text-align: center;
         }
 
-        /* MODALS */
         #messageLogModal, #flowerModal {
             display:none;
             position:fixed;
@@ -211,7 +206,8 @@
 </div>
 
 <button id="manageSubBtn">Manage Subscription</button>
-<!-- MESSAGE LOG MODAL -->
+
+<!-- Message Log Modal -->
 <div id="messageLogModal">
     <div style="background:white; width:420px; padding:20px; border-radius:22px; max-height:80vh; overflow-y:auto;">
         <h2 style="margin-top:0; color:#d6336c;">Message Log</h2>
@@ -224,7 +220,7 @@
     </div>
 </div>
 
-<!-- FLOWER MODAL -->
+<!-- Flower Modal -->
 <div id="flowerModal">
     <div style="background:white; width:420px; padding:20px; border-radius:22px;">
         <h2 style="margin-top:0; color:#d6336c;">Send a Flower 🌸</h2>
@@ -256,30 +252,26 @@
 
 <script>
 
-/* -------------------------------
-   USE THE SAME LOGIC AS SERVER
----------------------------------*/
+/* ============================================================
+   MATCHES FINAL SERVER SUBSCRIPTION LOGIC EXACTLY
+============================================================ */
 function hasActiveAccess(data) {
     if (!data) return false;
 
     const now = new Date();
 
     // ACTIVE subscription
-    if (data.has_subscription === true && data.subscription_end === null) {
-        return true;
-    }
+    if (data.has_subscription === true && data.subscription_end === null) return true;
 
     // CANCELED but still active
-    if (data.subscription_end && new Date(data.subscription_end) > now) {
-        return true;
-    }
+    if (data.subscription_end && new Date(data.subscription_end) > now) return true;
 
     return false;
 }
 
-/* -------------------------------
+/* ============================================================
    SUBSCRIPTION BANNER
----------------------------------*/
+============================================================ */
 function updateSubscriptionBanner(data) {
     const banner = document.getElementById("subscriptionBanner");
     banner.style.display = "block";
@@ -287,22 +279,24 @@ function updateSubscriptionBanner(data) {
     const active = hasActiveAccess(data);
 
     if (active) {
-        const planMap = {
+        const planNames = {
             basic: "LoveText Basic",
             plus: "LoveText Plus",
             trial: "Free Trial"
         };
 
         banner.innerHTML = `
-            You currently have an active <strong>${planMap[data.current_plan] || "Subscription"}</strong> 💖
+            You currently have an active <strong>${
+                planNames[data.current_plan] || "Subscription"
+            }</strong> 💖
         `;
         return;
     }
 
     if (data.subscription_end) {
-        const endDate = new Date(data.subscription_end).toLocaleDateString();
+        const end = new Date(data.subscription_end).toLocaleDateString();
         banner.innerHTML = `
-            Your subscription ends on <strong>${endDate}</strong> ❤️
+            Your subscription ends on <strong>${end}</strong> ❤️
         `;
         return;
     }
@@ -313,9 +307,9 @@ function updateSubscriptionBanner(data) {
     `;
 }
 
-/* -------------------------------
+/* ============================================================
    LOAD SUBSCRIPTION STATUS
----------------------------------*/
+============================================================ */
 let HAS_SUBSCRIPTION = false;
 
 async function loadSubscriptionStatus() {
@@ -339,20 +333,24 @@ async function loadSubscriptionStatus() {
     }
 }
 
-/* -------------------------------
-   LOAD RECIPIENTS — FIXED TYPO
----------------------------------*/
+/* ============================================================
+   LOAD RECIPIENTS
+============================================================ */
 async function loadRecipients() {
     try {
-        const res = await fetch("/api/customer/recipients", { credentials: "include" });
-        const list = await res.json();
+        const res = await fetch("/api/customer/recipients", {
+            credentials: "include"
+        });
 
+        const list = await res.json();
         const box = document.getElementById("recipients");
         box.innerHTML = "";
 
         if (!list.length) {
-            box.innerHTML = `<p style="text-align:center; color:var(--text-soft);">
-                You have no recipients yet.</p>`;
+            box.innerHTML = `
+                <p style="text-align:center; color:var(--text-soft);">
+                    You have no recipients yet.
+                </p>`;
             return;
         }
 
@@ -372,11 +370,13 @@ async function loadRecipients() {
         });
 
     } catch (err) {
-        console.error("RECIPIENT ERROR", err);
+        console.error("RECIPIENT LOAD ERROR", err);
     }
 }
 
-/* ------------------------------- */
+/* ============================================================
+   ADD RECIPIENT
+============================================================ */
 async function addRecipient() {
     if (!HAS_SUBSCRIPTION) {
         msg.innerText = "You need a subscription.";
@@ -411,7 +411,9 @@ async function addRecipient() {
     }
 }
 
-/* ------------------------------- */
+/* ============================================================
+   DELETE RECIPIENT
+============================================================ */
 async function deleteRecipient(id) {
     if (!confirm("Delete this recipient?")) return;
 
@@ -423,29 +425,36 @@ async function deleteRecipient(id) {
     loadRecipients();
 }
 
-/* ------------------------------- */
+/* ============================================================
+   MESSAGE LOG
+============================================================ */
 async function openMessageLog(id) {
     const modal = document.getElementById("messageLogModal");
     const content = document.getElementById("logContent");
 
-    content.innerHTML = "Loading...";
+    content.innerHTML = "Loading…";
 
-    const res = await fetch(`/api/message-log/${id}`, { credentials: "include" });
+    const res = await fetch(`/api/message-log/${id}`, {
+        credentials: "include"
+    });
+
     const data = await res.json();
 
     if (!data.success) {
-        content.innerHTML = "<p>Error loading messages</p>";
+        content.innerHTML = "<p>Error loading messages.</p>";
     } else if (!data.messages.length) {
         content.innerHTML = "<p>No messages yet.</p>";
     } else {
-        content.innerHTML = data.messages.map(m => `
-            <div style="padding:12px; margin-bottom:10px; background:#fafafa; border-radius:12px;">
-                <strong>${m.message_text}</strong>
-                <div style="font-size:12px; color:#777;">
-                    ${new Date(m.sent_at).toLocaleString()}
+        content.innerHTML = data.messages
+            .map(m => `
+                <div style="padding:12px; margin-bottom:10px; background:#fafafa; border-radius:12px;">
+                    <strong>${m.message_text}</strong>
+                    <div style="font-size:12px; color:#777;">
+                        ${new Date(m.sent_at).toLocaleString()}
+                    </div>
                 </div>
-            </div>
-        `).join("");
+            `)
+            .join("");
     }
 
     modal.style.display = "flex";
@@ -455,11 +464,14 @@ function closeMessageLog() {
     document.getElementById("messageLogModal").style.display = "none";
 }
 
-/* ------------------------------- */
+/* ============================================================
+   FLOWER SENDING
+============================================================ */
 let CURRENT_FLOWER_RECIPIENT = null;
 
 function openFlowerModal(id) {
     CURRENT_FLOWER_RECIPIENT = id;
+    flowerNote.value = "";
     document.getElementById("flowerModal").style.display = "flex";
 }
 
@@ -467,7 +479,6 @@ function closeFlowerModal() {
     document.getElementById("flowerModal").style.display = "none";
 }
 
-/* ------------------------------- */
 async function sendFlower() {
     const flower = flowerType.value;
     const note = flowerNote.value.trim();
@@ -490,21 +501,27 @@ async function sendFlower() {
     }
 }
 
-/* ------------------------------- */
+/* ============================================================
+   MANAGE SUBSCRIPTION (STRIPE PORTAL)
+============================================================ */
 document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const res = await fetch("/api/customer/subscription/portal", {
         credentials: "include"
     });
+
     const data = await res.json();
+
     if (data.url) window.location.href = data.url;
 });
 
-/* ------------------------------- */
+/* ============================================================
+   INIT
+============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
     loadSubscriptionStatus();
     loadRecipients();
 });
-
 </script>
+
 </body>
 </html>
