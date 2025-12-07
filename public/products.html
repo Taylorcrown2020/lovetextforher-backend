@@ -49,7 +49,7 @@
         .single-image,
         .dual-images img {
             width: 100%;
-            max-height: 260px;
+            height: 260px;
             object-fit: contain;
             border-radius: 12px;
             background: #f1f1f1;
@@ -117,7 +117,7 @@
 
 <script>
 /* --------------------------------------------------
-   PRODUCT DEFINITIONS
+   PRODUCT DEFINITIONS (Subscription + Merch)
 -------------------------------------------------- */
 const PRODUCTS = {
     "free-trial": {
@@ -145,7 +145,7 @@ const PRODUCTS = {
         image: "/img/love-premium.jpg"
     },
 
-    /* Merch */
+    /* MERCH — disabled cart unless you confirm cart backend */
     "tee-logo-dual": {
         id:"tee-logo-dual",
         name:"LoveText Tee — Front + Back",
@@ -153,46 +153,6 @@ const PRODUCTS = {
         billing:"Premium T-Shirt",
         subscription:false,
         images:["/img/IMG_2857.PNG","/img/IMG_2858.PNG"]
-    },
-    "tee-white-logo-dual": {
-        id:"tee-white-logo-dual",
-        name:"LoveText Tee — White Logo Set",
-        price:29.99,
-        billing:"Premium T-Shirt",
-        subscription:false,
-        images:["/img/IMG_2856.jpeg","/img/IMG_2855.jpg"]
-    },
-    "hoodie-classic": {
-        id:"hoodie-classic",
-        name:"Classic Logo Hoodie",
-        price:49.99,
-        billing:"Premium Hoodie",
-        subscription:false,
-        images:["/img/hoodie_front.jpg","/img/hoodie_back.jpg"]
-    },
-    "hoodie-heart": {
-        id:"hoodie-heart",
-        name:"Heart Edition Hoodie",
-        price:54.99,
-        billing:"Premium Hoodie",
-        subscription:false,
-        images:["/img/hoodie_heart_front.jpg","/img/hoodie_heart_back.jpg"]
-    },
-    "hat-logo": {
-        id:"hat-logo",
-        name:"LoveText Logo Hat",
-        price:24.99,
-        billing:"Cotton Hat",
-        subscription:false,
-        image:"/img/hat_logo.jpg"
-    },
-    "hat-heart": {
-        id:"hat-heart",
-        name:"Heart Embroidered Hat",
-        price:26.99,
-        billing:"Premium Hat",
-        subscription:false,
-        image:"/img/hat_heart.jpg"
     }
 };
 
@@ -205,79 +165,89 @@ async function getSubscription() {
             credentials: "include",
             cache: "no-store"
         });
-
         if (!res.ok) return null;
         return await res.json();
-
     } catch {
         return null;
     }
 }
 
 /* --------------------------------------------------
-   DETERMINE WHICH BUTTON TO SHOW
+   BUTTON RULES — Fully matches backend logic
 -------------------------------------------------- */
 function getButton(p, sub) {
-    const subscribed = sub?.subscribed === true;
-    const current = sub?.current_plan || "none";
+    const hasSub = sub?.has_subscription === true;
+    const plan = sub?.current_plan || null;
+    const end = sub?.subscription_end ? new Date(sub.subscription_end) : null;
+    const now = new Date();
+
+    const active = hasSub || (end && end > now);
 
     /* --------------------------
-       CASE 1 — User NOT subscribed
+       PLAN STATUS
     ---------------------------*/
-    if (!subscribed) {
+    const onTrial = plan === "trial";
+    const onBasic = plan === "basic";
+    const onPlus = plan === "plus";
+
+    /* --------------------------
+       NOT LOGGED IN — require login first
+    ---------------------------*/
+    if (!sub) {
+        if (p.subscription)
+            return `<button class="btn btn-subscribe" onclick="requireLogin()">Subscribe</button>`;
+        return `<button class="btn btn-disabled">Login Required</button>`;
+    }
+
+    /* --------------------------
+       USER HAS NO SUBSCRIPTION
+    ---------------------------*/
+    if (!active) {
         if (p.id === "free-trial") {
-            // Backend: Trial allowed only if user NEVER had a subscription
-            if (current !== "none") {
+            if (plan !== null) {
                 return `<button class="btn btn-disabled">Trial Used</button>`;
             }
-            return `<button class="btn btn-subscribe" onclick="subscribeNow('free-trial')">Start Free Trial</button>`;
+            return `<button class="btn btn-subscribe" onclick="subscribeNow('free-trial')">Start Trial</button>`;
         }
+
         return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Subscribe</button>`;
     }
 
     /* --------------------------
-       CASE 2 — Current plan
+       ACTIVE SUBSCRIPTION — same plan
     ---------------------------*/
-    if (
-        (current === "trial" && p.id === "free-trial") ||
-        (current === "basic" && p.id === "love-basic") ||
-        (current === "plus" && p.id === "love-plus")
-    ) {
-        return `<button class="btn btn-disabled">Current Plan</button>`;
-    }
+    if (onTrial && p.id === "free-trial") return `<button class="btn btn-disabled">Current Plan</button>`;
+    if (onBasic && p.id === "love-basic") return `<button class="btn btn-disabled">Current Plan</button>`;
+    if (onPlus && p.id === "love-plus") return `<button class="btn btn-disabled">Current Plan</button>`;
 
     /* --------------------------
-       CASE 3 — Trial → Upgrade
+       TRIAL → BASIC / PLUS UPGRADE
     ---------------------------*/
-    if (current === "trial" && p.id !== "free-trial") {
+    if (onTrial && p.subscription && p.id !== "free-trial") {
         return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Upgrade</button>`;
     }
 
     /* --------------------------
-       CASE 4 — Basic → Plus
+       BASIC → PLUS UPGRADE
     ---------------------------*/
-    if (current === "basic" && p.id === "love-plus") {
+    if (onBasic && p.id === "love-plus")
         return `<button class="btn btn-subscribe" onclick="subscribeNow('love-plus')">Upgrade</button>`;
-    }
 
     /* --------------------------
-       CASE 5 — Plus → Basic (downgrade)
+       PLUS → BASIC DOWNGRADE
     ---------------------------*/
-    if (current === "plus" && p.id === "love-basic") {
+    if (onPlus && p.id === "love-basic")
         return `<button class="btn btn-subscribe" onclick="subscribeNow('love-basic')">Downgrade</button>`;
-    }
 
-    /* Free trial unavailable once subscribed */
-    if (p.id === "free-trial") {
-        return `<button class="btn btn-disabled">Unavailable</button>`;
-    }
+    /* Free trial not allowed anymore */
+    if (p.id === "free-trial") return `<button class="btn btn-disabled">Unavailable</button>`;
 
-    /* Default case: Plan switch */
+    /* Fallback: Regular plan change */
     return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Change Plan</button>`;
 }
 
 /* --------------------------------------------------
-   RENDER PRODUCTS GRID
+   RENDER PRODUCT CARDS
 -------------------------------------------------- */
 async function loadProducts() {
     const sub = await getSubscription();
@@ -291,7 +261,7 @@ async function loadProducts() {
 
         const btn = p.subscription
             ? getButton(p, sub)
-            : `<button class="btn btn-add" onclick="addToCart('${p.id}')">Add to Cart</button>`;
+            : `<button class="btn btn-disabled">Store Disabled</button>`;
 
         grid.innerHTML += `
             <div class="card">
@@ -302,6 +272,13 @@ async function loadProducts() {
             </div>
         `;
     });
+}
+
+/* --------------------------------------------------
+   REQUIRE LOGIN
+-------------------------------------------------- */
+function requireLogin() {
+    window.location.href = "/login.html";
 }
 
 /* --------------------------------------------------
@@ -319,35 +296,7 @@ async function subscribeNow(productId) {
     if (data.url) window.location.href = data.url;
 }
 
-/* --------------------------------------------------
-   ADD TO CART — Matches Backend Exactly
--------------------------------------------------- */
-async function addToCart(id) {
-    const p = PRODUCTS[id];
-
-    const res = await fetch("/api/cart/add", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            productId: id,
-            name: p.name,
-            price: p.price
-        })
-    });
-
-    const data = await res.json();
-
-    if (data.error?.includes("Not logged")) {
-        window.location.href = "/login.html";
-        return;
-    }
-
-    if (data.success) {
-        window.location.href = "/cart.html";
-    }
-}
-
+/* INIT */
 loadProducts();
 </script>
 

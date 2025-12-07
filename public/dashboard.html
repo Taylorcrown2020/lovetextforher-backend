@@ -13,7 +13,6 @@
             --text-dark: #1a1a1a;
             --text-soft: #5f3a4d;
             --danger: #c62828;
-            --secondary-btn: #6b4bb8;
         }
 
         body {
@@ -48,6 +47,7 @@
             -webkit-text-fill-color: transparent;
         }
 
+        /* SUBSCRIPTION BANNER */
         #subscriptionBanner {
             display: none;
             background: #ffe3ed;
@@ -70,6 +70,7 @@
             font-weight: 600;
         }
 
+        /* RECIPIENT BOXES */
         .recipient-box {
             background: rgba(255,255,255,0.75);
             border: 1px solid #ffe0ec;
@@ -94,9 +95,10 @@
         }
 
         .delete-btn { background: var(--danger); }
-        .log-btn { background: var(--secondary-btn); margin-left: 10px; }
+        .log-btn { background: #6b4bb8; margin-left: 10px; }
         .flower-btn { background: #ff7ac4; margin-left: 10px; }
 
+        /* ADD FORM */
         #addForm input, #addForm select {
             width: 100%;
             padding: 14px;
@@ -138,7 +140,7 @@
             text-align: center;
         }
 
-        /* Modals */
+        /* MODALS */
         #messageLogModal, #flowerModal {
             display:none;
             position:fixed;
@@ -160,7 +162,6 @@
     <div id="subscriptionBanner"></div>
 
     <h1 class="header-title">Your Recipients</h1>
-
     <div id="recipients"></div>
 
     <h2 class="form-title">Add New Recipient</h2>
@@ -213,7 +214,8 @@
 
 <button id="manageSubBtn">Manage Subscription</button>
 
-<!-- Message Log Modal -->
+
+<!-- MESSAGE LOG MODAL -->
 <div id="messageLogModal">
     <div style="background:white; width:420px; padding:20px; border-radius:22px; max-height:80vh; overflow-y:auto;">
         <h2 style="margin-top:0; color:#d6336c;">Message Log</h2>
@@ -226,17 +228,11 @@
     </div>
 </div>
 
-<!-- Flower Modal -->
+
+<!-- FLOWER SEND MODAL -->
 <div id="flowerModal">
     <div style="background:white; width:420px; padding:20px; border-radius:22px;">
         <h2 style="margin-top:0; color:#d6336c;">Send a Flower 🌸</h2>
-
-        <select id="flowerType" style="width:100%; padding:12px; margin-top:12px;">
-            <option value="🌹 Rose">🌹 Rose</option>
-            <option value="🌸 Cherry Blossom">🌸 Cherry Blossom</option>
-            <option value="🌻 Sunflower">🌻 Sunflower</option>
-            <option value="🌷 Tulip">🌷 Tulip</option>
-        </select>
 
         <textarea id="flowerNote" placeholder="Optional note…"
             style="width:100%; height:90px; margin-top:12px; padding:10px; border-radius:12px;"></textarea>
@@ -253,23 +249,21 @@
     </div>
 </div>
 
+
 <script src="/js/nav.js" defer></script>
+
 <script>
 /* ============================================================
-   EASY ACCESS SUBSCRIPTION CHECK (matches server exactly)
+   BACKEND-ACCURATE SUBSCRIPTION CHECK
 ============================================================ */
 function hasActiveAccess(sub) {
     if (!sub) return false;
 
     const now = new Date();
 
-    // Case 1 — Fully active subscription
-    if (sub.has_subscription === true && sub.subscription_end === null)
-        return true;
+    if (sub.has_subscription === true && !sub.subscription_end) return true;
 
-    // Case 2 — Canceled but still active until a future date
-    if (sub.subscription_end && new Date(sub.subscription_end) > now)
-        return true;
+    if (sub.subscription_end && new Date(sub.subscription_end) > now) return true;
 
     return false;
 }
@@ -294,16 +288,12 @@ function updateSubscriptionBanner(sub) {
         return;
     }
 
-    // If canceled but ends later
     if (sub.subscription_end) {
         const end = new Date(sub.subscription_end).toLocaleDateString();
-        banner.innerHTML = `
-            Your subscription ends on <strong>${end}</strong>.
-        `;
+        banner.innerHTML = `Your subscription ends on <strong>${end}</strong>.`;
         return;
     }
 
-    // No subscription at all
     banner.innerHTML = `
         You do not have a subscription.<br><br>
         <a href="/products.html">Choose a Plan</a>
@@ -328,7 +318,6 @@ async function loadSubscriptionStatus() {
 
         updateSubscriptionBanner(sub);
 
-        // Billing portal button only shows if user can manage their plan
         document.getElementById("manageSubBtn").style.display =
             HAS_ACCESS ? "block" : "none";
 
@@ -377,7 +366,7 @@ async function loadRecipients() {
 }
 
 /* ============================================================
-   ADD RECIPIENT — (blocks if no subscription)
+   ADD RECIPIENT (checks subscription)
 ============================================================ */
 async function addRecipient() {
     if (!HAS_ACCESS) {
@@ -390,12 +379,6 @@ async function addRecipient() {
         r_relationship.value === "custom"
             ? r_customRel.value.trim()
             : r_relationship.value;
-
-    if (relationship === "") {
-        document.getElementById("msg").innerText =
-            "Please enter a custom relationship.";
-        return;
-    }
 
     const payload = {
         name: r_name.value.trim(),
@@ -478,7 +461,7 @@ function closeMessageLog() {
 }
 
 /* ============================================================
-   FLOWER SENDING (MATCHES FINAL BACKEND)
+   SEND FLOWER
 ============================================================ */
 let CURRENT_FLOWER_RECIPIENT = null;
 
@@ -493,12 +476,8 @@ function closeFlowerModal() {
 }
 
 async function sendFlower() {
-    const rawFlower = flowerType.value;
-    const note = flowerNote.value.trim();
-
-    // Build correct payload for backend
     const payload = {
-        note: note ? `${rawFlower} — ${note}` : rawFlower
+        note: flowerNote.value.trim()
     };
 
     const res = await fetch(`/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, {
