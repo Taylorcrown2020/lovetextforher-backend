@@ -95,7 +95,7 @@ app.post(
             }
 
             /***********************************************************
-             * SUBSCRIPTION UPDATED (renewal / price change)
+             * SUBSCRIPTION UPDATED (renewal / price change / cancel scheduled)
              ***********************************************************/
             if (type === "customer.subscription.updated") {
                 const customerId = obj.customer;
@@ -106,40 +106,42 @@ app.post(
                 if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
                 if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
 
+                // If cancellation scheduled, set subscription_end date
+                const subscriptionEnd = obj.cancel_at_period_end 
+                    ? new Date(obj.current_period_end * 1000)
+                    : null;
+
                 await db.query(`
                     UPDATE customers
                     SET
                         has_subscription = true,
                         current_plan = $1,
-                        subscription_end = NULL
-                    WHERE stripe_customer_id=$2
-                `, [plan, customerId]);
+                        subscription_end = $2
+                    WHERE stripe_customer_id=$3
+                `, [plan, subscriptionEnd, customerId]);
 
-                console.log(`🔄 Subscription updated: ${plan}`);
+                console.log(`🔄 Subscription updated: ${plan}${subscriptionEnd ? ' (canceling at period end)' : ''}`);
             }
 
             /***********************************************************
-             * SUBSCRIPTION CANCELED
+             * SUBSCRIPTION CANCELED/DELETED
+             * This fires when subscription actually ends (immediately or at period end)
              ***********************************************************/
             if (type === "customer.subscription.deleted") {
                 const customerId = obj.customer;
 
-                const activeUntil = obj.cancel_at_period_end
-                    ? new Date(obj.current_period_end * 1000)
-                    : null; // canceled immediately
+await db.query(`
+    UPDATE customers
+    SET 
+        has_subscription = false,
+        current_plan = 'none',
+        stripe_subscription_id = NULL,
+        trial_active = false,
+        subscription_end = NULL
+    WHERE stripe_customer_id=$1
+`, [customerId]);
 
-                await db.query(`
-                    UPDATE customers
-                    SET 
-                        has_subscription = false,
-                        current_plan = 'none',
-                        stripe_subscription_id = NULL,
-                        trial_active = false,
-                        subscription_end = $1
-                    WHERE stripe_customer_id=$2
-                `, [activeUntil, customerId]);
-
-                console.log("❌ Subscription canceled");
+                console.log("❌ Subscription ended");
             }
 
         } catch (err) {
