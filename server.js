@@ -1870,6 +1870,94 @@ app.get("/api/customer/subscription/portal", authCustomer, async (req, res) => {
     }
 });
 
+/***************************************************************
+ *  GET CUSTOMER SUBSCRIPTION STATUS
+ ***************************************************************/
+app.get("/api/customer/subscription", authCustomer, async (req, res) => {
+    try {
+        const q = await pool.query(
+            `SELECT 
+                has_subscription,
+                current_plan,
+                stripe_subscription_id,
+                subscription_end
+             FROM customers
+             WHERE id=$1`,
+            [req.user.id]
+        );
+
+        if (!q.rows.length)
+            return res.json({ subscribed: false });
+
+        const c = q.rows[0];
+
+        return res.json({
+            subscribed: c.has_subscription,
+            current_plan: c.current_plan,
+            subscription_end: c.subscription_end,
+        });
+
+    } catch (err) {
+        console.error("❌ SUB STATUS ERROR:", err);
+        return res.json({ subscribed: false });
+    }
+});
+
+
+/***************************************************************
+ *  STRIPE SUBSCRIPTION CHECKOUT
+ ***************************************************************/
+app.post("/api/stripe/checkout", authCustomer, async (req, res) => {
+    try {
+        const { productId } = req.body;
+
+        if (!global.__priceMap[productId]) {
+            return res.status(400).json({ error: "Invalid product" });
+        }
+
+        const priceId = global.__priceMap[productId];
+
+        const customerQ = await pool.query(
+            "SELECT stripe_customer_id FROM customers WHERE id=$1",
+            [req.user.id]
+        );
+
+        let stripeCustomer = customerQ.rows[0].stripe_customer_id;
+
+        // Create Stripe customer if needed
+        if (!stripeCustomer) {
+            const customer = await stripe.customers.create({
+                email: req.user.email,
+            });
+
+            stripeCustomer = customer.id;
+
+            await pool.query(
+                "UPDATE customers SET stripe_customer_id=$1 WHERE id=$2",
+                [stripeCustomer, req.user.id]
+            );
+        }
+
+        // Create checkout session
+        const session = await stripe.checkout.sessions.create({
+            mode: "subscription",
+            customer: stripeCustomer,
+            line_items: [{ price: priceId, quantity: 1 }],
+            success_url: `${process.env.FRONTEND_URL}/dashboard.html`,
+            cancel_url: `${process.env.FRONTEND_URL}/products.html`,
+            metadata: {
+                customer_id: req.user.id
+            }
+        });
+
+        return res.json({ url: session.url });
+
+    } catch (err) {
+        console.error("❌ CHECKOUT ERROR:", err);
+        return res.status(500).json({ error: "Stripe error" });
+    }
+});
+
 
 /***************************************************************
  *  FRONTEND FALLBACK — SERVE public/index.html
