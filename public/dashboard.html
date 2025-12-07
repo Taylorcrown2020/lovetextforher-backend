@@ -352,10 +352,14 @@ async function loadRecipients() {
         }
 
         list.forEach(r => {
+            const deliveryBadge = r.delivery_method === "both" ? "📧📱" : 
+                                 r.delivery_method === "sms" ? "📱" : "📧";
+            
             box.innerHTML += `
                 <div class="recipient-box">
-                    <strong>${r.name}</strong> (${r.relationship})
-                    <p>Email: ${r.email}</p>
+                    <strong>${r.name}</strong> (${r.relationship}) ${deliveryBadge}
+                    <p>Email: ${r.email || 'N/A'}</p>
+                    ${r.phone_number ? `<p>Phone: ${r.phone_number}</p>` : ''}
                     <p>Frequency: ${r.frequency}</p>
                     <p>Time: ${r.timings}</p>
 
@@ -375,19 +379,43 @@ async function loadRecipients() {
    ADD RECIPIENT — BLOCKS IF NO ACTIVE ACCESS
 ============================================================ */
 async function addRecipient() {
+    const msgEl = document.getElementById("msg");
+    
     if (!HAS_ACCESS) {
-        document.getElementById("msg").innerText =
-            "You need an active subscription to add recipients.";
+        msgEl.innerText = "You need an active subscription to add recipients.";
+        return;
+    }
+
+    const name = r_name.value.trim();
+    const email = r_email.value.trim();
+    const phone = phone_number.value.trim();
+    const delivery = delivery_method.value;
+    const relationship = r_relationship.value === "custom" 
+        ? r_customRel.value.trim() 
+        : r_relationship.value;
+
+    // Validation
+    if (!name) {
+        msgEl.innerText = "Name is required.";
+        return;
+    }
+
+    if (!email && delivery !== "sms") {
+        msgEl.innerText = "Email is required for email delivery.";
+        return;
+    }
+
+    if ((delivery === "sms" || delivery === "both") && !phone) {
+        msgEl.innerText = "Phone number is required for SMS delivery.";
         return;
     }
 
     const payload = {
-        name: r_name.value.trim(),
-        email: r_email.value.trim(),
-        relationship:
-            r_relationship.value === "custom"
-                ? r_customRel.value.trim()
-                : r_relationship.value,
+        name,
+        email,
+        phone_number: phone || null,
+        delivery_method: delivery,
+        relationship,
         frequency: r_frequency.value,
         timings: r_timings.value,
         timezone: r_timezone.value
@@ -403,11 +431,30 @@ async function addRecipient() {
     const data = await res.json();
 
     if (data.success) {
-        document.getElementById("msg").innerText = "";
+        msgEl.innerText = "Recipient added successfully! ✅";
+        msgEl.style.color = "#28a745";
+        
+        // Clear form
+        r_name.value = "";
+        r_email.value = "";
+        phone_number.value = "";
+        delivery_method.value = "email";
+        r_relationship.value = "spouse";
+        r_customRel.value = "";
+        r_customRel.style.display = "none";
+        r_frequency.value = "daily";
+        r_timings.value = "morning";
+        r_timezone.value = "America/Chicago";
+        
         loadRecipients();
+        
+        setTimeout(() => {
+            msgEl.innerText = "";
+            msgEl.style.color = "var(--primary)";
+        }, 3000);
     } else {
-        document.getElementById("msg").innerText =
-            data.error || "Error adding recipient.";
+        msgEl.innerText = data.error || "Error adding recipient.";
+        msgEl.style.color = "var(--danger)";
     }
 }
 
@@ -512,6 +559,14 @@ document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const data = await res.json();
 
     if (data.url) window.location.href = data.url;
+});
+
+/* ============================================================
+   CUSTOM RELATIONSHIP TOGGLE
+============================================================ */
+document.getElementById("r_relationship").addEventListener("change", (e) => {
+    const customField = document.getElementById("r_customRel");
+    customField.style.display = e.target.value === "custom" ? "block" : "none";
 });
 
 /* ============================================================
