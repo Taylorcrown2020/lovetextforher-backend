@@ -1784,6 +1784,80 @@ app.post(
     }
 );
 
+/***************************************************************
+ *  SUBSCRIPTION CHECKOUT — CREATES STRIPE SESSION
+ ***************************************************************/
+app.post(
+    "/api/stripe/checkout",
+    authCustomer,
+    async (req, res) => {
+        try {
+            const { productId } = req.body;
+            const priceId = global.__priceMap[productId];
+
+            if (!priceId) {
+                return res.status(400).json({ error: "Invalid product ID" });
+            }
+
+            if (!stripe) {
+                return res.status(500).json({ error: "Stripe not configured" });
+            }
+
+            // Get customer info
+            const q = await pool.query(
+                "SELECT * FROM customers WHERE id=$1",
+                [req.user.id]
+            );
+
+            if (!q.rows.length) {
+                return res.status(400).json({ error: "Customer not found" });
+            }
+
+            let customer = q.rows[0];
+
+            // If customer has no Stripe customer ID, create one
+            let stripeCustomerId = customer.stripe_customer_id;
+
+            if (!stripeCustomerId) {
+                const sc = await stripe.customers.create({
+                    email: customer.email,
+                    metadata: { customer_id: customer.id }
+                });
+
+                stripeCustomerId = sc.id;
+
+                await pool.query(
+                    "UPDATE customers SET stripe_customer_id=$1 WHERE id=$2",
+                    [stripeCustomerId, customer.id]
+                );
+            }
+
+            // Create checkout session
+            const session = await stripe.checkout.sessions.create({
+                mode: "subscription",
+                customer: stripeCustomerId,
+                line_items: [
+                    {
+                        price: priceId,
+                        quantity: 1
+                    }
+                ],
+                success_url: `${process.env.BASE_URL}/success.html`,
+                cancel_url: `${process.env.BASE_URL}/products.html`,
+                metadata: {
+                    customer_id: customer.id
+                }
+            });
+
+            return res.json({ url: session.url });
+
+        } catch (err) {
+            console.error("❌ SUBSCRIPTION CHECKOUT ERROR:", err);
+            return res.status(500).json({ error: "Checkout failed" });
+        }
+    }
+);
+
 
 /***************************************************************
  *  FRONTEND FALLBACK — SERVE HTML FILES
