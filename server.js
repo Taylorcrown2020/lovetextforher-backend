@@ -54,6 +54,13 @@ console.log("💰 PRICE MAP LOADED:", global.__LT_prices);
  *  STRIPE WEBHOOK (RAW BODY)
  *  MUST COME BEFORE ANY JSON BODY PARSERS
  ***************************************************************/
+/***************************************************************
+ *  SUBSCRIPTION FIX - Replace your webhook and subscription code
+ ***************************************************************/
+
+/***************************************************************
+ * 1. STRIPE WEBHOOK - CORRECTED
+ ***************************************************************/
 app.post(
     "/webhook",
     express.raw({ type: "application/json" }),
@@ -69,9 +76,7 @@ app.post(
 
             const data = event.data.object;
 
-            /************************************************************
-             * Convert price ID → normalized plan name
-             ************************************************************/
+            // Map price ID to plan name
             const mapPrice = (priceId) => {
                 const prices = global.__LT_prices;
                 if (priceId === prices["free-trial"]) return "trial";
@@ -80,74 +85,106 @@ app.post(
                 return null;
             };
 
-            /************************************************************
-             * SUB CREATED
-             ************************************************************/
-            if (event.type === "customer.subscription.created") {
-                const price = data.items.data[0].price.id;
-                const plan = mapPrice(price);
+            console.log(`📩 Webhook: ${event.type}`);
 
-                console.log("⚡ SUB CREATED:", plan);
+            // CHECKOUT SESSION COMPLETED
+            if (event.type === "checkout.session.completed") {
+                const customerId = data.metadata?.customer_id;
+                
+                if (customerId && data.mode === "subscription") {
+                    const subscriptionId = data.subscription;
+                    
+                    // Fetch the subscription to get the price
+                    const subscription = await global.__LT_stripe.subscriptions.retrieve(subscriptionId);
+                    const priceId = subscription.items.data[0].price.id;
+                    const plan = mapPrice(priceId);
+
+                    console.log(`✅ Checkout complete: customer ${customerId} → plan ${plan}`);
+
+                    await global.__LT_pool.query(
+                        `UPDATE customers
+                         SET has_subscription = TRUE,
+                             current_plan = $1,
+                             stripe_subscription_id = $2,
+                             subscription_end = NULL
+                         WHERE id = $3`,
+                        [plan, subscriptionId, customerId]
+                    );
+                }
+            }
+
+            // SUBSCRIPTION CREATED
+            if (event.type === "customer.subscription.created") {
+                const priceId = data.items.data[0].price.id;
+                const plan = mapPrice(priceId);
+
+                console.log(`➕ Sub created: ${plan} for ${data.customer}`);
 
                 await global.__LT_pool.query(
-                    `
-                    UPDATE customers
-                    SET has_subscription = TRUE,
-                        current_plan = $1,
-                        subscription_end = NULL
-                    WHERE stripe_customer_id = $2
-                    `,
-                    [plan, data.customer]
+                    `UPDATE customers
+                     SET has_subscription = TRUE,
+                         current_plan = $1,
+                         stripe_subscription_id = $2,
+                         subscription_end = NULL
+                     WHERE stripe_customer_id = $3`,
+                    [plan, data.id, data.customer]
                 );
             }
 
-            /************************************************************
-             * SUB UPDATED — Corrected cancel logic
-             ************************************************************/
+            // SUBSCRIPTION UPDATED
             if (event.type === "customer.subscription.updated") {
-                console.log("🔄 SUB UPDATED — status:", data.status);
-
-                if (
-                    data.status === "canceled" ||
-                    data.cancel_at_period_end === true
-                ) {
-                    console.log("⛔ UPDATE IGNORED — Canceled");
+                // Skip if subscription is canceled or set to cancel
+                if (data.status === "canceled" || data.cancel_at_period_end === true) {
+                    console.log(`⚠️ Sub update skipped (canceling): ${data.id}`);
                     return res.sendStatus(200);
                 }
 
-                const price = data.items.data[0].price.id;
-                const plan = mapPrice(price);
+                // Only process active subscriptions
+                if (data.status === "active" || data.status === "trialing") {
+                    const priceId = data.items.data[0].price.id;
+                    const plan = mapPrice(priceId);
 
-                console.log("🔄 ACTIVE UPDATE — plan:", plan);
+                    console.log(`🔄 Sub updated: ${plan} for ${data.customer}`);
 
-                await global.__LT_pool.query(
-                    `
-                    UPDATE customers
-                    SET has_subscription = TRUE,
-                        current_plan = $1,
-                        subscription_end = NULL
-                    WHERE stripe_customer_id = $2
-                    `,
-                    [plan, data.customer]
-                );
+                    const result = await global.__LT_pool.query(
+                        `UPDATE customers
+                         SET has_subscription = TRUE,
+                             current_plan = $1,
+                             stripe_subscription_id = $2,
+                             subscription_end = NULL
+                         WHERE stripe_customer_id = $3
+                         RETURNING id`,
+                        [plan, data.id, data.customer]
+                    );
+
+                    // Enforce recipient limits after plan change
+                    if (result.rows.length > 0) {
+                        await global.__LT_enforceRecipientLimit(result.rows[0].id, plan);
+                    }
+                }
             }
 
-            /************************************************************
-             * SUB DELETED — final cancellation
-             ************************************************************/
+            // SUBSCRIPTION DELETED
             if (event.type === "customer.subscription.deleted") {
-                console.log("❌ SUB DELETED — ENDS:", data.ended_at);
+                console.log(`❌ Sub deleted: ${data.id}`);
 
-                await global.__LT_pool.query(
-                    `
-                    UPDATE customers
-                    SET has_subscription = FALSE,
-                        current_plan = NULL,
-                        subscription_end = to_timestamp($1)
-                    WHERE stripe_customer_id = $2
-                    `,
-                    [data.ended_at, data.customer]
+                const endTime = data.ended_at ? new Date(data.ended_at * 1000) : new Date();
+
+                const result = await global.__LT_pool.query(
+                    `UPDATE customers
+                     SET has_subscription = FALSE,
+                         current_plan = 'none',
+                         stripe_subscription_id = NULL,
+                         subscription_end = $1
+                     WHERE stripe_customer_id = $2
+                     RETURNING id`,
+                    [endTime, data.customer]
                 );
+
+                // Enforce limits (will remove all recipients for 'none' plan)
+                if (result.rows.length > 0) {
+                    await global.__LT_enforceRecipientLimit(result.rows[0].id, 'none');
+                }
             }
 
             res.sendStatus(200);
@@ -158,6 +195,288 @@ app.post(
     }
 );
 
+/***************************************************************
+ * 2. GET SUBSCRIPTION STATUS - CORRECTED
+ ***************************************************************/
+app.get(
+    "/api/customer/subscription",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            const q = await global.__LT_pool.query(
+                `SELECT 
+                    has_subscription,
+                    current_plan,
+                    stripe_subscription_id,
+                    stripe_customer_id,
+                    subscription_end
+                 FROM customers
+                 WHERE id = $1`,
+                [req.user.id]
+            );
+
+            if (!q.rows.length) {
+                return res.status(404).json({ error: "Customer not found" });
+            }
+
+            const customer = q.rows[0];
+            
+            // Check if subscription is still valid
+            let isActive = false;
+            let actualPlan = customer.current_plan || 'none';
+
+            // If they have a Stripe subscription, verify it's still active
+            if (customer.stripe_subscription_id) {
+                try {
+                    const stripeSub = await global.__LT_stripe.subscriptions.retrieve(
+                        customer.stripe_subscription_id
+                    );
+                    
+                    if (stripeSub.status === 'active' || stripeSub.status === 'trialing') {
+                        isActive = true;
+                        
+                        // Get actual plan from Stripe
+                        const priceId = stripeSub.items.data[0].price.id;
+                        const mapPrice = (priceId) => {
+                            const prices = global.__LT_prices;
+                            if (priceId === prices["free-trial"]) return "trial";
+                            if (priceId === prices["love-basic"]) return "basic";
+                            if (priceId === prices["love-plus"]) return "plus";
+                            return "none";
+                        };
+                        actualPlan = mapPrice(priceId);
+                        
+                        // Update database if out of sync
+                        if (actualPlan !== customer.current_plan) {
+                            await global.__LT_pool.query(
+                                `UPDATE customers 
+                                 SET current_plan = $1, has_subscription = TRUE
+                                 WHERE id = $2`,
+                                [actualPlan, req.user.id]
+                            );
+                        }
+                    } else {
+                        // Subscription is not active
+                        isActive = false;
+                        actualPlan = 'none';
+                        
+                        // Update database
+                        await global.__LT_pool.query(
+                            `UPDATE customers 
+                             SET current_plan = 'none', 
+                                 has_subscription = FALSE,
+                                 stripe_subscription_id = NULL
+                             WHERE id = $1`,
+                            [req.user.id]
+                        );
+                    }
+                } catch (stripeErr) {
+                    console.error("Error fetching Stripe subscription:", stripeErr);
+                    // If Stripe call fails, fall back to database values
+                    isActive = customer.has_subscription;
+                }
+            } else {
+                // No Stripe subscription ID
+                isActive = false;
+                actualPlan = 'none';
+            }
+
+            return res.json({
+                has_subscription: isActive,
+                subscribed: isActive,
+                current_plan: actualPlan,
+                stripe_subscription_id: customer.stripe_subscription_id,
+                subscription_end: customer.subscription_end,
+                recipient_limit: global.__LT_getRecipientLimit(actualPlan)
+            });
+
+        } catch (err) {
+            console.error("❌ SUBSCRIPTION STATUS ERROR:", err);
+            return res.status(500).json({ error: "Server error" });
+        }
+    }
+);
+
+/***************************************************************
+ * 3. STRIPE CHECKOUT - CORRECTED
+ ***************************************************************/
+app.post(
+    "/api/stripe/checkout",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        const { productId } = req.body;
+
+        try {
+            // Validate product
+            const priceId = global.__LT_prices[productId];
+            if (!priceId) {
+                return res.status(400).json({ error: "Invalid product" });
+            }
+
+            const newPlan = global.__LT_normalizePlan(productId);
+
+            // Get customer record
+            const customerQ = await global.__LT_pool.query(
+                "SELECT * FROM customers WHERE id = $1",
+                [req.user.id]
+            );
+
+            if (!customerQ.rows.length) {
+                return res.status(404).json({ error: "Customer not found" });
+            }
+
+            const customer = customerQ.rows[0];
+
+            // Ensure Stripe customer exists
+            let stripeCustomerId = customer.stripe_customer_id;
+            if (!stripeCustomerId) {
+                const stripeCustomer = await global.__LT_stripe.customers.create({
+                    email: customer.email,
+                    metadata: { customer_id: customer.id }
+                });
+                stripeCustomerId = stripeCustomer.id;
+
+                await global.__LT_pool.query(
+                    "UPDATE customers SET stripe_customer_id = $1 WHERE id = $2",
+                    [stripeCustomerId, customer.id]
+                );
+            }
+
+            // Check if customer has an active subscription
+            let activeSubscription = null;
+            if (customer.stripe_subscription_id) {
+                try {
+                    const sub = await global.__LT_stripe.subscriptions.retrieve(
+                        customer.stripe_subscription_id
+                    );
+                    if (sub.status === 'active' || sub.status === 'trialing') {
+                        activeSubscription = sub;
+                    }
+                } catch (err) {
+                    console.log("Subscription not found or inactive:", err.message);
+                }
+            }
+
+            // CASE 1: Customer has active subscription - UPDATE IT
+            if (activeSubscription) {
+                const itemId = activeSubscription.items.data[0].id;
+
+                await global.__LT_stripe.subscriptions.update(
+                    activeSubscription.id,
+                    {
+                        items: [{ id: itemId, price: priceId }],
+                        proration_behavior: 'always_invoice',
+                        cancel_at_period_end: false
+                    }
+                );
+
+                // Update database
+                await global.__LT_pool.query(
+                    `UPDATE customers
+                     SET current_plan = $1,
+                         has_subscription = TRUE,
+                         subscription_end = NULL
+                     WHERE id = $2`,
+                    [newPlan, customer.id]
+                );
+
+                // Enforce recipient limits
+                await global.__LT_enforceRecipientLimit(customer.id, newPlan);
+
+                return res.json({ 
+                    url: "/dashboard.html",
+                    message: "Subscription updated successfully"
+                });
+            }
+
+            // CASE 2: No active subscription - CREATE NEW CHECKOUT SESSION
+            const session = await global.__LT_stripe.checkout.sessions.create({
+                mode: "subscription",
+                customer: stripeCustomerId,
+                line_items: [{ price: priceId, quantity: 1 }],
+                success_url: `${process.env.BASE_URL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${process.env.BASE_URL}/products.html`,
+                metadata: {
+                    customer_id: customer.id,
+                    plan: newPlan
+                }
+            });
+
+            return res.json({ url: session.url });
+
+        } catch (err) {
+            console.error("❌ CHECKOUT ERROR:", err);
+            return res.status(500).json({ error: "Checkout failed: " + err.message });
+        }
+    }
+);
+
+/***************************************************************
+ * 4. CANCEL SUBSCRIPTION
+ ***************************************************************/
+app.post(
+    "/api/customer/subscription/cancel",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            const customerQ = await global.__LT_pool.query(
+                "SELECT stripe_subscription_id FROM customers WHERE id = $1",
+                [req.user.id]
+            );
+
+            if (!customerQ.rows.length || !customerQ.rows[0].stripe_subscription_id) {
+                return res.status(400).json({ error: "No active subscription" });
+            }
+
+            const subId = customerQ.rows[0].stripe_subscription_id;
+
+            // Cancel at period end (so they keep access until billing period ends)
+            await global.__LT_stripe.subscriptions.update(subId, {
+                cancel_at_period_end: true
+            });
+
+            return res.json({ 
+                success: true,
+                message: "Subscription will cancel at period end"
+            });
+
+        } catch (err) {
+            console.error("❌ CANCEL ERROR:", err);
+            return res.status(500).json({ error: "Failed to cancel subscription" });
+        }
+    }
+);
+
+/***************************************************************
+ * 5. BILLING PORTAL - CORRECTED
+ ***************************************************************/
+app.get(
+    "/api/customer/subscription/portal",
+    global.__LT_authCustomer,
+    async (req, res) => {
+        try {
+            const customerQ = await global.__LT_pool.query(
+                "SELECT stripe_customer_id FROM customers WHERE id = $1",
+                [req.user.id]
+            );
+
+            if (!customerQ.rows.length || !customerQ.rows[0].stripe_customer_id) {
+                return res.status(400).json({ error: "No Stripe customer found" });
+            }
+
+            const portal = await global.__LT_stripe.billingPortal.sessions.create({
+                customer: customerQ.rows[0].stripe_customer_id,
+                return_url: `${process.env.BASE_URL}/dashboard.html`
+            });
+
+            return res.json({ url: portal.url });
+
+        } catch (err) {
+            console.error("❌ PORTAL ERROR:", err);
+            return res.status(500).json({ error: "Failed to open billing portal" });
+        }
+    }
+);
 /***************************************************************
  * EXPRESS MIDDLEWARE (after webhook)
  ***************************************************************/
