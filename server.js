@@ -129,15 +129,17 @@ app.post(
                     console.log(`🔄 Sub updated: ${plan} for ${data.customer}`);
 
                     const result = await global.__LT_pool.query(
-                        `UPDATE customers
-                         SET has_subscription = TRUE,
-                             current_plan = $1,
-                             stripe_subscription_id = $2,
-                             subscription_end = NULL
-                         WHERE stripe_customer_id = $3
-                         RETURNING id`,
-                        [plan, data.id, data.customer]
-                    );
+    `UPDATE customers
+     SET has_subscription = TRUE,
+         current_plan = $1,
+         stripe_subscription_id = $2,
+         subscription_end = NULL
+     WHERE id = $3
+     RETURNING id, current_plan, has_subscription`,
+    [plan, subscriptionId, customerId]
+);
+
+console.log(`✅ DB Updated:`, result.rows[0]);
 
                     if (result.rows.length > 0) {
                         await global.__LT_enforceRecipientLimit(result.rows[0].id, plan);

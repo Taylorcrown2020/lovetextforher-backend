@@ -308,13 +308,12 @@ const PRODUCTS = {
     }
 };
 
-
 /*******************************************************
  * GET SUBSCRIPTION STATUS
  *******************************************************/
 async function getSubscriptionStatus() {
     try {
-        const r = await fetch("/api/customer/subscription", {
+        const r = await fetch("/api/customer/subscription?t=" + Date.now(), {
             method: "GET",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -323,7 +322,7 @@ async function getSubscriptionStatus() {
 
         if (!r.ok) {
             if (r.status === 401) {
-                // Not logged in
+                // Not logged in - that's okay for products page
                 return null;
             }
             console.error("Subscription status error:", r.status);
@@ -339,7 +338,6 @@ async function getSubscriptionStatus() {
         return null;
     }
 }
-
 
 /*******************************************************
  * BUILD BUTTON BASED ON PLAN & STATUS
@@ -393,7 +391,6 @@ function buildButton(product, sub) {
     return `<button class="btn btn-sub" onclick="subscribe('${product.id}')">Change Plan</button>`;
 }
 
-
 /*******************************************************
  * GET BADGE FOR CARD
  *******************************************************/
@@ -419,9 +416,8 @@ function getBadge(product, sub) {
     return "";
 }
 
-
 /*******************************************************
- * STRIPE — SUBSCRIPTION CHECKOUT
+ * STRIPE — SUBSCRIPTION CHECKOUT (FIXED!)
  *******************************************************/
 async function subscribe(productId) {
     try {
@@ -444,20 +440,30 @@ async function subscribe(productId) {
             return;
         }
 
+        // ✅ FIX: If subscription was updated without Stripe checkout
+        if (data.message && data.url === "/dashboard.html") {
+            console.log("Subscription updated, waiting for webhook...");
+            
+            // Show user feedback
+            alert(data.message + "\n\nRedirecting to dashboard...");
+            
+            // Wait 3 seconds for webhook to process
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Force reload dashboard with cache busting
+            window.location.href = "/dashboard.html?updated=" + Date.now();
+            return;
+        }
+
+        // Normal Stripe checkout flow
         if (data.url) {
-            // Redirect to Stripe Checkout or Dashboard
             window.location.href = data.url;
-        } else if (data.message) {
-            // Plan updated without checkout
-            alert(data.message);
-            window.location.reload();
         }
     } catch (err) {
         console.error("Subscribe error:", err);
         alert("Error processing subscription. Please try again.");
     }
 }
-
 
 /*******************************************************
  * RENDER ALL PRODUCTS
@@ -527,10 +533,6 @@ async function renderProducts() {
     }
 }
 
-// Start rendering on page load
-renderProducts();
-
-
 /*******************************************************
  * ADD TO CART FOR MERCH
  *******************************************************/
@@ -570,6 +572,23 @@ async function addToCart(id) {
         alert("Error adding to cart. Please try again.");
     }
 }
+
+/*******************************************************
+ * CHECK IF RETURNING FROM STRIPE SUCCESS
+ *******************************************************/
+window.addEventListener('DOMContentLoaded', () => {
+    // Check if returning from Stripe checkout
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('updated')) {
+        console.log("Returned from subscription update, reloading...");
+        // Give webhook extra time if just updated
+        setTimeout(() => {
+            renderProducts();
+        }, 1000);
+    } else {
+        renderProducts();
+    }
+});
 </script>
 
 </body>

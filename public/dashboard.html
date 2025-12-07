@@ -498,7 +498,7 @@ let currentRecipients = [];
  ******************************************************/
 async function loadSubscription() {
     try {
-        const res = await fetch("/api/customer/subscription", {
+        const res = await fetch("/api/customer/subscription?t=" + Date.now(), {
             method: "GET",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
