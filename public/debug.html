@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Debugger</title>
+    <style>
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(214,51,108,0.2);
+            border: 2px solid #f8cde6;
+        }
+        
+        h1 {
+            color: #d6336c;
+            margin: 0 0 30px 0;
+            font-size: 32px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, #d6336c, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 30px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(214,51,108,0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px solid;
+        }
+        
+        .result.success {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+        
+        .result.warning {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #78350f;
+        }
+        
+        .result.error {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+        
+        .result h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+        
+        .result p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        pre {
+            background: #1a1a1a;
+            color: #4ade80;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #8b5cf6;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .tips {
+            background: #e0e7ff;
+            border: 2px solid #818cf8;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 30px;
+        }
+        
+        .tips h3 {
+            color: #3730a3;
+            margin: 0 0 15px 0;
+        }
+        
+        .tips ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .tips li {
+            color: #4338ca;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Subscription Debugger</h1>
+        
+        <button id="runBtn" onclick="runDiagnostics()">
+            Run Diagnostics
+        </button>
+        
+        <div id="results"></div>
+        
+        <div class="tips">
+            <h3>💡 What to look for:</h3>
+            <ul>
+                <li><strong>has_subscription: false</strong> → Webhook didn't fire or failed</li>
+                <li><strong>current_plan: 'none'</strong> → Database wasn't updated after payment</li>
+                <li><strong>stripe_subscription_id: null</strong> → Subscription not linked</li>
+                <li><strong>401 errors</strong> → You're not logged in</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        async function runDiagnostics() {
+            const btn = document.getElementById('runBtn');
+            const results = document.getElementById('results');
+            
+            btn.disabled = true;
+            btn.textContent = 'Running diagnostics...';
+            results.innerHTML = '<div class="loading">🔄 Testing your subscription status...</div>';
+            
+            const tests = [];
+            
+            // Test 1: Check authentication
+            try {
+                const meRes = await fetch('/api/customer/me', {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (meRes.ok) {
+                    const data = await meRes.json();
+                    tests.push({
+                        name: '✅ Authentication',
+                        status: 'success',
+                        message: `Logged in as: ${data.customer?.email || 'Unknown'}`,
+                        data: data.customer
+                    });
+                } else {
+                    tests.push({
+                        name: '❌ Authentication',
+                        status: 'error',
+                        message: `Not logged in (Status: ${meRes.status})`,
+                        data: null
+                    });
+                }
+            } catch (err) {
+                tests.push({
+                    name: '❌ Authentication',
+                    status: 'error',
+                    message: `Error: ${err.message}`,
+                    data: null
+                });
+            }
+            
+            // Test 2: Check subscription
+            try {
+                const subRes = await fetch('/api/customer/subscription', {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    cache: 'no-store'
+                });
+                
+                if (subRes.ok) {
+                    const data = await subRes.json();
+                    const hasActiveSub = data.has_subscription || data.subscribed;
+                    
+                    tests.push({
+                        name: hasActiveSub ? '✅ Subscription Status' : '⚠️ Subscription Status',
+                        status: hasActiveSub ? 'success' : 'warning',
+                        message: `Plan: ${data.current_plan || 'none'} | Active: ${hasActiveSub ? 'Yes' : 'No'} | Limit: ${data.recipient_limit || 0}`,
+                        data: data
+                    });
+                } else {
+                    tests.push({
+                        name: '❌ Subscription Status',
+                        status: 'error',
+                        message: `API Error (Status: ${subRes.status})`,
+                        data: null
+                    });
+                }
+            } catch (err) {
+                tests.push({
+                    name: '❌ Subscription Status',
+                    status: 'error',
+                    message: `Error: ${err.message}`,
+                    data: null
+                });
+            }
+            
+            // Test 3: Check recipients
+            try {
+                const recipRes = await fetch('/api/customer/recipients', {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (recipRes.ok) {
+                    const data = await recipRes.json();
+                    tests.push({
+                        name: '✅ Recipients',
+                        status: 'success',
+                        message: `Found ${data.length} recipient(s)`,
+                        data: data
+                    });
+                } else {
+                    tests.push({
+                        name: '❌ Recipients',
+                        status: 'error',
+                        message: `API Error (Status: ${recipRes.status})`,
+                        data: null
+                    });
+                }
+            } catch (err) {
+                tests.push({
+                    name: '❌ Recipients',
+                    status: 'error',
+                    message: `Error: ${err.message}`,
+                    data: null
+                });
+            }
+            
+            // Display results
+            let html = '';
+            tests.forEach(test => {
+                html += `
+                    <div class="result ${test.status}">
+                        <h3>${test.name}</h3>
+                        <p><strong>${test.message}</strong></p>
+                        ${test.data ? `
+                            <details>
+                                <summary style="cursor: pointer; margin-top: 10px;">View Raw Data</summary>
+                                <pre>${JSON.stringify(test.data, null, 2)}</pre>
+                            </details>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            results.innerHTML = html;
+            btn.disabled = false;
+            btn.textContent = 'Run Diagnostics Again';
+        }
+    </script>
+</body>
+</html>
