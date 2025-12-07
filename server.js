@@ -1026,6 +1026,42 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
         return res.status(500).json({ error: "Server error adding recipient" });
     }
 });
+app.get("/api/customer/recipients", global.__LT_authCustomer, async (req, res) => {
+    try {
+        // Check if customer has active subscription
+        const subCheck = await global.__LT_pool.query(
+            `SELECT has_subscription, subscription_end FROM customers WHERE id=$1`,
+            [req.user.id]
+        );
+        
+        const customer = subCheck.rows[0];
+        const now = new Date();
+        
+        // Check if subscription is truly active
+        const isActive = customer.has_subscription || 
+                        (customer.subscription_end && new Date(customer.subscription_end) > now);
+        
+        if (!isActive) {
+            return res.json([]); // Return empty array if no subscription
+        }
+
+        const q = await global.__LT_pool.query(
+            `SELECT 
+                id, email, name, relationship, frequency, timings, timezone,
+                next_delivery, last_sent, is_active
+             FROM users
+             WHERE customer_id=$1
+             ORDER BY id DESC`,
+            [req.user.id]
+        );
+
+        return res.json(q.rows);
+
+    } catch (err) {
+        console.error("RECIPIENT LIST ERROR:", err);
+        return res.status(500).json({ error: "Server error loading recipients" });
+    }
+});
 
 /***************************************************************
  *  DELETE RECIPIENT

@@ -419,6 +419,27 @@ async function deleteRecipient(id) {
     loadRecipients();
 }
 
+// After fetching recipients
+const response = await fetch('/api/customer/recipients');
+const recipients = await response.json();
+
+if (recipients.length === 0) {
+    // Check if they had a subscription before
+    const subResponse = await fetch('/api/customer/subscription');
+    const subData = await subResponse.json();
+    
+    if (!subData.subscribed) {
+        // Show resubscribe message
+        document.querySelector('#recipients-container').innerHTML = `
+            <div style="text-align:center; padding:40px;">
+                <h3>No Active Subscription</h3>
+                <p>Subscribe to add and manage recipients.</p>
+                <a href="products.html" class="btn">View Plans</a>
+            </div>
+        `;
+    }
+}
+
 /* ============================================================
    MESSAGE LOG
 ============================================================ */
