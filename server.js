@@ -1810,6 +1810,66 @@ app.post("/api/stripe/checkout", authCustomer, async (req, res) => {
     }
 });
 
+/***************************************************************
+ *  GET CUSTOMER SUBSCRIPTION STATUS
+ ***************************************************************/
+app.get("/api/customer/subscription", authCustomer, async (req, res) => {
+    try {
+        const q = await pool.query(
+            `SELECT 
+                has_subscription,
+                current_plan,
+                stripe_subscription_id,
+                subscription_end
+             FROM customers
+             WHERE id=$1`,
+            [req.user.id]
+        );
+
+        if (!q.rows.length)
+            return res.json({ subscribed: false });
+
+        const c = q.rows[0];
+
+        return res.json({
+            subscribed: c.has_subscription,
+            current_plan: c.current_plan,
+            subscription_end: c.subscription_end,
+        });
+
+    } catch (err) {
+        console.error("❌ SUB STATUS ERROR:", err);
+        return res.json({ subscribed: false });
+    }
+});
+
+/***************************************************************
+ *  BILLING PORTAL
+ ***************************************************************/
+app.get("/api/customer/subscription/portal", authCustomer, async (req, res) => {
+    try {
+        const q = await pool.query(
+            "SELECT stripe_customer_id FROM customers WHERE id=$1",
+            [req.user.id]
+        );
+
+        if (!q.rows.length || !q.rows[0].stripe_customer_id) {
+            return res.status(400).json({ error: "No Stripe customer" });
+        }
+
+        const portal = await stripe.billingPortal.sessions.create({
+            customer: q.rows[0].stripe_customer_id,
+            return_url: `${process.env.FRONTEND_URL}/dashboard.html`
+        });
+
+        return res.json({ url: portal.url });
+
+    } catch (err) {
+        console.error("❌ BILLING PORTAL ERROR:", err);
+        return res.status(500).json({ error: "Cannot create portal" });
+    }
+});
+
 
 /***************************************************************
  *  FRONTEND FALLBACK — SERVE public/index.html
