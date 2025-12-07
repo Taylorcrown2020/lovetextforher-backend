@@ -1561,7 +1561,7 @@ cron.schedule("*/5 * * * *", async () => {
 /***************************************************************
  *  GET CUSTOMER CART
  ***************************************************************/
-app.get("/api/cart", requireAuth, async (req, res) => {
+app.get("/api/cart", authCustomer, async (req, res) => {
     try {
         const q = await pool.query(
             "SELECT items FROM carts WHERE customer_id=$1",
@@ -1582,7 +1582,7 @@ app.get("/api/cart", requireAuth, async (req, res) => {
 /***************************************************************
  *  ADD ITEM TO CART
  ***************************************************************/
-app.post("/api/cart/add", requireAuth, async (req, res) => {
+app.post("/api/cart/add", authCustomer, async (req, res) => {
     try {
         let { productId, name, price } = req.body;
 
@@ -1617,7 +1617,7 @@ app.post("/api/cart/add", requireAuth, async (req, res) => {
 /***************************************************************
  *  REMOVE ITEM FROM CART
  ***************************************************************/
-app.post("/api/cart/remove", requireAuth, async (req, res) => {
+app.post("/api/cart/remove", authCustomer, async (req, res) => {
     try {
         let { productId } = req.body;
 
@@ -1648,7 +1648,7 @@ app.post("/api/cart/remove", requireAuth, async (req, res) => {
 /***************************************************************
  *  MERCH CHECKOUT — ONE-TIME
  ***************************************************************/
-app.post("/api/stripe/merch-checkout", requireAuth, async (req, res) => {
+app.post("/api/stripe/merch-checkout", authCustomer, async (req, res) => {
     try {
         const { items } = req.body;
 
@@ -1690,7 +1690,7 @@ app.post("/api/stripe/merch-checkout", requireAuth, async (req, res) => {
 /***************************************************************
  *  SUBSCRIPTION CHECKOUT — **FINAL FIXED VERSION**
  ***************************************************************/
-app.post("/api/stripe/checkout", requireAuth, async (req, res) => {
+app.post("/api/stripe/checkout", authCustomer, async (req, res) => {
     try {
         const { productId } = req.body;
 
