@@ -2050,6 +2050,49 @@ cron.schedule("* * * * *", async () => {
         client.release();
     }
 });
+/***************************************************************
+ *  CUSTOMER AUTH MIDDLEWARE
+ ***************************************************************/
+global.__LT_authCustomer = function (req, res, next) {
+    try {
+        const token = req.cookies.customer_token;
+        if (!token) return res.status(401).json({ error: "Not logged in" });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.role !== "customer") throw new Error("Invalid role");
+        req.user = decoded;
+        next();
+    } catch (err) {
+        res.clearCookie("customer_token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            path: "/"
+        });
+        return res.status(401).json({ error: "Invalid session" });
+    }
+};
+
+/***************************************************************
+ *  ADMIN AUTH MIDDLEWARE
+ ***************************************************************/
+global.__LT_authAdmin = function (req, res, next) {
+    try {
+        const token = req.cookies.admin_token;
+        if (!token) return res.status(401).json({ error: "Not logged in" });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.role !== "admin") throw new Error("Invalid role");
+        req.admin = decoded;
+        next();
+    } catch (err) {
+        res.clearCookie("admin_token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            path: "/"
+        });
+        return res.status(401).json({ error: "Invalid session" });
+    }
+};
 
 /***************************************************************
  *  SERVER START
