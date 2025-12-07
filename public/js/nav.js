@@ -1,95 +1,155 @@
-/* ============================================================
-   nav.js — FINAL VERSION
-   Fully compatible with your new backend
-============================================================ */
+/************************************************************
+ * CLEAN, SAFE, RESPONSIVE NAVIGATION BAR
+ * - No click hijacking
+ * - Customer / Admin detection
+ * - Looks clean and modern
+ ************************************************************/
 
-document.addEventListener("DOMContentLoaded", () => {
-    buildNavbar();
-});
-
-/* ============================================================
-   BUILD NAVBAR
-============================================================ */
-async function buildNavbar() {
+async function loadNavbar() {
     const nav = document.getElementById("navbar");
     if (!nav) return;
 
-    const user = await getCustomer();
+    // Base styles
+    nav.style.padding = "18px 32px";
+    nav.style.display = "flex";
+    nav.style.justifyContent = "space-between";
+    nav.style.alignItems = "center";
+    nav.style.borderBottom = "1px solid #f3c9dd";
+    nav.style.background = "white";
+    nav.style.position = "sticky";
+    nav.style.top = "0";
+    nav.style.zIndex = "999";
 
-    nav.innerHTML = `
-        <div style="
-            width:100%;
-            padding:18px 24px;
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            background:white;
-            border-bottom:1px solid #f1c3d6;
-            position:fixed;
-            top:0;
-            left:0;
-            z-index:1000;
-        ">
-
-            <a href="/index.html" style="text-decoration:none;color:#d6336c;font-size:22px;font-weight:800;">
-                LoveTextForHer
-            </a>
-
-            <div style="display:flex; gap:20px; align-items:center;">
-                ${user ? authLinks() : guestLinks()}
-            </div>
-        </div>
+    const brandHTML = `
+        <a href="/index.html" style="font-size:24px;font-weight:800;color:#d6336c;text-decoration:none;">
+            LoveTextForHer
+        </a>
     `;
-}
 
-/* ============================================================
-   NAV OPTIONS
-============================================================ */
-function guestLinks() {
-    return `
-        <a href="/products.html" style="color:#d6336c;font-weight:600;">Products</a>
-        <a href="/login.html" style="color:#d6336c;font-weight:600;">Login</a>
-        <a href="/register.html" style="color:#d6336c;font-weight:600;">Sign Up</a>
+    // Default navigation (logged out)
+    let rightHTML = `
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/products.html" class="nav-link">Products</a>
+        <a href="/login.html" class="nav-link">Login</a>
+        <a href="/register.html" class="nav-link">Register</a>
+        <a href="/admin.html" class="nav-link">Admin Login</a>
     `;
-}
 
-function authLinks() {
-    return `
-        <a href="/products.html" style="color:#d6336c;font-weight:600;">Products</a>
-        <a href="/dashboard.html" style="color:#d6336c;font-weight:600;">Dashboard</a>
-        <button onclick="logout()" 
-            style="background:#d6336c;color:white;padding:8px 14px;border:none;border-radius:8px;cursor:pointer;">
-            Logout
-        </button>
-    `;
-}
-
-/* ============================================================
-   CHECK CUSTOMER SESSION
-============================================================ */
-async function getCustomer() {
     try {
-        const res = await fetch("/api/customer/me", {
+        /******************************
+         * CHECK CUSTOMER LOGIN
+         ******************************/
+        const cRes = await fetch("/api/customer/me", {
             credentials: "include",
             cache: "no-store"
         });
 
-        const data = await res.json();
-        return data.customer || null;
+        if (cRes.ok) {
+            const user = await cRes.json();
+            if (user?.email) {
+                rightHTML = `
+                    <a href="/dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="/products.html" class="nav-link">Products</a>
+                    <a href="/cart.html" class="nav-link">Cart</a>
+                    <button id="logoutBtn" class="logout-btn">Logout</button>
+                `;
+                renderNav(brandHTML, rightHTML);
+
+                bindLogout("/api/customer/logout", "/login.html");
+                return;
+            }
+        }
+
+        /******************************
+         * CHECK ADMIN LOGIN
+         ******************************/
+        const aRes = await fetch("/api/admin/me", {
+            credentials: "include",
+            cache: "no-store"
+        });
+
+        if (aRes.ok) {
+            const admin = await aRes.json();
+
+            if (admin?.admin?.email) {
+                rightHTML = `
+                    <a href="/admin.html" class="nav-link">Admin Dashboard</a>
+                    <a href="/admin-recipients.html" class="nav-link">Recipients</a>
+                    <button id="logoutBtn" class="logout-btn">Logout</button>
+                `;
+
+                renderNav(brandHTML, rightHTML);
+
+                bindLogout("/api/admin/logout", "/admin.html");
+                return;
+            }
+        }
+
+        // Default nav (not logged in)
+        renderNav(brandHTML, rightHTML);
 
     } catch (err) {
-        return null;
+        console.error("NAV ERROR:", err);
+        renderNav(brandHTML, rightHTML);
     }
 }
 
-/* ============================================================
-   LOGOUT
-============================================================ */
-async function logout() {
-    await fetch("/api/customer/logout", {
-        method: "POST",
-        credentials: "include"
+/************************************************************
+ * Render navbar with consistent styling
+ ************************************************************/
+function renderNav(brandHTML, rightHTML) {
+    const nav = document.getElementById("navbar");
+
+    nav.innerHTML = `
+        <div style="font-weight:800;">${brandHTML}</div>
+        <div class="nav-right" style="
+            display:flex;
+            gap:28px;
+            align-items:center;
+            font-size:16px;">
+            ${rightHTML}
+        </div>
+    `;
+
+    styleNavLinks();
+}
+
+/************************************************************
+ * Logout handling
+ ************************************************************/
+function bindLogout(endpoint, redirectURL) {
+    const btn = document.getElementById("logoutBtn");
+    if (!btn) return;
+
+    btn.addEventListener("click", async () => {
+        await fetch(endpoint, {
+            method: "POST",
+            credentials: "include"
+        });
+        window.location.href = redirectURL;
+    });
+}
+
+/************************************************************
+ * Style all nav links
+ ************************************************************/
+function styleNavLinks() {
+    document.querySelectorAll(".nav-link").forEach(a => {
+        a.style.textDecoration = "none";
+        a.style.color = "#d6336c";
+        a.style.fontWeight = "600";
     });
 
-    window.location.href = "/index.html";
+    const btn = document.querySelector(".logout-btn");
+    if (btn) {
+        btn.style.background = "#d6336c";
+        btn.style.color = "white";
+        btn.style.border = "none";
+        btn.style.padding = "8px 16px";
+        btn.style.borderRadius = "8px";
+        btn.style.cursor = "pointer";
+        btn.style.fontWeight = "600";
+    }
 }
+
+document.addEventListener("DOMContentLoaded", loadNavbar);
