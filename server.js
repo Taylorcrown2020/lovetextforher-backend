@@ -8,12 +8,15 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-const cookieParser = require("cookie-parser");
 const { Pool } = require("pg");
+const cookieParser = require("cookie-parser");
 const path = require("path");
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const cron = require("node-cron");
+
+const { Resend } = require("resend");   // ← ADD THIS
 
 /***************************************************************
  *  INITIALIZE EXPRESS
