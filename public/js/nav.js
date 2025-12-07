@@ -1,155 +1,169 @@
-/************************************************************
- * CLEAN, SAFE, RESPONSIVE NAVIGATION BAR
- * - No click hijacking
- * - Customer / Admin detection
- * - Looks clean and modern
- ************************************************************/
+/* ============================================================
+   Global Navigation Bar — LoveTextForHer
+   Clean, modern, gradient, admin-style aesthetic
+   Fully compatible with new backend
+============================================================ */
 
-async function loadNavbar() {
-    const nav = document.getElementById("navbar");
-    if (!nav) return;
+document.addEventListener("DOMContentLoaded", async () => {
 
-    // Base styles
-    nav.style.padding = "18px 32px";
-    nav.style.display = "flex";
-    nav.style.justifyContent = "space-between";
-    nav.style.alignItems = "center";
-    nav.style.borderBottom = "1px solid #f3c9dd";
-    nav.style.background = "white";
-    nav.style.position = "sticky";
-    nav.style.top = "0";
-    nav.style.zIndex = "999";
+    const navbar = document.getElementById("navbar");
+    if (!navbar) return;
 
-    const brandHTML = `
-        <a href="/index.html" style="font-size:24px;font-weight:800;color:#d6336c;text-decoration:none;">
-            LoveTextForHer
-        </a>
-    `;
-
-    // Default navigation (logged out)
-    let rightHTML = `
-        <a href="/index.html" class="nav-link">Home</a>
-        <a href="/products.html" class="nav-link">Products</a>
-        <a href="/login.html" class="nav-link">Login</a>
-        <a href="/register.html" class="nav-link">Register</a>
-        <a href="/admin.html" class="nav-link">Admin Login</a>
-    `;
-
-    try {
-        /******************************
-         * CHECK CUSTOMER LOGIN
-         ******************************/
-        const cRes = await fetch("/api/customer/me", {
-            credentials: "include",
-            cache: "no-store"
-        });
-
-        if (cRes.ok) {
-            const user = await cRes.json();
-            if (user?.email) {
-                rightHTML = `
-                    <a href="/dashboard.html" class="nav-link">Dashboard</a>
-                    <a href="/products.html" class="nav-link">Products</a>
-                    <a href="/cart.html" class="nav-link">Cart</a>
-                    <button id="logoutBtn" class="logout-btn">Logout</button>
-                `;
-                renderNav(brandHTML, rightHTML);
-
-                bindLogout("/api/customer/logout", "/login.html");
-                return;
+    navbar.innerHTML = `
+        <style>
+            /* NAV WRAPPER */
+            #ltfh-navbar {
+                width: 100%;
+                height: 82px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 40px;
+                background: rgba(255,255,255,0.55);
+                backdrop-filter: blur(18px);
+                border-bottom: 1px solid rgba(255,255,255,0.7);
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 9999;
             }
-        }
 
-        /******************************
-         * CHECK ADMIN LOGIN
-         ******************************/
-        const aRes = await fetch("/api/admin/me", {
-            credentials: "include",
-            cache: "no-store"
-        });
-
-        if (aRes.ok) {
-            const admin = await aRes.json();
-
-            if (admin?.admin?.email) {
-                rightHTML = `
-                    <a href="/admin.html" class="nav-link">Admin Dashboard</a>
-                    <a href="/admin-recipients.html" class="nav-link">Recipients</a>
-                    <button id="logoutBtn" class="logout-btn">Logout</button>
-                `;
-
-                renderNav(brandHTML, rightHTML);
-
-                bindLogout("/api/admin/logout", "/admin.html");
-                return;
+            /* BRAND */
+            #ltfh-brand {
+                font-size: 22px;
+                font-weight: 800;
+                background: linear-gradient(90deg, #d6336c, #8b5cf6);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                letter-spacing: .5px;
             }
-        }
 
-        // Default nav (not logged in)
-        renderNav(brandHTML, rightHTML);
+            /* NAV LINKS */
+            #ltfh-links a, 
+            #ltfh-links button {
+                margin-left: 26px;
+                font-size: 16px;
+                font-weight: 600;
+                text-decoration: none;
+                color: #d6336c;
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 6px 2px;
+                transition: .25s;
+            }
 
-    } catch (err) {
-        console.error("NAV ERROR:", err);
-        renderNav(brandHTML, rightHTML);
-    }
-}
+            #ltfh-links a:hover {
+                color: #8b5cf6;
+            }
 
-/************************************************************
- * Render navbar with consistent styling
- ************************************************************/
-function renderNav(brandHTML, rightHTML) {
-    const nav = document.getElementById("navbar");
+            /* CART — Gradient Button */
+            .ltfh-cart-btn {
+                padding: 8px 16px;
+                background: linear-gradient(90deg,#8b5cf6,#d6336c);
+                color: white !important;
+                border-radius: 10px;
+            }
+            .ltfh-cart-btn:hover {
+                opacity: .85;
+            }
 
-    nav.innerHTML = `
-        <div style="font-weight:800;">${brandHTML}</div>
-        <div class="nav-right" style="
-            display:flex;
-            gap:28px;
-            align-items:center;
-            font-size:16px;">
-            ${rightHTML}
+            /* LOGOUT BUTTON */
+            .ltfh-logout {
+                padding: 8px 16px;
+                background: linear-gradient(90deg,#d6336c,#8b5cf6);
+                color: white !important;
+                border-radius: 10px;
+            }
+            .ltfh-logout:hover {
+                opacity: .85;
+            }
+        </style>
+
+        <div id="ltfh-navbar">
+            <div id="ltfh-brand">LoveTextForHer</div>
+            <div id="ltfh-links">Loading...</div>
         </div>
     `;
 
-    styleNavLinks();
-}
+    const links = document.getElementById("ltfh-links");
 
-/************************************************************
- * Logout handling
- ************************************************************/
-function bindLogout(endpoint, redirectURL) {
-    const btn = document.getElementById("logoutBtn");
-    if (!btn) return;
+    /* ---------------------------------------------------------
+       Detect logged-in role
+    --------------------------------------------------------- */
 
-    btn.addEventListener("click", async () => {
-        await fetch(endpoint, {
-            method: "POST",
-            credentials: "include"
+    let customer = null;
+    let admin = null;
+
+    try {
+        const r = await fetch("/api/customer/me", {
+            credentials: "include",
+            cache: "no-store"
         });
-        window.location.href = redirectURL;
-    });
-}
+        const data = await r.json();
+        if (data.customer) customer = data.customer;
+    } catch {}
 
-/************************************************************
- * Style all nav links
- ************************************************************/
-function styleNavLinks() {
-    document.querySelectorAll(".nav-link").forEach(a => {
-        a.style.textDecoration = "none";
-        a.style.color = "#d6336c";
-        a.style.fontWeight = "600";
-    });
+    try {
+        const r = await fetch("/api/admin/me", {
+            credentials: "include",
+            cache: "no-store"
+        });
+        const data = await r.json();
+        if (data.admin) admin = data.admin;
+    } catch {}
 
-    const btn = document.querySelector(".logout-btn");
-    if (btn) {
-        btn.style.background = "#d6336c";
-        btn.style.color = "white";
-        btn.style.border = "none";
-        btn.style.padding = "8px 16px";
-        btn.style.borderRadius = "8px";
-        btn.style.cursor = "pointer";
-        btn.style.fontWeight = "600";
+    /* ---------------------------------------------------------
+       IF ADMIN LOGGED IN
+    --------------------------------------------------------- */
+    if (admin) {
+        links.innerHTML = `
+            <a href="/admin.html">Dashboard</a>
+            <a href="/admin-users.html">Users</a>
+            <a href="/admin-customers.html">Customers</a>
+            <a href="/kpi.html">KPIs</a>
+            <button class="ltfh-logout" id="logoutAdmin">Logout</button>
+        `;
+
+        document.getElementById("logoutAdmin").onclick = async () => {
+            await fetch("/api/admin/logout", {
+                method: "POST",
+                credentials: "include"
+            });
+            window.location.href = "/login.html";
+        };
+
+        return;
     }
-}
 
-document.addEventListener("DOMContentLoaded", loadNavbar);
+    /* ---------------------------------------------------------
+       IF CUSTOMER LOGGED IN
+    --------------------------------------------------------- */
+    if (customer) {
+        links.innerHTML = `
+            <a href="/products.html">Products</a>
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/cart.html" class="ltfh-cart-btn">Cart</a>
+            <button class="ltfh-logout" id="logoutCustomer">Logout</button>
+        `;
+
+        document.getElementById("logoutCustomer").onclick = async () => {
+            await fetch("/api/customer/logout", {
+                method: "POST",
+                credentials: "include"
+            });
+            window.location.href = "/index.html";
+        };
+
+        return;
+    }
+
+    /* ---------------------------------------------------------
+       IF LOGGED OUT — Public nav
+    --------------------------------------------------------- */
+    links.innerHTML = `
+        <a href="/products.html">Products</a>
+        <a href="/login.html">Login</a>
+        <a href="/register.html">Register</a>
+    `;
+});
