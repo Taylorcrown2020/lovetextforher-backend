@@ -975,8 +975,19 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
             return res.status(404).json({ error: "Customer not found" });
 
         const customer = customerQ.rows[0];
+        
+        // Check if subscription is active
+        const now = new Date();
+        const isActive = customer.has_subscription || 
+                        (customer.subscription_end && new Date(customer.subscription_end) > now);
+        
+        if (!isActive) {
+            return res.status(403).json({ 
+                error: "You need an active subscription to add recipients." 
+            });
+        }
 
-        // enforce plan limits
+        // Enforce plan limits
         const maxAllowed = global.__LT_getRecipientLimit(customer.current_plan);
         const currentCount = await countRecipients(customer.id);
 
@@ -989,33 +1000,57 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
         let {
             name,
             email,
+            phone_number,
+            delivery_method,
             relationship,
             frequency,
             timings,
             timezone
         } = req.body;
 
+        // Sanitize all inputs
         name = global.__LT_sanitize(name);
         email = global.__LT_sanitize(email);
+        phone_number = global.__LT_sanitize(phone_number);
+        delivery_method = global.__LT_sanitize(delivery_method) || "email";
         relationship = global.__LT_sanitize(relationship);
         frequency = global.__LT_sanitize(frequency);
         timings = global.__LT_sanitize(timings);
         timezone = global.__LT_sanitize(timezone);
 
-        if (!email || !name)
+        // Validate required fields
+        if (!name || !email)
             return res.status(400).json({ error: "Name & email required" });
+
+        // Validate delivery method
+        if (!["email", "sms", "both"].includes(delivery_method)) {
+            delivery_method = "email";
+        }
+
+        // If SMS selected, require phone number
+        if ((delivery_method === "sms" || delivery_method === "both") && !phone_number) {
+            return res.status(400).json({ error: "Phone number required for SMS delivery" });
+        }
 
         const unsubscribeToken = crypto.randomBytes(16).toString("hex");
 
         await global.__LT_pool.query(
             `INSERT INTO users 
-                (email, customer_id, name, relationship, frequency,
-                 timings, timezone, unsubscribe_token, is_active,
-                 next_delivery, created_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,NOW(),NOW())`,
+                (email, phone_number, delivery_method, customer_id, name, 
+                 relationship, frequency, timings, timezone, 
+                 unsubscribe_token, is_active, next_delivery, created_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,true,NOW(),NOW())`,
             [
-                email, customer.id, name, relationship, frequency,
-                timings, timezone, unsubscribeToken
+                email, 
+                phone_number || null, 
+                delivery_method, 
+                customer.id, 
+                name,
+                relationship, 
+                frequency, 
+                timings, 
+                timezone, 
+                unsubscribeToken
             ]
         );
 
@@ -1030,8 +1065,14 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
 /***************************************************************
  *  DELETE RECIPIENT
  ***************************************************************/
+/***************************************************************
+ *  DELETE RECIPIENT
+ ***************************************************************/
+
 app.delete("/api/customer/recipients/:id", global.__LT_authCustomer, async (req, res) => {
     try {
+        // Allow deletion regardless of subscription status
+        // (Users should be able to manage their data even after canceling)
         await global.__LT_pool.query(
             `DELETE FROM users WHERE id=$1 AND customer_id=$2`,
             [req.params.id, req.user.id]
@@ -1519,6 +1560,43 @@ app.post("/api/stripe/merch-checkout", global.__LT_authCustomer, async (req, res
         return res.status(500).json({ error: "Server error processing merch checkout" });
     }
 });
+
+/***************************************************************
+ *  TWILIO SMS CLIENT
+ ***************************************************************/
+let twilioClient = null;
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    const twilio = require("twilio");
+    twilioClient = twilio(
+        process.env.TWILIO_ACCOUNT_SID,
+        process.env.TWILIO_AUTH_TOKEN
+    );
+    console.log("📱 Twilio SMS loaded");
+}
+
+/***************************************************************
+ *  UNIVERSAL SMS SENDER
+ ***************************************************************/
+global.__LT_sendSMS = async function (to, message) {
+    if (!twilioClient) {
+        console.error("❌ Twilio not configured");
+        return false;
+    }
+    
+    try {
+        await twilioClient.messages.create({
+            body: message,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: to
+        });
+        console.log(`📱 SMS sent to ${to}`);
+        return true;
+    } catch (err) {
+        console.error("❌ SMS SEND ERROR:", err);
+        return false;
+    }
+};
+
 /***************************************************************
  *  LoveTextForHer — BACKEND (PART 7 OF 7)
  *  ----------------------------------------------------------
@@ -1588,30 +1666,46 @@ cron.schedule("* * * * *", async () => {
 
         // Get all recipients due for a message
         const due = await client.query(`
-            SELECT *
-            FROM users
-            WHERE is_active = true
-              AND next_delivery <= $1
+            SELECT u.*, c.has_subscription, c.subscription_end
+            FROM users u
+            JOIN customers c ON u.customer_id = c.id
+            WHERE u.is_active = true
+              AND u.next_delivery <= $1
         `, [now]);
 
         for (const r of due.rows) {
             try {
-                const unsubscribeURL =
-                    `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
+                // Check if customer still has active subscription
+                const isActive = r.has_subscription || 
+                                (r.subscription_end && new Date(r.subscription_end) > now);
+                
+                if (!isActive) {
+                    console.log(`⚠️  Skipping ${r.email} - subscription inactive`);
+                    continue;
+                }
 
-                const message =
-                    global.__LT_buildMessage(r.name, r.relationship);
-
-                const html =
-                    global.__LT_buildLoveEmailHTML(r.name, message, unsubscribeURL);
-
-                // SEND EMAIL
-                await global.__LT_sendEmail(
-                    r.email,
-                    "Your Love Message ❤️",
-                    html,
-                    message + "\n\nUnsubscribe: " + unsubscribeURL
-                );
+                const message = global.__LT_buildMessage(r.name, r.relationship);
+                
+                // SEND EMAIL (if delivery method includes email)
+                if (!r.delivery_method || r.delivery_method === "email" || r.delivery_method === "both") {
+                    const unsubscribeURL = `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
+                    const html = global.__LT_buildLoveEmailHTML(r.name, message, unsubscribeURL);
+                    
+                    await global.__LT_sendEmail(
+                        r.email,
+                        "Your Love Message ❤️",
+                        html,
+                        message + "\n\nUnsubscribe: " + unsubscribeURL
+                    );
+                    
+                    console.log(`💌 Email sent → ${r.email}`);
+                }
+                
+                // SEND SMS (if delivery method includes SMS and phone exists)
+                if ((r.delivery_method === "sms" || r.delivery_method === "both") && r.phone_number) {
+                    await global.__LT_sendSMS(r.phone_number, message);
+                    console.log(`📱 SMS sent → ${r.phone_number}`);
+                }
 
                 // LOG MESSAGE
                 await global.__LT_logMessage(
@@ -1630,10 +1724,10 @@ cron.schedule("* * * * *", async () => {
                     WHERE id=$2
                 `, [next, r.id]);
 
-                console.log(`💘 Love message sent → ${r.email}`);
+                console.log(`💘 Love message sent → ${r.name}`);
 
             } catch (innerErr) {
-                console.error("❌ Error sending automated email:", innerErr);
+                console.error("❌ Error sending automated message:", innerErr);
             }
         }
 
