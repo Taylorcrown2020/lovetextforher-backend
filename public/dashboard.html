@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <title>Your Dashboard — LoveTextForHer</title>
 
-    <script>
-        // Protected customer page — nav.js handles session/auth
-    </script>
-
     <style>
         :root {
             --primary: #d6336c;
@@ -26,10 +22,7 @@
             background: linear-gradient(135deg, #fff7fa, #f6f3ff);
         }
 
-        #navbar {
-            width: 100%;
-            height: 95px;
-        }
+        #navbar { width: 100%; height: 95px; }
 
         .dashboard-container {
             max-width: 950px;
@@ -99,8 +92,7 @@
         .log-btn { background: var(--secondary-btn); margin-left: 10px; }
         .flower-btn { background: #ff7ac4; margin-left: 10px; }
 
-        #addForm input,
-        #addForm select {
+        #addForm input, #addForm select {
             width: 100%;
             padding: 14px;
             margin-top: 15px;
@@ -141,7 +133,6 @@
             text-align: center;
         }
 
-        /* MODALS */
         #messageLogModal, #flowerModal {
             display:none;
             position:fixed;
@@ -216,7 +207,7 @@
 
 <button id="manageSubBtn">Manage Subscription</button>
 
-<!-- MESSAGE LOG MODAL -->
+<!-- Message Log Modal -->
 <div id="messageLogModal">
     <div style="background:white; width:420px; padding:20px; border-radius:22px; max-height:80vh; overflow-y:auto;">
         <h2 style="margin-top:0; color:#d6336c;">Message Log</h2>
@@ -229,7 +220,7 @@
     </div>
 </div>
 
-<!-- FLOWER MODAL -->
+<!-- Flower Modal -->
 <div id="flowerModal">
     <div style="background:white; width:420px; padding:20px; border-radius:22px;">
         <h2 style="margin-top:0; color:#d6336c;">Send a Flower 🌸</h2>
@@ -260,120 +251,107 @@
 <script src="/js/nav.js" defer></script>
 
 <script>
-/* ----------------------------------------------------
-   GLOBAL STATE
------------------------------------------------------ */
-let HAS_SUBSCRIPTION = false;
-let PLAN = "none";
-let ACTIVE_UNTIL = null;
+/* ============================================================
+   MATCHES YOUR SERVER SUBSCRIPTION LOGIC EXACTLY
+============================================================ */
+function hasActiveAccess(data) {
+    if (!data) return false;
 
-/* ----------------------------------------------------
-   Custom Relationship Field Toggle
------------------------------------------------------ */
-document.getElementById("r_relationship").addEventListener("change", () => {
-    document.getElementById("r_customRel").style.display =
-        r_relationship.value === "custom" ? "block" : "none";
-});
+    const now = new Date();
 
-/* ----------------------------------------------------
-   SUBSCRIPTION BANNER LOGIC (FIXED!)
------------------------------------------------------ */
+    if (data.has_subscription === true && data.subscription_end === null) return true;
+
+    if (data.subscription_end && new Date(data.subscription_end) > now) return true;
+
+    return false;
+}
+
+/* ============================================================
+   UPDATE SUBSCRIPTION BANNER
+============================================================ */
 function updateSubscriptionBanner(data) {
     const banner = document.getElementById("subscriptionBanner");
     banner.style.display = "block";
 
-    const planName =
-        data.plan === "basic" ? "LoveText Basic" :
-        data.plan === "plus" ? "LoveText Plus" :
-        data.plan === "trial" ? "Free Trial" :
-        "None";
+    const active = hasActiveAccess(data);
 
-    // No subscription
-    if (!data.subscribed && !data.subscription_end) {
+    if (active) {
+        const planNames = {
+            basic: "LoveText Basic ❤️",
+            plus: "LoveText Plus 💜",
+            trial: "Free Trial 💖"
+        };
+
         banner.innerHTML = `
-            You do not have a subscription.<br>
-            <a href="/products.html">Choose a Plan</a>
+            You currently have an active <strong>${planNames[data.current_plan] || "subscription"}</strong>.
         `;
         return;
     }
 
-    // Trial
-    if (data.is_trial) {
-        const end = new Date(data.trial_end).toLocaleDateString();
-        banner.innerHTML = `Your Free Trial is active until <strong>${end}</strong> ❤️`;
-        return;
-    }
-
-    // Canceled but active until date
     if (data.subscription_end) {
         const end = new Date(data.subscription_end).toLocaleDateString();
         banner.innerHTML = `
-            Your subscription remains active until <strong>${end}</strong> ❤️
+            Your subscription ends on <strong>${end}</strong>.
         `;
         return;
     }
 
-    // Active subscription
-    banner.innerHTML =
-        `You currently have an active <strong>${planName}</strong> subscription 💖`;
+    banner.innerHTML = `
+        You do not have a subscription.<br><br>
+        <a href="/products.html">Choose a Plan</a>
+    `;
 }
 
-/* ----------------------------------------------------
-   LOAD SUBSCRIPTION STATUS (FIXED!)
------------------------------------------------------ */
+/* ============================================================
+   LOAD SUB STATUS (CONTROLS EVERYTHING)
+============================================================ */
+let HAS_ACCESS = false;
+
 async function loadSubscriptionStatus() {
     try {
-        const res = await fetch("/api/customer/subscription", { credentials: "include" });
-        if (!res.ok) return;
-
+        const res = await fetch("/api/customer/subscription", {
+            credentials: "include",
+            cache: "no-store"
+        });
         const data = await res.json();
 
-        HAS_SUBSCRIPTION = data.has_subscription;
-        PLAN = data.current_plan;
-        ACTIVE_UNTIL = data.subscription_end;
+        HAS_ACCESS = hasActiveAccess(data);
 
-        updateSubscriptionBanner({
-            subscribed: data.has_subscription,
-            plan: data.current_plan,
-            is_trial: data.trial_active,
-            trial_end: data.trial_end,
-            subscription_end: data.subscription_end
-        });
+        updateSubscriptionBanner(data);
 
         document.getElementById("manageSubBtn").style.display =
-            HAS_SUBSCRIPTION ? "block" : "none";
+            HAS_ACCESS ? "block" : "none";
 
     } catch (err) {
-        console.error("SUB STATUS ERROR", err);
+        console.error("SUB LOAD ERROR", err);
     }
 }
 
-/* ----------------------------------------------------
+/* ============================================================
    LOAD RECIPIENTS
------------------------------------------------------ */
+============================================================ */
 async function loadRecipients() {
     try {
-        const res = await fetch("/api/customer/recipients", { credentials: "include" });
-        const data = await res.json();
+        const res = await fetch("/api/customer/recipients", {
+            credentials: "include"
+        });
 
+        const list = await res.json();
         const box = document.getElementById("recipients");
         box.innerHTML = "";
 
-        if (!data.length) {
-            box.innerHTML = `<p style="text-align:center; color:var(--text-soft);">
-                You have no recipients yet.</p>`;
+        if (!list.length) {
+            box.innerHTML = `<p style="text-align:center; color:var(--text-soft);">You have no recipients yet.</p>`;
             return;
         }
 
-        data.forEach(r => {
-            const timing = Array.isArray(r.timings) ? r.timings.join(", ") : r.timings;
-
+        list.forEach(r => {
             box.innerHTML += `
                 <div class="recipient-box">
                     <strong>${r.name}</strong> (${r.relationship})
                     <p>Email: ${r.email}</p>
                     <p>Frequency: ${r.frequency}</p>
-                    <p>Timing: ${timing}</p>
+                    <p>Time: ${r.timings}</p>
 
                     <button class="delete-btn" onclick="deleteRecipient(${r.id})">Delete</button>
                     <button class="log-btn" onclick="openMessageLog(${r.id})">Message Log</button>
@@ -387,61 +365,49 @@ async function loadRecipients() {
     }
 }
 
-/* ----------------------------------------------------
-   ADD RECIPIENT
------------------------------------------------------ */
+/* ============================================================
+   ADD RECIPIENT — BLOCKS IF NO ACTIVE ACCESS
+============================================================ */
 async function addRecipient() {
-    if (!HAS_SUBSCRIPTION) {
-        msg.innerText = "You need a subscription.";
+    if (!HAS_ACCESS) {
+        document.getElementById("msg").innerText =
+            "You need an active subscription to add recipients.";
         return;
     }
 
-    const name = r_name.value.trim();
-    const email = r_email.value.trim();
-    let relationship = r_relationship.value;
-    const freq = r_frequency.value;
-    const timing = r_timings.value;
-    const timezone = r_timezone.value;
-
-    if (relationship === "custom") {
-        relationship = r_customRel.value.trim();
-    }
-
-    if (!name || !email || !relationship) {
-        msg.innerText = "Please fill out all fields.";
-        return;
-    }
+    const payload = {
+        name: r_name.value.trim(),
+        email: r_email.value.trim(),
+        relationship:
+            r_relationship.value === "custom"
+                ? r_customRel.value.trim()
+                : r_relationship.value,
+        frequency: r_frequency.value,
+        timings: r_timings.value,
+        timezone: r_timezone.value
+    };
 
     const res = await fetch("/api/customer/recipients", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            name,
-            email,
-            relationship,
-            frequency: freq,
-            timings: timing,
-            timezone
-        })
+        body: JSON.stringify(payload)
     });
 
     const data = await res.json();
 
     if (data.success) {
-        msg.innerText = "";
-        r_name.value = "";
-        r_email.value = "";
-        r_customRel.value = "";
+        document.getElementById("msg").innerText = "";
         loadRecipients();
     } else {
-        msg.innerText = data.error || "Error adding recipient.";
+        document.getElementById("msg").innerText =
+            data.error || "Error adding recipient.";
     }
 }
 
-/* ----------------------------------------------------
+/* ============================================================
    DELETE RECIPIENT
------------------------------------------------------ */
+============================================================ */
 async function deleteRecipient(id) {
     if (!confirm("Delete this recipient?")) return;
 
@@ -453,16 +419,19 @@ async function deleteRecipient(id) {
     loadRecipients();
 }
 
-/* ----------------------------------------------------
+/* ============================================================
    MESSAGE LOG
------------------------------------------------------ */
+============================================================ */
 async function openMessageLog(id) {
     const modal = document.getElementById("messageLogModal");
     const content = document.getElementById("logContent");
 
-    content.innerHTML = "<p>Loading...</p>";
+    content.innerHTML = "Loading…";
 
-    const res = await fetch(`/api/message-log/${id}`, { credentials: "include" });
+    const res = await fetch(`/api/message-log/${id}`, {
+        credentials: "include"
+    });
+
     const data = await res.json();
 
     if (!data.success) {
@@ -470,18 +439,16 @@ async function openMessageLog(id) {
     } else if (!data.messages.length) {
         content.innerHTML = "<p>No messages yet.</p>";
     } else {
-        content.innerHTML = "";
-        data.messages.forEach(m => {
-            content.innerHTML += `
-                <div style="padding:12px; margin-bottom:10px; border-radius:12px;
-                    background:#fafafa; border:1px solid #eee;">
+        content.innerHTML = data.messages
+            .map(m => `
+                <div style="padding:12px; margin-bottom:10px; background:#fafafa; border-radius:12px;">
                     <strong>${m.message_text}</strong>
                     <div style="font-size:12px; color:#777;">
                         ${new Date(m.sent_at).toLocaleString()}
                     </div>
                 </div>
-            `;
-        });
+            `)
+            .join("");
     }
 
     modal.style.display = "flex";
@@ -491,9 +458,9 @@ function closeMessageLog() {
     document.getElementById("messageLogModal").style.display = "none";
 }
 
-/* ----------------------------------------------------
-   FLOWER SENDER
------------------------------------------------------ */
+/* ============================================================
+   FLOWER SENDING
+============================================================ */
 let CURRENT_FLOWER_RECIPIENT = null;
 
 function openFlowerModal(id) {
@@ -528,21 +495,22 @@ async function sendFlower() {
     }
 }
 
-/* ----------------------------------------------------
-   MANAGE SUBSCRIPTION (Stripe Portal)
------------------------------------------------------ */
+/* ============================================================
+   STRIPE BILLING PORTAL (Manage Subscription)
+============================================================ */
 document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const res = await fetch("/api/customer/subscription/portal", {
         credentials: "include"
     });
+
     const data = await res.json();
 
     if (data.url) window.location.href = data.url;
 });
 
-/* ----------------------------------------------------
+/* ============================================================
    INIT
------------------------------------------------------ */
+============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
     loadSubscriptionStatus();
     loadRecipients();
