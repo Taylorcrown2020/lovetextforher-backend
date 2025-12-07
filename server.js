@@ -116,37 +116,38 @@ app.post(
             }
 
             // SUBSCRIPTION UPDATED
-            if (event.type === "customer.subscription.updated") {
-                if (data.status === "canceled" || data.cancel_at_period_end === true) {
-                    console.log(`⚠️ Sub update skipped (canceling): ${data.id}`);
-                    return res.sendStatus(200);
-                }
+// SUBSCRIPTION UPDATED
+if (event.type === "customer.subscription.updated") {
+    if (data.status === "canceled" || data.cancel_at_period_end === true) {
+        console.log(`⚠️ Sub update skipped (canceling): ${data.id}`);
+        return res.sendStatus(200);
+    }
 
-                if (data.status === "active" || data.status === "trialing") {
-                    const priceId = data.items.data[0].price.id;
-                    const plan = mapPrice(priceId);
+    if (data.status === "active" || data.status === "trialing") {
+        const priceId = data.items.data[0].price.id;
+        const plan = mapPrice(priceId);
 
-                    console.log(`🔄 Sub updated: ${plan} for ${data.customer}`);
+        console.log(`🔄 Sub updated: ${plan} for ${data.customer}`);
 
-                    const result = await global.__LT_pool.query(
-    `UPDATE customers
-     SET has_subscription = TRUE,
-         current_plan = $1,
-         stripe_subscription_id = $2,
-         subscription_end = NULL
-     WHERE id = $3
-     RETURNING id, current_plan, has_subscription`,
-    [plan, subscriptionId, customerId]
-);
+        // ✅ FIX: Use correct variables
+        const result = await global.__LT_pool.query(
+            `UPDATE customers
+             SET has_subscription = TRUE,
+                 current_plan = $1,
+                 stripe_subscription_id = $2,
+                 subscription_end = NULL
+             WHERE stripe_customer_id = $3
+             RETURNING id, current_plan, has_subscription`,
+            [plan, data.id, data.customer]  // ✅ FIXED!
+        );
 
-console.log(`✅ DB Updated:`, result.rows[0]);
+        console.log(`✅ DB Updated:`, result.rows[0]);
 
-                    if (result.rows.length > 0) {
-                        await global.__LT_enforceRecipientLimit(result.rows[0].id, plan);
-                    }
-                }
-            }
-
+        if (result.rows.length > 0) {
+            await global.__LT_enforceRecipientLimit(result.rows[0].id, plan);
+        }
+    }
+}
             // SUBSCRIPTION DELETED
             if (event.type === "customer.subscription.deleted") {
                 console.log(`❌ Sub deleted: ${data.id}`);
