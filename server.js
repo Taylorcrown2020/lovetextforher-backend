@@ -1751,7 +1751,7 @@ app.post("/api/stripe/checkout", authCustomer, async (req, res) => {
 /***************************************************************
  *  BILLING PORTAL
  ***************************************************************/
-app.get("/api/customer/subscription/portal", requireAuth, async (req, res) => {
+app.get("/api/customer/subscription/portal", authCustomer, async (req, res) => {
     try {
         const q = await pool.query(
             "SELECT stripe_customer_id FROM customers WHERE id=$1",
