@@ -22,6 +22,9 @@ const cron = require("node-cron");
 const nodemailer = require("nodemailer");
 const { Resend } = require("resend");
 
+const app = express();
+const PORT = process.env.PORT || 3000;
+
 /***************************************************************
  *  STRIPE — MUST LOAD FIRST
  ***************************************************************/
@@ -34,17 +37,16 @@ if (process.env.STRIPE_SECRET_KEY) {
     console.error("❌ Missing STRIPE_SECRET_KEY");
 }
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
 /***************************************************************
- *  PRICE MAP — REQUIRED FOR ALL SUB LOGIC
+ *  PRICE MAP (Your exact IDs)
  ***************************************************************/
 const PRICE_MAP = {
     "free-trial": process.env.STRIPE_FREETRIAL_PRICE_ID,
     "love-basic": process.env.STRIPE_BASIC_PRICE_ID,
     "love-plus": process.env.STRIPE_PLUS_PRICE_ID
 };
+
+global.__PRICE_MAP = PRICE_MAP;
 
 console.log("💰 PRICE MAP:", PRICE_MAP);
 
@@ -61,8 +63,8 @@ const pool = new Pool({
 });
 
 pool.query("SELECT NOW()")
-    .then(() => console.log("✅ DB Connected"))
-    .catch(err => console.error("❌ DB Error:", err));
+    .then(() => console.log("✅ Database connected"))
+    .catch(err => console.error("❌ DB ERROR:", err));
 
 /***************************************************************
  *  UNIVERSAL HELPERS
@@ -93,8 +95,11 @@ function planLimit(plan) {
     return 0;
 }
 
+global.normalizePlan = normalizePlan;
+global.planLimit = planLimit;
+
 /***************************************************************
- *  STRIPE WEBHOOK — MUST BE BEFORE JSON PARSER
+ *  STRIPE WEBHOOK — MUST BE BEFORE express.json()
  ***************************************************************/
 app.post(
     "/webhook",
@@ -112,27 +117,24 @@ app.post(
             console.log("📨 Webhook:", event.type);
             const data = event.data.object;
 
-            // Map price → plan
-            const mapPrice = id => {
-                if (id === PRICE_MAP["free-trial"]) return "trial";
-                if (id === PRICE_MAP["love-basic"]) return "basic";
-                if (id === PRICE_MAP["love-plus"]) return "plus";
+            const priceToPlan = price => {
+                if (price === PRICE_MAP["free-trial"]) return "trial";
+                if (price === PRICE_MAP["love-basic"]) return "basic";
+                if (price === PRICE_MAP["love-plus"]) return "plus";
                 return "none";
             };
 
-            /***********************************************************
-             * CHECKOUT COMPLETED (first-time subscription)
-             ***********************************************************/
+            /******************************
+             * CHECKOUT COMPLETED
+             ******************************/
             if (event.type === "checkout.session.completed") {
-                if (data.mode !== "subscription") {
-                    return res.sendStatus(200);
-                }
+                if (data.mode !== "subscription") return res.sendStatus(200);
 
                 const customerId = data.metadata.customer_id;
                 const subId = data.subscription;
 
                 const stripeSub = await stripe.subscriptions.retrieve(subId);
-                const plan = mapPrice(stripeSub.items.data[0].price.id);
+                const plan = priceToPlan(stripeSub.items.data[0].price.id);
 
                 await pool.query(
                     `
@@ -149,11 +151,11 @@ app.post(
                 console.log("✅ Checkout Completed:", plan);
             }
 
-            /***********************************************************
+            /******************************
              * SUB CREATED
-             ***********************************************************/
+             ******************************/
             if (event.type === "customer.subscription.created") {
-                const plan = mapPrice(data.items.data[0].price.id);
+                const plan = priceToPlan(data.items.data[0].price.id);
 
                 await pool.query(
                     `
@@ -170,16 +172,11 @@ app.post(
                 console.log("➕ Subscription Created:", plan);
             }
 
-            /***********************************************************
+            /******************************
              * SUB UPDATED (upgrade/downgrade)
-             ***********************************************************/
+             ******************************/
             if (event.type === "customer.subscription.updated") {
-                if (data.cancel_at_period_end) {
-                    console.log("⏳ Subscription will cancel later");
-                    return res.sendStatus(200);
-                }
-
-                const plan = mapPrice(data.items.data[0].price.id);
+                const plan = priceToPlan(data.items.data[0].price.id);
 
                 await pool.query(
                     `
@@ -195,9 +192,9 @@ app.post(
                 console.log("🔄 Subscription Updated:", plan);
             }
 
-            /***********************************************************
+            /******************************
              * SUB DELETED (canceled)
-             ***********************************************************/
+             ******************************/
             if (event.type === "customer.subscription.deleted") {
                 const end = data.ended_at
                     ? new Date(data.ended_at * 1000)
@@ -228,7 +225,7 @@ app.post(
 );
 
 /***************************************************************
- *  END PART 1 — REPLY “part 2”
+ * END PART 1 — REPLY “part 2”
  ***************************************************************/
 /***************************************************************
  *  LoveTextForHer — Backend (Part 2 / 7)
@@ -236,10 +233,9 @@ app.post(
  *  ✔ Middleware (AFTER webhook)
  *  ✔ CORS for Render frontend
  *  ✔ Static files
- *  ✔ Customer & Admin auth middleware
+ *  ✔ Customer & Admin auth
  *  ✔ Admin seeding
  *  ✔ Register/Login/Logout
- *  ✔ /me endpoints
  ***************************************************************/
 
 /***************************************************************
@@ -249,26 +245,22 @@ app.use(express.json({ limit: "5mb" }));
 app.use(cookieParser());
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL,   // You confirmed this domain
+    origin: process.env.FRONTEND_URL,
     credentials: true
 }));
 
 app.use(express.static(path.join(__dirname, "public")));
 
 /***************************************************************
- *  AUTH MIDDLEWARE — CUSTOMER
+ *  JWT AUTH — CUSTOMER
  ***************************************************************/
-global.authCustomer = function (req, res, next) {
+global.authCustomer = (req, res, next) => {
     try {
         const token = req.cookies.customer_token;
-
-        if (!token)
-            return res.status(401).json({ error: "Not logged in" });
+        if (!token) return res.status(401).json({ error: "Not logged in" });
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        if (decoded.role !== "customer")
-            throw new Error("Invalid role");
+        if (decoded.role !== "customer") throw new Error("Wrong role");
 
         req.user = decoded;
         next();
@@ -278,27 +270,22 @@ global.authCustomer = function (req, res, next) {
             httpOnly: true,
             secure: true,
             sameSite: "none",
-            path: "/"
+            path: "/",
         });
-
         return res.status(401).json({ error: "Invalid session" });
     }
 };
 
 /***************************************************************
- *  AUTH MIDDLEWARE — ADMIN
+ *  JWT AUTH — ADMIN
  ***************************************************************/
-global.authAdmin = function (req, res, next) {
+global.authAdmin = (req, res, next) => {
     try {
         const token = req.cookies.admin_token;
-
-        if (!token)
-            return res.status(401).json({ error: "Not logged in" });
+        if (!token) return res.status(401).json({ error: "Not logged in" });
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        if (decoded.role !== "admin")
-            throw new Error("Invalid role");
+        if (decoded.role !== "admin") throw new Error("Wrong role");
 
         req.admin = decoded;
         next();
@@ -308,15 +295,14 @@ global.authAdmin = function (req, res, next) {
             httpOnly: true,
             secure: true,
             sameSite: "none",
-            path: "/"
+            path: "/",
         });
-
-        return res.status(401).json({ error: "Invalid session" });
+        return res.status(401).json({ error: "Invalid admin session" });
     }
 };
 
 /***************************************************************
- *  SEED DEFAULT ADMIN (first run only)
+ *  SEED DEFAULT ADMIN (FIRST RUN)
  ***************************************************************/
 async function seedAdmin() {
     try {
@@ -324,13 +310,11 @@ async function seedAdmin() {
 
         if (q.rows.length === 0) {
             const hash = await bcrypt.hash("Admin123!", 10);
-
             await pool.query(
                 `INSERT INTO admins (email, password_hash)
                  VALUES ($1, $2)`,
                 ["admin@lovetextforher.com", hash]
             );
-
             console.log("🌟 Default admin created");
         }
     } catch (err) {
@@ -355,13 +339,13 @@ app.post("/api/customer/register", async (req, res) => {
         if (password.length < 6)
             return res.status(400).json({ error: "Password too short" });
 
-        // Check if exists
-        const exists = await pool.query(
+        // Check duplicate
+        const ex = await pool.query(
             "SELECT id FROM customers WHERE email=$1",
             [email]
         );
 
-        if (exists.rows.length > 0)
+        if (ex.rows.length > 0)
             return res.status(400).json({ error: "Email already exists" });
 
         const hash = await bcrypt.hash(password, 10);
@@ -369,10 +353,10 @@ app.post("/api/customer/register", async (req, res) => {
         await pool.query(
             `
             INSERT INTO customers
-                (name, email, password_hash,
-                 has_subscription, current_plan,
-                 stripe_customer_id, stripe_subscription_id,
-                 subscription_end)
+            (name, email, password_hash,
+             has_subscription, current_plan,
+             stripe_customer_id, stripe_subscription_id,
+             subscription_end)
             VALUES ($1,$2,$3,false,'none',NULL,NULL,NULL)
             `,
             [name, email, hash]
@@ -392,7 +376,6 @@ app.post("/api/customer/register", async (req, res) => {
 app.post("/api/customer/login", async (req, res) => {
     try {
         let { email, password } = req.body;
-
         email = sanitize(email);
 
         const q = await pool.query(
@@ -400,18 +383,18 @@ app.post("/api/customer/login", async (req, res) => {
             [email]
         );
 
-        if (q.rows.length === 0)
+        if (!q.rows.length)
             return res.status(400).json({ error: "Invalid credentials" });
 
-        const user = q.rows[0];
+        const customer = q.rows[0];
 
-        const valid = await bcrypt.compare(password, user.password_hash);
+        const valid = await bcrypt.compare(password, customer.password_hash);
         if (!valid)
             return res.status(400).json({ error: "Invalid credentials" });
 
         const token = signJWT({
-            id: user.id,
-            email: user.email,
+            id: customer.id,
+            email: customer.email,
             role: "customer"
         });
 
@@ -451,7 +434,6 @@ app.post("/api/customer/logout", (req, res) => {
 app.post("/api/admin/login", async (req, res) => {
     try {
         let { email, password } = req.body;
-
         email = sanitize(email);
 
         const q = await pool.query(
@@ -459,7 +441,7 @@ app.post("/api/admin/login", async (req, res) => {
             [email]
         );
 
-        if (q.rows.length === 0)
+        if (!q.rows.length)
             return res.status(400).json({ error: "Invalid credentials" });
 
         const admin = q.rows[0];
@@ -511,7 +493,9 @@ app.get("/api/customer/me", authCustomer, async (req, res) => {
     try {
         const q = await pool.query(
             `
-            SELECT id, name, email, has_subscription, current_plan
+            SELECT id, name, email, has_subscription, current_plan,
+                   stripe_customer_id, stripe_subscription_id,
+                   subscription_end
             FROM customers
             WHERE id=$1
             `,
@@ -547,25 +531,24 @@ app.get("/api/admin/me", authAdmin, (req, res) => {
  *  ------------------------------------------------------------
  *  ✔ Message templates
  *  ✔ Message builder
- *  ✔ Email HTML builder
- *  ✔ Plan normalization
- *  ✔ Plan limits
+ *  ✔ Email generator
+ *  ✔ Plan normalization & limits
  *  ✔ Enforce limits after downgrade
- *  ✔ Message logging
+ *  ✔ Message logs
  ***************************************************************/
 
 /***************************************************************
- *  MESSAGE TEMPLATES
+ *  UNIVERSAL MESSAGE TEMPLATES (relationship-aware)
  ***************************************************************/
 const MESSAGE_TEMPLATES = {
     spouse: [
         "Hey {name}, your partner loves you deeply ❤️",
-        "{name}, you are appreciated more than you know 💍",
+        "{name}, you're appreciated more than you know 💍",
         "Your spouse is thinking about you right now 💕"
     ],
     girlfriend: [
         "{name}, you are loved more every single day 💖",
-        "Someone can't stop thinking about you 🌹",
+        "Someone can’t stop thinking about you 🌹",
         "A reminder that you're adored, {name} ❤️"
     ],
     boyfriend: [
@@ -606,36 +589,38 @@ const MESSAGE_TEMPLATES = {
 };
 
 /***************************************************************
- *  BUILD LOVE MESSAGE
+ *  BUILD LOVE MESSAGE (relationship-aware)
  ***************************************************************/
 function buildLoveMessage(name, relationship) {
-    const cleanName = sanitize(name);
+    const clean = sanitize(name);
 
-    const group =
-        MESSAGE_TEMPLATES[relationship?.toLowerCase()] ||
-        MESSAGE_TEMPLATES.default;
+    const group = MESSAGE_TEMPLATES[relationship?.toLowerCase()] ||
+                  MESSAGE_TEMPLATES.default;
 
     const template = group[Math.floor(Math.random() * group.length)];
 
-    return template.replace("{name}", cleanName);
+    return template.replace("{name}", clean);
 }
 
 global.buildLoveMessage = buildLoveMessage;
 
 /***************************************************************
- *  EMAIL TEMPLATE BUILDER
+ *  EMAIL HTML TEMPLATE
  ***************************************************************/
 function buildLoveEmailHTML(name, message, unsubscribeURL) {
     return `
         <div style="font-family:Arial;padding:20px;">
             <h2 style="color:#d6336c;">Hello ${sanitize(name)} ❤️</h2>
-            <p style="font-size:16px; line-height:1.6;">
+
+            <p style="font-size:16px;line-height:1.6;">
                 ${sanitize(message)}
             </p>
+
             <br>
+
             <a href="${unsubscribeURL}"
-               style="color:#888; font-size:12px;">
-               Unsubscribe from messages
+               style="color:#777;font-size:12px;text-decoration:none;">
+                Unsubscribe from messages
             </a>
         </div>
     `;
@@ -655,29 +640,28 @@ global.normalizePlan = normalizePlan;
 
 /***************************************************************
  *  PLAN LIMITS
- *  trial = unlimited
+ *  trial = ∞
  *  basic = 3
- *  plus = unlimited
+ *  plus  = ∞
  ***************************************************************/
 function getRecipientLimit(plan) {
-    if (plan === "plus") return Infinity;
     if (plan === "trial") return Infinity;
+    if (plan === "plus") return Infinity;
     if (plan === "basic") return 3;
     return 0;
 }
 global.getRecipientLimit = getRecipientLimit;
 
 /***************************************************************
- *  ENFORCE RECIPIENT LIMIT (after downgrade)
+ *  ENFORCE LIMITS (after downgrade)
  ***************************************************************/
 async function enforceRecipientLimit(customerId, plan) {
     const limit = getRecipientLimit(plan);
-
     if (limit === Infinity) return;
 
     const q = await pool.query(
         `SELECT id FROM users
-         WHERE customer_id = $1
+         WHERE customer_id=$1
          ORDER BY id ASC`,
         [customerId]
     );
@@ -686,8 +670,8 @@ async function enforceRecipientLimit(customerId, plan) {
 
     if (recipients.length <= limit) return;
 
+    // Remove oldest ones until within limit
     const toDelete = recipients.slice(0, recipients.length - limit);
-
     const ids = toDelete.map(r => r.id);
 
     await pool.query(
@@ -708,12 +692,12 @@ global.logMessage = async function (customerId, recipientId, email, message) {
         await pool.query(
             `
             INSERT INTO message_logs (customer_id, recipient_id, email, message)
-            VALUES ($1, $2, $3, $4)
+            VALUES ($1,$2,$3,$4)
             `,
             [customerId, recipientId, email, message]
         );
     } catch (err) {
-        console.error("ERROR LOGGING MESSAGE:", err);
+        console.error("❌ LOG MESSAGE ERROR:", err);
     }
 };
 
@@ -723,11 +707,9 @@ global.logMessage = async function (customerId, recipientId, email, message) {
 /***************************************************************
  *  LoveTextForHer — Backend (Part 4 / 7)
  *  ------------------------------------------------------------
- *  ✔ Customer register
- *  ✔ Customer login
- *  ✔ Customer logout
+ *  ✔ Customer register/login/logout
  *  ✔ Admin login/logout
- *  ✔ JWT middleware
+ *  ✔ JWT middleware for customer/admin
  *  ✔ /me endpoints
  ***************************************************************/
 
@@ -752,7 +734,7 @@ app.post("/api/customer/register", async (req, res) => {
             [email]
         );
 
-        if (exists.rows.length > 0)
+        if (exists.rows.length)
             return res.status(400).json({ error: "Email already exists" });
 
         const hash = await bcrypt.hash(password, 10);
@@ -760,12 +742,11 @@ app.post("/api/customer/register", async (req, res) => {
         await pool.query(
             `
             INSERT INTO customers
-            (name, email, password_hash,
-             has_subscription, current_plan,
-             trial_active, trial_end,
-             stripe_customer_id, stripe_subscription_id,
-             subscription_end)
-            VALUES ($1,$2,$3,false,'none',false,NULL,NULL,NULL,NULL)
+                (name, email, password_hash,
+                 has_subscription, current_plan,
+                 stripe_customer_id, stripe_subscription_id,
+                 subscription_end)
+            VALUES ($1,$2,$3,false,'none',NULL,NULL,NULL)
             `,
             [name, email, hash]
         );
@@ -792,7 +773,7 @@ app.post("/api/customer/login", async (req, res) => {
             [email]
         );
 
-        if (q.rows.length === 0)
+        if (!q.rows.length)
             return res.status(400).json({ error: "Invalid credentials" });
 
         const customer = q.rows[0];
@@ -807,12 +788,13 @@ app.post("/api/customer/login", async (req, res) => {
             role: "customer"
         });
 
+        // Secure cookie
         res.cookie("customer_token", token, {
             httpOnly: true,
-            secure: true,
-            sameSite: "none",
+            secure: true,      // required on Render
+            sameSite: "none",  // required for cross-origin cookie
             path: "/",
-            maxAge: 7 * 86400 * 1000 // 7 days
+            maxAge: 7 * 86400 * 1000
         });
 
         return res.json({ success: true });
@@ -843,6 +825,7 @@ app.post("/api/customer/logout", (req, res) => {
 app.post("/api/admin/login", async (req, res) => {
     try {
         let { email, password } = req.body;
+
         email = sanitize(email);
 
         const q = await pool.query(
@@ -896,19 +879,17 @@ app.post("/api/admin/logout", (req, res) => {
 });
 
 /***************************************************************
- *  CUSTOMER JWT MIDDLEWARE
+ *  CUSTOMER AUTH MIDDLEWARE
  ***************************************************************/
 global.authCustomer = function (req, res, next) {
     try {
         const token = req.cookies.customer_token;
-
         if (!token)
             return res.status(401).json({ error: "Not logged in" });
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
         if (decoded.role !== "customer")
-            throw new Error("Wrong role");
+            throw new Error("Invalid role");
 
         req.user = decoded;
         next();
@@ -926,19 +907,17 @@ global.authCustomer = function (req, res, next) {
 };
 
 /***************************************************************
- *  ADMIN JWT MIDDLEWARE
+ *  ADMIN AUTH MIDDLEWARE
  ***************************************************************/
 global.authAdmin = function (req, res, next) {
     try {
         const token = req.cookies.admin_token;
-
         if (!token)
             return res.status(401).json({ error: "Not logged in" });
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
         if (decoded.role !== "admin")
-            throw new Error("Wrong role");
+            throw new Error("Invalid role");
 
         req.admin = decoded;
         next();
@@ -956,29 +935,27 @@ global.authAdmin = function (req, res, next) {
 };
 
 /***************************************************************
- *  CUSTOMER /me
+ *  CUSTOMER /me ENDPOINT
  ***************************************************************/
 app.get("/api/customer/me", authCustomer, async (req, res) => {
     try {
         const q = await pool.query(
-            `
-            SELECT id, name, email, has_subscription, current_plan
-            FROM customers
-            WHERE id=$1
-            `,
+            `SELECT id, name, email, has_subscription, current_plan
+             FROM customers
+             WHERE id=$1`,
             [req.user.id]
         );
 
         return res.json({ customer: q.rows[0] });
 
     } catch (err) {
-        console.error("CUSTOMER /me ERROR:", err);
+        console.error("/me ERROR:", err);
         return res.status(500).json({ customer: null });
     }
 });
 
 /***************************************************************
- *  ADMIN /me
+ *  ADMIN /me ENDPOINT
  ***************************************************************/
 app.get("/api/admin/me", authAdmin, (req, res) => {
     return res.json({
@@ -991,21 +968,21 @@ app.get("/api/admin/me", authAdmin, (req, res) => {
 });
 
 /***************************************************************
- *  END PART 4 — reply “part 5”
+ *  END PART 4 — Reply “part 5”
  ***************************************************************/
 /***************************************************************
  *  LoveTextForHer — Backend (Part 5 / 7)
  *  ------------------------------------------------------------
- *  ✔ Recipient list/add/delete
- *  ✔ Subscription limits (trial/unlimited/basic=3)
+ *  ✔ Recipients (list/add/delete)
+ *  ✔ Subscription plan limits
  *  ✔ Message logs
  *  ✔ Flower sending
- *  ✔ Admin recipient tools
+ *  ✔ Public unsubscribe link
+ *  ✔ Admin recipient management
  ***************************************************************/
 
-
 /***************************************************************
- *  COUNT RECIPIENTS FOR A CUSTOMER
+ *  COUNT RECIPIENTS FOR CUSTOMER
  ***************************************************************/
 async function countRecipients(customerId) {
     const q = await pool.query(
@@ -1015,9 +992,8 @@ async function countRecipients(customerId) {
     return Number(q.rows[0].count);
 }
 
-
 /***************************************************************
- *  GET ALL RECIPIENTS FOR THE LOGGED-IN CUSTOMER
+ *  GET CUSTOMER RECIPIENT LIST
  ***************************************************************/
 app.get("/api/customer/recipients", authCustomer, async (req, res) => {
     try {
@@ -1042,34 +1018,30 @@ app.get("/api/customer/recipients", authCustomer, async (req, res) => {
     }
 });
 
-
 /***************************************************************
- *  ADD RECIPIENT (LIMITS ENFORCED)
+ *  ADD RECIPIENT (WITH PLAN LIMIT)
  ***************************************************************/
 app.post("/api/customer/recipients", authCustomer, async (req, res) => {
     try {
-        // Get customer info
-        const customerQ = await pool.query(
-            "SELECT * FROM customers WHERE id=$1",
+        const userQ = await pool.query(
+            "SELECT current_plan FROM customers WHERE id=$1",
             [req.user.id]
         );
 
-        if (!customerQ.rows.length)
+        if (!userQ.rows.length)
             return res.status(404).json({ error: "Customer not found" });
 
-        const customer = customerQ.rows[0];
+        const plan = userQ.rows[0].current_plan;
+        const maxAllowed = getRecipientLimit(plan);
+        const current = await countRecipients(req.user.id);
 
-        // Determine plan limit
-        const maxAllowed = getRecipientLimit(customer.current_plan);
-        const currentCount = await countRecipients(customer.id);
-
-        if (currentCount >= maxAllowed) {
+        if (current >= maxAllowed) {
             return res.status(400).json({
-                error: "Your subscription plan does not allow additional recipients."
+                error: "Your subscription plan does not allow more recipients."
             });
         }
 
-        // Sanitize incoming data
+        // Sanitize input
         let {
             name,
             email,
@@ -1087,12 +1059,10 @@ app.post("/api/customer/recipients", authCustomer, async (req, res) => {
         timezone = sanitize(timezone);
 
         if (!name || !email)
-            return res.status(400).json({ error: "Name & email are required." });
+            return res.status(400).json({ error: "Name & email required" });
 
-        // Generate unsubscribe token
         const unsubscribeToken = crypto.randomBytes(16).toString("hex");
 
-        // Insert recipient
         await pool.query(
             `
             INSERT INTO users
@@ -1104,7 +1074,7 @@ app.post("/api/customer/recipients", authCustomer, async (req, res) => {
             `,
             [
                 email,
-                customer.id,
+                req.user.id,
                 name,
                 relationship,
                 frequency,
@@ -1122,7 +1092,6 @@ app.post("/api/customer/recipients", authCustomer, async (req, res) => {
     }
 });
 
-
 /***************************************************************
  *  DELETE RECIPIENT
  ***************************************************************/
@@ -1136,14 +1105,13 @@ app.delete("/api/customer/recipients/:id", authCustomer, async (req, res) => {
         return res.json({ success: true });
 
     } catch (err) {
-        console.error("DELETE RECIPIENT ERROR:", err);
+        console.error("DELETE RECIP ERROR:", err);
         return res.status(500).json({ error: "Server error" });
     }
 });
 
-
 /***************************************************************
- *  MESSAGE LOG (LAST 5 MESSAGES)
+ *  GET MESSAGE LOG (LAST 5)
  ***************************************************************/
 app.get("/api/message-log/:rid", authCustomer, async (req, res) => {
     try {
@@ -1168,9 +1136,8 @@ app.get("/api/message-log/:rid", authCustomer, async (req, res) => {
     }
 });
 
-
 /***************************************************************
- *  SEND FLOWER MESSAGE TO RECIPIENT
+ *  SEND FLOWER TO RECIPIENT
  ***************************************************************/
 app.post("/api/customer/send-flowers/:id", authCustomer, async (req, res) => {
     try {
@@ -1190,8 +1157,7 @@ app.post("/api/customer/send-flowers/:id", authCustomer, async (req, res) => {
         const unsubscribeURL =
             `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
 
-        const message =
-            `🌸 You received a flower!` +
+        const message = "🌸 You received a flower!" +
             (note?.trim() ? ` — ${sanitize(note)}` : "");
 
         const html = buildLoveEmailHTML(r.name, message, unsubscribeURL);
@@ -1203,7 +1169,7 @@ app.post("/api/customer/send-flowers/:id", authCustomer, async (req, res) => {
             message + "\n\nUnsubscribe: " + unsubscribeURL
         );
 
-        // Log the message
+        // Log flower
         await pool.query(
             `
             INSERT INTO message_logs (customer_id, recipient_id, email, message)
@@ -1220,9 +1186,8 @@ app.post("/api/customer/send-flowers/:id", authCustomer, async (req, res) => {
     }
 });
 
-
 /***************************************************************
- *  PUBLIC UNSUBSCRIBE ENDPOINT
+ *  PUBLIC UNSUBSCRIBE
  ***************************************************************/
 app.get("/api/unsubscribe/:token", async (req, res) => {
     try {
@@ -1234,7 +1199,7 @@ app.get("/api/unsubscribe/:token", async (req, res) => {
         );
 
         if (!q.rows.length)
-            return res.status(404).send("Invalid unsubscribe link.");
+            return res.status(404).send("Invalid link");
 
         await pool.query(
             "UPDATE users SET is_active=false WHERE id=$1",
@@ -1251,7 +1216,6 @@ app.get("/api/unsubscribe/:token", async (req, res) => {
         return res.status(500).send("Server error");
     }
 });
-
 
 /***************************************************************
  *  ADMIN — GET ALL RECIPIENTS
@@ -1277,17 +1241,12 @@ app.get("/api/admin/recipients", authAdmin, async (req, res) => {
     }
 });
 
-
 /***************************************************************
- *  ADMIN — DELETE RECIPIENT
+ *  ADMIN — DELETE ANY RECIPIENT
  ***************************************************************/
 app.delete("/api/admin/recipients/:id", authAdmin, async (req, res) => {
     try {
-        await pool.query(
-            "DELETE FROM users WHERE id=$1",
-            [req.params.id]
-        );
-
+        await pool.query("DELETE FROM users WHERE id=$1", [req.params.id]);
         return res.json({ success: true });
 
     } catch (err) {
@@ -1296,9 +1255,8 @@ app.delete("/api/admin/recipients/:id", authAdmin, async (req, res) => {
     }
 });
 
-
 /***************************************************************
- *  ADMIN — SEND MESSAGE NOW (override schedule)
+ *  ADMIN — SEND MESSAGE NOW (IMMEDIATE OVERRIDE)
  ***************************************************************/
 app.post("/api/admin/send-now/:id", authAdmin, async (req, res) => {
     try {
@@ -1317,23 +1275,24 @@ app.post("/api/admin/send-now/:id", authAdmin, async (req, res) => {
         const unsubscribeURL =
             `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
 
-        const message = buildMessage(r.name, r.relationship);
-        const html = buildLoveEmailHTML(r.name, message, unsubscribeURL);
+        const msg = buildMessage(r.name, r.relationship);
+
+        const html = buildLoveEmailHTML(r.name, msg, unsubscribeURL);
 
         await sendEmail(
             r.email,
             "A Love Message For You ❤️",
             html,
-            message + "\n\nUnsubscribe: " + unsubscribeURL
+            msg + "\n\nUnsubscribe: " + unsubscribeURL
         );
 
-        // Log the message
+        // Log
         await pool.query(
             `
             INSERT INTO message_logs (customer_id, recipient_id, email, message)
             VALUES ($1,$2,$3,$4)
             `,
-            [r.customer_id, r.id, r.email, message]
+            [r.customer_id, r.id, r.email, msg]
         );
 
         return res.json({ success: true });
@@ -1344,90 +1303,94 @@ app.post("/api/admin/send-now/:id", authAdmin, async (req, res) => {
     }
 });
 
-
 /***************************************************************
- *  END OF PART 5 — reply "part 6"
+ *  END PART 5 — reply “part 6”
  ***************************************************************/
 /***************************************************************
  *  LoveTextForHer — Backend (Part 6 / 7)
  *  ------------------------------------------------------------
- *  ✔ Romantic message builder
- *  ✔ HTML email template
- *  ✔ Resend email sender (+ Brevo fallback)
+ *  ✔ Relationship-aware romantic message builder
+ *  ✔ HTML email builder
+ *  ✔ Resend + Brevo fallback sender
+ *  ✔ Final recipient limit map
  *  ✔ Cron scheduler (every 5 minutes)
  ***************************************************************/
 
-
 /***************************************************************
- *  PRIMARY MESSAGE BUILDER (relationship-aware)
+ *  MESSAGE BUILDER (relationship-aware)
  ***************************************************************/
 function buildMessage(name, relationship) {
+    const cleanName = sanitize(name);
+
+    // Base messages shown to everyone
     const base = [
-        `Hey ${name}, just a reminder—you’re appreciated more than you know ❤️`,
-        `${name}, someone out there is thinking about you right now 💕`,
-        `${name}, you deserve kindness, joy, and all the love today 🌸`,
-        `A small reminder for ${name}: you brighten someone’s world ✨`,
-        `${name}, you matter deeply to someone today and every day 💖`
+        `Hey ${cleanName}, someone is thinking about you right now ❤️`,
+        `${cleanName}, you deserve love, joy, and kindness today 🌸`,
+        `A reminder for ${cleanName}: you're appreciated more than you know 💕`,
+        `${cleanName}, you brighten someone's world ✨`,
+        `You matter deeply to someone today, ${cleanName} 💖`
     ];
 
-    const relationshipAddOns = {
+    const extras = {
         spouse: [
-            `Your partner loves you more than words can say 💍💕`,
-            `Your spouse wanted you to know you're their whole world ❤️`
+            "Your partner loves you more than words can say 💍💕",
+            "You mean the world to your spouse ❤️"
         ],
         girlfriend: [
-            `Your boyfriend wants you to remember you're his greatest blessing 💖`,
-            `You are loved more than you will ever realize 💕`
+            "Your boyfriend wants you to know you're his greatest blessing 💖",
+            "You are loved more than you will ever realize 💕"
         ],
         boyfriend: [
-            `Your girlfriend wanted you to know you mean everything to her ❤️`,
-            `You are strong, valued, and deeply loved 💙`
+            "Your girlfriend wants you to know you mean everything to her ❤️",
+            "You are strong, valued, and deeply loved 💙"
         ],
         mom: [
-            `Your child wants you to know how much you inspire them every day ❤️`,
-            `You are the heart of the family 💐`
+            "Your child wants you to know how much they appreciate you ❤️",
+            "You are the heart of your family 💐"
         ],
         dad: [
-            `Your child appreciates you more than you know 💙`,
-            `Your strength and love mean everything to your family 👨‍👧‍👦`
+            "Your child appreciates everything you do 💙",
+            "Your strength means the world to your family 👨‍👧‍👦"
         ],
         sister: [
-            `A sibling who loves you wanted you to smile today 💕`,
-            `You’re the best sister anyone could ask for 🎀`
+            "A sibling who loves you wanted you to smile today 💕",
+            "You're the best sister anyone could ask for 🎀"
         ],
         brother: [
-            `Someone who admires you wanted you to know you're amazing 💙`,
-            `Best brother award goes to… you 🏆`
+            "Someone who admires you wanted you to know you're amazing 💙",
+            "Best brother award goes to you 🏆"
         ],
         friend: [
-            `A friend who cares about you wanted to brighten your day 😊`,
-            `You're the kind of friend everyone wishes they had 💛`
+            "A friend who cares about you wanted to brighten your day 😊",
+            "You're the kind of friend everyone wishes they had 💛"
         ]
     };
 
-    // Pick random core message
+    // Pick random base message
     let msg = base[Math.floor(Math.random() * base.length)];
 
-    // Add relationship-specific message
-    if (relationshipAddOns[relationship]) {
-        const extra = relationshipAddOns[relationship];
-        msg += " " + extra[Math.floor(Math.random() * extra.length)];
+    // Add relationship extra
+    if (extras[relationship]) {
+        const arr = extras[relationship];
+        msg += " " + arr[Math.floor(Math.random() * arr.length)];
     }
 
     return msg;
 }
+global.buildMessage = buildMessage;
 
 
 /***************************************************************
- *  EMAIL HTML TEMPLATE
+ *  EMAIL HTML BUILDER
  ***************************************************************/
 function buildLoveEmailHTML(name, message, unsubscribeURL) {
     return `
-        <div style="font-family:Arial;padding:25px;background:#fff3f8;color:#d6336c;border-radius:14px;">
-            <h2 style="margin-top:0;">A Message For ${name} ❤️</h2>
-            
+        <div style="font-family:Arial;padding:25px;background:#fff3f8;
+                     color:#d6336c;border-radius:14px;">
+            <h2 style="margin-top:0;">A Message for ${sanitize(name)} ❤️</h2>
+
             <p style="font-size:17px;line-height:1.6;">
-                ${message}
+                ${sanitize(message)}
             </p>
 
             <br>
@@ -1443,11 +1406,11 @@ global.buildLoveEmailHTML = buildLoveEmailHTML;
 
 
 /***************************************************************
- *  EMAIL SENDER (Resend + Brevo fallback)
+ *  EMAIL SENDER — Resend (primary) + Brevo fallback
  ***************************************************************/
 async function sendEmail(to, subject, html, text) {
+    // Try Resend first
     try {
-        // Resend (PRIMARY)
         const result = await resend.emails.send({
             from: process.env.FROM_EMAIL,
             to,
@@ -1485,11 +1448,11 @@ async function sendEmail(to, subject, html, text) {
             text
         });
 
-        console.log("📧 Sent via Brevo SMTP fallback");
+        console.log("📧 Sent via Brevo fallback");
         return true;
 
     } catch (err) {
-        console.error("❌ Email send FAILED:", err);
+        console.error("❌ Email FAILED:", err);
         return false;
     }
 }
@@ -1497,22 +1460,22 @@ global.sendEmail = sendEmail;
 
 
 /***************************************************************
- *  RECIPIENT LIMITS (final authoritative version)
+ *  FINAL RECIPIENT LIMITS
  ***************************************************************/
 function getRecipientLimit(plan) {
-    if (plan === "trial") return Infinity;
-    if (plan === "plus") return Infinity;
-    if (plan === "basic") return 3;
-    return 0;
+    if (plan === "trial") return Infinity;   // free trial = unlimited
+    if (plan === "plus") return Infinity;    // premium = unlimited
+    if (plan === "basic") return 3;          // basic = max 3
+    return 0;                                // no plan = none
 }
 global.getRecipientLimit = getRecipientLimit;
 
 
 /***************************************************************
- *  CRON JOB — RUNS EVERY 5 MINUTES
+ *  CRON SCHEDULER — EVERY 5 MINUTES
  ***************************************************************/
 cron.schedule("*/5 * * * *", async () => {
-    console.log("⏰ CRON: Checking recipients for message delivery…");
+    console.log("⏰ CRON: Checking message delivery queue…");
 
     try {
         const q = await pool.query(`
@@ -1525,26 +1488,26 @@ cron.schedule("*/5 * * * *", async () => {
         const nowUTC = new Date();
 
         for (const r of q.rows) {
-            // Skip unsubscribed or canceled users
+            // Skip unsubscribed customers
             if (!r.has_subscription) continue;
 
-            // Convert current time to recipient timezone
-            const nowUser = new Date(
+            // Convert time to recipient timezone
+            const localNow = new Date(
                 nowUTC.toLocaleString("en-US", { timeZone: r.timezone })
             );
+            const hour = localNow.getHours();
 
-            const hour = nowUser.getHours();
-
-            const timingWindows = {
+            // Time windows
+            const windows = {
                 morning: [6, 12],
                 afternoon: [12, 17],
                 evening: [17, 21],
                 night: [21, 24]
             };
 
-            const [minH, maxH] = timingWindows[r.timings] || [0, 24];
+            const [minH, maxH] = windows[r.timings] || [0, 24];
 
-            // Not in the correct time window
+            // Not in timing window
             if (hour < minH || hour >= maxH) continue;
 
             // Not due yet
@@ -1558,6 +1521,7 @@ cron.schedule("*/5 * * * *", async () => {
 
             const html = buildLoveEmailHTML(r.name, loveMsg, unsubscribeURL);
 
+            // Send the email
             await sendEmail(
                 r.email,
                 "A Love Message For You ❤️",
@@ -1565,7 +1529,7 @@ cron.schedule("*/5 * * * *", async () => {
                 loveMsg + "\n\nUnsubscribe: " + unsubscribeURL
             );
 
-            // Log message
+            // Log the message
             await pool.query(
                 `
                 INSERT INTO message_logs (customer_id, recipient_id, email, message)
@@ -1574,18 +1538,18 @@ cron.schedule("*/5 * * * *", async () => {
                 [r.customer_id, r.id, r.email, loveMsg]
             );
 
-            // Determine next delivery time
-            let nextDelivery = new Date(nowUTC);
+            // Calculate next delivery time
+            let next = new Date(nowUTC);
 
-            if (r.frequency === "daily") nextDelivery.setDate(nextDelivery.getDate() + 1);
-            if (r.frequency === "every-other-day") nextDelivery.setDate(nextDelivery.getDate() + 2);
-            if (r.frequency === "three-times-week") nextDelivery.setDate(nextDelivery.getDate() + 2);
-            if (r.frequency === "weekly") nextDelivery.setDate(nextDelivery.getDate() + 7);
-            if (r.frequency === "bi-weekly") nextDelivery.setDate(nextDelivery.getDate() + 14);
+            if (r.frequency === "daily") next.setDate(next.getDate() + 1);
+            if (r.frequency === "every-other-day") next.setDate(next.getDate() + 2);
+            if (r.frequency === "three-times-week") next.setDate(next.getDate() + 2);
+            if (r.frequency === "weekly") next.setDate(next.getDate() + 7);
+            if (r.frequency === "bi-weekly") next.setDate(next.getDate() + 14);
 
             await pool.query(
                 "UPDATE users SET last_sent=NOW(), next_delivery=$1 WHERE id=$2",
-                [nextDelivery.toISOString(), r.id]
+                [next.toISOString(), r.id]
             );
 
             console.log(`✔ Message sent → ${r.email}`);
@@ -1596,377 +1560,272 @@ cron.schedule("*/5 * * * *", async () => {
     }
 });
 
-
 /***************************************************************
- *  END OF PART 6 — Reply: "part 7"
+ *  END OF PART 6 — Reply “part 7”
  ***************************************************************/
 /***************************************************************
- * PART 7 — CART, MERCH CHECKOUT, SERVER START
+ *  PART 7 — Stripe Checkout, Webhooks, Cart, Server Start
  ***************************************************************/
-
 
 /***************************************************************
- *  GET CUSTOMER CART
+ *  STRIPE CHECKOUT — SUBSCRIPTIONS
  ***************************************************************/
-app.get("/api/cart", authCustomer, async (req, res) => {
+app.post("/api/stripe/checkout", requireAuth, async (req, res) => {
+    const { productId } = req.body;
+
     try {
-        const q = await pool.query(
-            "SELECT items FROM carts WHERE customer_id=$1",
-            [req.user.id]
-        );
+        const PRICE_MAP = {
+            "free-trial": process.env.STRIPE_FREETRIAL_PRICE_ID,
+            "love-basic": process.env.STRIPE_BASIC_PRICE_ID,
+            "love-plus": process.env.STRIPE_PLUS_PRICE_ID
+        };
 
-        if (!q.rows.length) {
-            return res.json({ items: [] });
-        }
+        const price = PRICE_MAP[productId];
+        if (!price) return res.json({ error: "Invalid product" });
 
-        return res.json({ items: q.rows[0].items || [] });
-
-    } catch (err) {
-        console.error("❌ CART LOAD ERROR:", err);
-        return res.status(500).json({ error: "Unable to load cart" });
-    }
-});
-
-
-/***************************************************************
- *  ADD ITEM TO CART
- ***************************************************************/
-app.post("/api/cart/add", authCustomer, async (req, res) => {
-    try {
-        let { productId, name, price } = req.body;
-
-        productId = sanitize(productId);
-        name = sanitize(name);
-        price = Number(price);
-
-        if (!productId || !name || !price) {
-            return res.status(400).json({ error: "Invalid item" });
-        }
-
-        const q = await pool.query(
-            "SELECT items FROM carts WHERE customer_id=$1",
-            [req.user.id]
-        );
-
-        const items = q.rows.length ? q.rows[0].items || [] : [];
-        items.push({ productId, name, price });
-
-        await pool.query(
-            `INSERT INTO carts (customer_id, items)
-             VALUES ($1,$2)
-             ON CONFLICT (customer_id)
-             DO UPDATE SET items=$2`,
-            [req.user.id, JSON.stringify(items)]
-        );
-
-        return res.json({ success: true });
-
-    } catch (err) {
-        console.error("❌ CART ADD ERROR:", err);
-        return res.status(500).json({ error: "Unable to add item" });
-    }
-});
-
-
-/***************************************************************
- *  REMOVE ITEM FROM CART
- ***************************************************************/
-app.post("/api/cart/remove", authCustomer, async (req, res) => {
-    try {
-        let { productId } = req.body;
-
-        const q = await pool.query(
-            "SELECT items FROM carts WHERE customer_id=$1",
-            [req.user.id]
-        );
-
-        if (!q.rows.length) {
-            return res.json({ success: true });
-        }
-
-        const items = q.rows[0].items || [];
-        const filtered = items.filter(i => i.productId !== productId);
-
-        await pool.query(
-            "UPDATE carts SET items=$1 WHERE customer_id=$2",
-            [JSON.stringify(filtered), req.user.id]
-        );
-
-        return res.json({ success: true });
-
-    } catch (err) {
-        console.error("❌ CART REMOVE ERROR:", err);
-        return res.status(500).json({ error: "Unable to remove item" });
-    }
-});
-
-
-/***************************************************************
- *  MERCH CHECKOUT (Stripe — one-time)
- ***************************************************************/
-app.post("/api/stripe/merch-checkout", authCustomer, async (req, res) => {
-    try {
-        if (!stripe) {
-            return res.status(500).json({ error: "Stripe not configured" });
-        }
-
-        const { items } = req.body;
-
-        if (!items || !Array.isArray(items) || items.length === 0) {
-            return res.status(400).json({ error: "No items provided" });
-        }
-
-        const lineItems = items.map(item => ({
-            price_data: {
-                currency: "usd",
-                product_data: {
-                    name: sanitize(item.name)
-                },
-                unit_amount: Math.round(Number(item.price) * 100)
-            },
-            quantity: 1
-        }));
-
-        const session = await stripe.checkout.sessions.create({
-            mode: "payment",
-            line_items: lineItems,
-            success_url: `${process.env.BASE_URL}/success.html`,
-            cancel_url: `${process.env.BASE_URL}/cart.html`,
-            metadata: { customer_id: req.user.id }
-        });
-
-        // Clear the cart after creating session
-        await pool.query(
-            "UPDATE carts SET items='[]' WHERE customer_id=$1",
-            [req.user.id]
-        );
-
-        return res.json({ url: session.url });
-
-    } catch (err) {
-        console.error("❌ MERCH CHECKOUT ERROR:", err);
-        return res.status(500).json({ error: "Error creating payment session" });
-    }
-});
-
-/***************************************************************
- *  SUBSCRIPTION CHECKOUT — CREATES STRIPE SESSION
- ***************************************************************/
-app.post("/api/stripe/checkout", authCustomer, async (req, res) => {
-    try {
-        if (!stripe)
-            return res.status(500).json({ error: "Stripe not configured" });
-
-        const { productId } = req.body;
-
-        const priceId = global.__priceMap[productId];
-        if (!priceId)
-            return res.status(400).json({ error: "Invalid product" });
-
-        // Fetch customer
-        const q = await pool.query(
-            "SELECT * FROM customers WHERE id=$1",
-            [req.user.id]
-        );
-        const customer = q.rows[0];
-
-        let stripeCustomerId = customer.stripe_customer_id;
-
-        // Create Stripe customer if needed
-        if (!stripeCustomerId) {
-            const sc = await stripe.customers.create({
-                email: customer.email,
-                metadata: { customer_id: customer.id }
-            });
-
-            stripeCustomerId = sc.id;
-
-            await pool.query(
-                "UPDATE customers SET stripe_customer_id=$1 WHERE id=$2",
-                [stripeCustomerId, customer.id]
-            );
-        }
-
-        // Create checkout session
         const session = await stripe.checkout.sessions.create({
             mode: "subscription",
-            customer: stripeCustomerId,
+            customer_email: req.customer.email,
             line_items: [
                 {
-                    price: priceId,
+                    price,
                     quantity: 1
                 }
             ],
             success_url: `${process.env.FRONTEND_URL}/dashboard.html`,
             cancel_url: `${process.env.FRONTEND_URL}/products.html`,
-            metadata: { customer_id: customer.id }
-        });
-
-        return res.json({ url: session.url });
-
-    } catch (err) {
-        console.error("❌ SUBSCRIPTION CHECKOUT ERROR:", err);
-        return res.status(500).json({ error: "Unable to start subscription" });
-    }
-});
-
-/***************************************************************
- *  GET CUSTOMER SUBSCRIPTION STATUS
- ***************************************************************/
-app.get("/api/customer/subscription", authCustomer, async (req, res) => {
-    try {
-        const q = await pool.query(
-            `SELECT 
-                has_subscription,
-                current_plan,
-                stripe_subscription_id,
-                subscription_end
-             FROM customers
-             WHERE id=$1`,
-            [req.user.id]
-        );
-
-        if (!q.rows.length)
-            return res.json({ subscribed: false });
-
-        const c = q.rows[0];
-
-        return res.json({
-            subscribed: c.has_subscription,
-            current_plan: c.current_plan,
-            subscription_end: c.subscription_end,
-        });
-
-    } catch (err) {
-        console.error("❌ SUB STATUS ERROR:", err);
-        return res.json({ subscribed: false });
-    }
-});
-
-/***************************************************************
- *  BILLING PORTAL
- ***************************************************************/
-app.get("/api/customer/subscription/portal", authCustomer, async (req, res) => {
-    try {
-        const q = await pool.query(
-            "SELECT stripe_customer_id FROM customers WHERE id=$1",
-            [req.user.id]
-        );
-
-        if (!q.rows.length || !q.rows[0].stripe_customer_id) {
-            return res.status(400).json({ error: "No Stripe customer" });
-        }
-
-        const portal = await stripe.billingPortal.sessions.create({
-            customer: q.rows[0].stripe_customer_id,
-            return_url: `${process.env.FRONTEND_URL}/dashboard.html`
-        });
-
-        return res.json({ url: portal.url });
-
-    } catch (err) {
-        console.error("❌ BILLING PORTAL ERROR:", err);
-        return res.status(500).json({ error: "Cannot create portal" });
-    }
-});
-
-/***************************************************************
- *  GET CUSTOMER SUBSCRIPTION STATUS
- ***************************************************************/
-app.get("/api/customer/subscription", authCustomer, async (req, res) => {
-    try {
-        const q = await pool.query(
-            `SELECT 
-                has_subscription,
-                current_plan,
-                stripe_subscription_id,
-                subscription_end
-             FROM customers
-             WHERE id=$1`,
-            [req.user.id]
-        );
-
-        if (!q.rows.length)
-            return res.json({ subscribed: false });
-
-        const c = q.rows[0];
-
-        return res.json({
-            subscribed: c.has_subscription,
-            current_plan: c.current_plan,
-            subscription_end: c.subscription_end,
-        });
-
-    } catch (err) {
-        console.error("❌ SUB STATUS ERROR:", err);
-        return res.json({ subscribed: false });
-    }
-});
-
-
-/***************************************************************
- *  STRIPE SUBSCRIPTION CHECKOUT
- ***************************************************************/
-app.post("/api/stripe/checkout", authCustomer, async (req, res) => {
-    try {
-        const { productId } = req.body;
-
-        if (!global.__priceMap[productId]) {
-            return res.status(400).json({ error: "Invalid product" });
-        }
-
-        const priceId = global.__priceMap[productId];
-
-        const customerQ = await pool.query(
-            "SELECT stripe_customer_id FROM customers WHERE id=$1",
-            [req.user.id]
-        );
-
-        let stripeCustomer = customerQ.rows[0].stripe_customer_id;
-
-        // Create Stripe customer if needed
-        if (!stripeCustomer) {
-            const customer = await stripe.customers.create({
-                email: req.user.email,
-            });
-
-            stripeCustomer = customer.id;
-
-            await pool.query(
-                "UPDATE customers SET stripe_customer_id=$1 WHERE id=$2",
-                [stripeCustomer, req.user.id]
-            );
-        }
-
-        // Create checkout session
-        const session = await stripe.checkout.sessions.create({
-            mode: "subscription",
-            customer: stripeCustomer,
-            line_items: [{ price: priceId, quantity: 1 }],
-            success_url: `${process.env.FRONTEND_URL}/dashboard.html`,
-            cancel_url: `${process.env.FRONTEND_URL}/products.html`,
+            subscription_data: {
+                metadata: {
+                    customer_id: req.customer.id,
+                    plan: productId
+                }
+            },
             metadata: {
-                customer_id: req.user.id
+                customer_id: req.customer.id,
+                plan: productId
             }
         });
 
         return res.json({ url: session.url });
 
     } catch (err) {
-        console.error("❌ CHECKOUT ERROR:", err);
-        return res.status(500).json({ error: "Stripe error" });
+        console.error("CHECKOUT ERROR:", err);
+        return res.json({ error: "Checkout failed." });
     }
 });
 
 
 /***************************************************************
- *  FRONTEND FALLBACK — SERVE public/index.html
+ *  BILLING PORTAL
  ***************************************************************/
-app.get("*", (req, res) => {
+app.get("/api/customer/subscription/portal", requireAuth, async (req, res) => {
     try {
-        return res.sendFile(path.join(__dirname, "public", "index.html"));
-    } catch {
-        return res.status(404).send("Not found");
+        const portal = await stripe.billingPortal.sessions.create({
+            customer: req.customer.stripe_customer_id,
+            return_url: `${process.env.FRONTEND_URL}/dashboard.html`
+        });
+
+        return res.json({ url: portal.url });
+
+    } catch (err) {
+        console.error("PORTAL ERROR:", err);
+        return res.json({ error: "Unable to open billing portal" });
+    }
+});
+
+
+/***************************************************************
+ *  STRIPE WEBHOOK — THE MOST IMPORTANT PART
+ ***************************************************************/
+app.post(
+    "/webhook",
+    express.raw({ type: "application/json" }),
+    async (req, res) => {
+
+        let event;
+
+        try {
+            event = stripe.webhooks.constructEvent(
+                req.body,
+                req.headers["stripe-signature"],
+                process.env.STRIPE_WEBHOOK_SECRET
+            );
+
+        } catch (err) {
+            console.error("❌ WEBHOOK SIGNATURE ERROR", err.message);
+            return res.status(400).send("Webhook error");
+        }
+
+        const type = event.type;
+        const data = event.data.object;
+
+        try {
+            switch (type) {
+
+                /******************************************
+                 *  TRIAL / BASIC / PLUS ACTIVATED
+                 ******************************************/
+                case "customer.subscription.created":
+                case "customer.subscription.updated": {
+                    const customerId = data.metadata?.customer_id;
+                    const plan = data.metadata?.plan;
+
+                    if (!customerId || !plan) break;
+
+                    // Active
+                    await pool.query(
+                        `
+                        UPDATE customers
+                        SET has_subscription=true,
+                            current_plan=$1,
+                            subscription_end=$2
+                        WHERE id=$3
+                        `,
+                        [
+                            plan === "free-trial"
+                                ? "trial"
+                                : plan === "love-basic"
+                                ? "basic"
+                                : "plus",
+                            data.cancel_at ? new Date(data.cancel_at * 1000) : null,
+                            customerId
+                        ]
+                    );
+
+                    console.log("✔ SUB UPDATED:", customerId, plan);
+                    break;
+                }
+
+                /******************************************
+                 *  SUBSCRIPTION CANCELED
+                 ******************************************/
+                case "customer.subscription.deleted": {
+                    const customerId = data.metadata?.customer_id;
+                    if (!customerId) break;
+
+                    await pool.query(
+                        `
+                        UPDATE customers
+                        SET has_subscription=false,
+                            current_plan='none',
+                            subscription_end=NOW()
+                        WHERE id=$1
+                        `,
+                        [customerId]
+                    );
+
+                    console.log("❌ SUB CANCELED:", customerId);
+                    break;
+                }
+
+                /******************************************
+                 *  PAYMENT FAILED
+                 ******************************************/
+                case "invoice.payment_failed": {
+                    const customerId = data.metadata?.customer_id;
+                    if (!customerId) break;
+
+                    await pool.query(
+                        `
+                        UPDATE customers
+                        SET has_subscription=false
+                        WHERE id=$1
+                        `,
+                        [customerId]
+                    );
+
+                    console.log("⚠ PAYMENT FAILED — ACCESS REMOVED:", customerId);
+                    break;
+                }
+            }
+
+            res.status(200).send("OK");
+
+        } catch (err) {
+            console.error("❌ WEBHOOK PROCESSING ERROR:", err);
+            res.status(500).send("Internal webhook error");
+        }
+    }
+);
+
+
+/***************************************************************
+ *  CART — ADD ITEM
+ ***************************************************************/
+app.post("/api/cart/add", requireAuth, async (req, res) => {
+    const { productId, name, price } = req.body;
+
+    try {
+        await pool.query(
+            `
+            INSERT INTO cart (customer_id, product_id, name, price)
+            VALUES ($1,$2,$3,$4)
+            `,
+            [req.customer.id, productId, name, price]
+        );
+
+        return res.json({ success: true });
+
+    } catch (err) {
+        console.error("CART ADD ERROR:", err);
+        return res.json({ error: "Unable to add to cart" });
+    }
+});
+
+
+/***************************************************************
+ *  CART — GET CONTENTS
+ ***************************************************************/
+app.get("/api/cart", requireAuth, async (req, res) => {
+    try {
+        const q = await pool.query(
+            `SELECT * FROM cart WHERE customer_id=$1`,
+            [req.customer.id]
+        );
+
+        res.json({ items: q.rows });
+
+    } catch (err) {
+        res.json({ items: [] });
+    }
+});
+
+
+/***************************************************************
+ *  CART — CHECKOUT (MERCH ONLY)
+ ***************************************************************/
+app.post("/api/cart/checkout", requireAuth, async (req, res) => {
+    try {
+        const q = await pool.query(
+            `SELECT * FROM cart WHERE customer_id=$1`,
+            [req.customer.id]
+        );
+
+        if (!q.rows.length)
+            return res.json({ error: "Cart empty" });
+
+        const session = await stripe.checkout.sessions.create({
+            mode: "payment",
+            customer_email: req.customer.email,
+            line_items: q.rows.map(x => ({
+                price_data: {
+                    currency: "usd",
+                    product_data: {
+                        name: x.name
+                    },
+                    unit_amount: Math.round(x.price * 100)
+                },
+                quantity: 1
+            })),
+            success_url: `${process.env.FRONTEND_URL}/thankyou.html`,
+            cancel_url: `${process.env.FRONTEND_URL}/cart.html`
+        });
+
+        return res.json({ url: session.url });
+
+    } catch (err) {
+        console.error("CART PAY ERROR:", err);
+        return res.json({ error: "Unable to start payment" });
     }
 });
 
@@ -1975,5 +1834,5 @@ app.get("*", (req, res) => {
  *  START SERVER
  ***************************************************************/
 app.listen(PORT, () => {
-    console.log(`🚀 LoveTextForHer Backend Running on Port ${PORT}`);
+    console.log(`🚀 LoveTextForHer backend running on ${PORT}`);
 });
