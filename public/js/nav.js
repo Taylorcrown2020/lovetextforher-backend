@@ -1,296 +1,95 @@
-/********************************************************************
- *  NAV.JS — FINAL VERSION (MATCHES NEW SERVER + NEW HTML FILES)
- ********************************************************************/
+/* ============================================================
+   nav.js — FINAL VERSION
+   Fully compatible with your new backend
+============================================================ */
 
-/* ================================================================
-   DISABLED NAV PAGES
-================================================================ */
-const DISABLED = [
-    "/unsubscribe.html",
-    "/success.html",
-    "/cancel.html",
-    "/reset_password.html",
-    "/forgot_password.html",
-    "/reset_request.html"
-];
+document.addEventListener("DOMContentLoaded", () => {
+    buildNavbar();
+});
 
-if (DISABLED.includes(window.location.pathname)) {
-    window.SKIP_NAV_JS = true;
+/* ============================================================
+   BUILD NAVBAR
+============================================================ */
+async function buildNavbar() {
+    const nav = document.getElementById("navbar");
+    if (!nav) return;
+
+    const user = await getCustomer();
+
+    nav.innerHTML = `
+        <div style="
+            width:100%;
+            padding:18px 24px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            background:white;
+            border-bottom:1px solid #f1c3d6;
+            position:fixed;
+            top:0;
+            left:0;
+            z-index:1000;
+        ">
+
+            <a href="/index.html" style="text-decoration:none;color:#d6336c;font-size:22px;font-weight:800;">
+                LoveTextForHer
+            </a>
+
+            <div style="display:flex; gap:20px; align-items:center;">
+                ${user ? authLinks() : guestLinks()}
+            </div>
+        </div>
+    `;
 }
 
-if (window.SKIP_NAV_JS === true) {
-    console.log("⛔ nav.js disabled on this page");
-    throw new Error("NAV_DISABLED");
+/* ============================================================
+   NAV OPTIONS
+============================================================ */
+function guestLinks() {
+    return `
+        <a href="/products.html" style="color:#d6336c;font-weight:600;">Products</a>
+        <a href="/login.html" style="color:#d6336c;font-weight:600;">Login</a>
+        <a href="/register.html" style="color:#d6336c;font-weight:600;">Sign Up</a>
+    `;
 }
 
-/* ================================================================
-   HELPER — API
-================================================================ */
-async function api(path, options = {}) {
-    try {
-        const res = await fetch(path, {
-            credentials: "include",
-            cache: "no-store",
-            headers: { "Content-Type": "application/json" },
-            ...options
-        });
-        return await res.json();
-    } catch {
-        return null;
-    }
+function authLinks() {
+    return `
+        <a href="/products.html" style="color:#d6336c;font-weight:600;">Products</a>
+        <a href="/dashboard.html" style="color:#d6336c;font-weight:600;">Dashboard</a>
+        <button onclick="logout()" 
+            style="background:#d6336c;color:white;padding:8px 14px;border:none;border-radius:8px;cursor:pointer;">
+            Logout
+        </button>
+    `;
 }
 
-/* ================================================================
-   AUTH HELPERS
-================================================================ */
+/* ============================================================
+   CHECK CUSTOMER SESSION
+============================================================ */
 async function getCustomer() {
     try {
         const res = await fetch("/api/customer/me", {
             credentials: "include",
             cache: "no-store"
         });
-        if (!res.ok) return null;
+
         const data = await res.json();
         return data.customer || null;
-    } catch {
+
+    } catch (err) {
         return null;
     }
 }
 
-async function getAdmin() {
-    try {
-        const res = await fetch("/api/admin/me", {
-            credentials: "include",
-            cache: "no-store"
-        });
-        if (!res.ok) return false;
-        const data = await res.json();
-        return data.admin?.role === "admin";
-    } catch {
-        return false;
-    }
+/* ============================================================
+   LOGOUT
+============================================================ */
+async function logout() {
+    await fetch("/api/customer/logout", {
+        method: "POST",
+        credentials: "include"
+    });
+
+    window.location.href = "/index.html";
 }
-
-/* ================================================================
-   CART COUNT
-================================================================ */
-async function getCartCount() {
-    try {
-        const d = await api("/api/cart");
-        return Array.isArray(d?.items) ? d.items.length : 0;
-    } catch {
-        return 0;
-    }
-}
-
-/* ================================================================
-   NAV ELEMENT
-================================================================ */
-function ensureNavbarEl() {
-    let el = document.getElementById("navbar");
-    if (!el) {
-        el = document.createElement("div");
-        el.id = "navbar";
-        document.body.prepend(el);
-    }
-    return el;
-}
-
-/* ================================================================
-   GLOBAL NAV STYLES
-================================================================ */
-(function injectStyles() {
-    const s = document.createElement("style");
-    s.innerHTML = `
-        #navbar {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            padding: 18px 0;
-            background: rgba(255,255,255,0.7);
-            backdrop-filter: blur(20px);
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            z-index: 9999;
-        }
-        .nav-inner {
-            max-width: 1200px;
-            margin: auto;
-            padding: 0 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .nav-logo {
-            font-size: 20px;
-            font-weight: 900;
-            color: #d6336c;
-        }
-        .nav-links a {
-            margin-left: 22px;
-            text-decoration: none;
-            font-weight: 500;
-            color: #1a1a1a;
-            position: relative;
-        }
-        .nav-links a:hover {
-            color: #d6336c;
-        }
-        .cart-bubble {
-            position: absolute;
-            top: -10px;
-            right: -12px;
-            background: #d6336c;
-            color: white;
-            padding: 2px 7px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-    `;
-    document.head.appendChild(s);
-})();
-
-/* ================================================================
-   NAV LAYOUTS
-================================================================ */
-function publicNav() {
-    return `
-        <div class="nav-inner">
-            <div class="nav-logo">LOVETEXTFORHER</div>
-            <div class="nav-links">
-                <a href="/index.html">Home</a>
-                <a href="/login.html">Login</a>
-                <a href="/register.html">Register</a>
-                <a href="/admin_login.html">Admin</a>
-            </div>
-        </div>`;
-}
-
-function customerNav(cartBubble) {
-    return `
-        <div class="nav-inner">
-            <div class="nav-logo">LOVETEXTFORHER</div>
-            <div class="nav-links">
-                <a href="/dashboard.html">Dashboard</a>
-                <a href="/products.html">Products</a>
-                <a href="/cart.html">Cart ${cartBubble}</a>
-                <a href="#" id="logout-customer">Logout</a>
-            </div>
-        </div>`;
-}
-
-function adminNav() {
-    return `
-        <div class="nav-inner">
-            <div class="nav-logo">ADMIN PANEL</div>
-            <div class="nav-links">
-                <a href="/admin.html">Dashboard</a>
-                <a href="/admin_users.html">Users</a>
-                <a href="/admin_customers.html">Customers</a>
-                <a href="/admin_kpis.html">KPIs</a>
-                <a href="#" id="logout-admin">Logout</a>
-            </div>
-        </div>`;
-}
-
-/* ================================================================
-   LOGOUT HANDLERS
-================================================================ */
-async function logoutCustomer() {
-    await api("/api/customer/logout", { method: "POST" });
-    window.location.href = "/login.html";
-}
-
-async function logoutAdmin() {
-    await api("/api/admin/logout", { method: "POST" });
-    window.location.href = "/admin_login.html";
-}
-
-/* ================================================================
-   INJECT NAVBAR
-================================================================ */
-async function injectNavbar() {
-    const navbar = ensureNavbarEl();
-    navbar.innerHTML = "";
-
-    const path = window.location.pathname;
-
-    const customer = await getCustomer();
-    const admin = await getAdmin();
-
-    // Admin pages
-    if (admin && path.startsWith("/admin") && path !== "/admin_login.html") {
-        navbar.innerHTML = adminNav();
-        document.getElementById("logout-admin").onclick = logoutAdmin;
-        return;
-    }
-
-    // Customer pages (NEW — matches your server)
-    const customerProtectedPages = [
-        "/dashboard.html",
-        "/products.html",
-        "/cart.html"
-    ];
-
-    if (customer && customerProtectedPages.includes(path)) {
-        const count = await getCartCount();
-        const bubble = count > 0 ? `<span class="cart-bubble">${count}</span>` : "";
-        navbar.innerHTML = customerNav(bubble);
-        document.getElementById("logout-customer").onclick = logoutCustomer;
-        return;
-    }
-
-    // Default public nav
-    navbar.innerHTML = publicNav();
-}
-
-/* ================================================================
-   ACCESS CONTROL MATCHING SERVER EXACTLY
-================================================================ */
-async function enforceAccess() {
-    const path = window.location.pathname;
-
-    const customer = await getCustomer();
-    const admin = await getAdmin();
-
-    const customerProtected = [
-        "/dashboard.html",
-        "/products.html",
-        "/cart.html"
-    ];
-
-    const adminProtected = [
-        "/admin.html",
-        "/admin_users.html",
-        "/admin_customers.html",
-        "/admin_kpis.html"
-    ];
-
-    // CUSTOMER PAGE WITHOUT LOGIN → Redirect
-    if (customerProtected.includes(path) && !customer) {
-        return (window.location.href = "/login.html");
-    }
-
-    // ADMIN PAGE WITHOUT LOGIN → Redirect
-    if (adminProtected.includes(path) && !admin) {
-        return (window.location.href = "/admin_login.html");
-    }
-
-    // CUSTOMER TRYING TO VIEW LOGIN/REGISTER
-    if (customer && (path === "/login.html" || path === "/register.html")) {
-        return (window.location.href = "/dashboard.html");
-    }
-
-    // ADMIN TRYING TO VIEW admin_login
-    if (admin && path === "/admin_login.html") {
-        return (window.location.href = "/admin.html");
-    }
-}
-
-/* ================================================================
-   INIT
-================================================================ */
-document.addEventListener("DOMContentLoaded", () => {
-    injectNavbar();
-    enforceAccess();
-});

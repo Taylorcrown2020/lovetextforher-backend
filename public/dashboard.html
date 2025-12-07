@@ -2,380 +2,215 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Your Dashboard — LoveTextForHer</title>
+    <title>Dashboard — LoveTextForHer</title>
 
     <style>
         :root {
             --primary: #d6336c;
             --secondary: #8b5cf6;
-            --primary-light: #ffe3ed;
-            --secondary-light: #f3e9ff;
             --text-dark: #1a1a1a;
-            --text-soft: #5f3a4d;
-            --danger: #c62828;
-            --bg-glass: rgba(255,255,255,0.58);
+            --text-soft: #6a6a6a;
+            --bg: #fff7fa;
         }
 
         body {
             margin: 0;
             font-family: "Inter", sans-serif;
-            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
-        }
-
-        #navbar {
-            width: 100%;
-            height: 95px;
-        }
-
-        .dashboard {
-            max-width: 1000px;
-            margin: 150px auto;
-            background: var(--bg-glass);
-            backdrop-filter: blur(20px);
-            padding: 40px 45px;
-            border-radius: 22px;
-            border: 1px solid rgba(255,255,255,0.7);
-            box-shadow: 0 18px 40px rgba(0,0,0,0.07);
+            background: var(--bg);
         }
 
         h1 {
             text-align: center;
+            margin-top: 120px;
+            color: var(--primary);
             font-size: 32px;
             font-weight: 800;
-            margin-bottom: 35px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
 
-        /* Subscription banner */
-        #subBanner {
-            display:none;
-            margin-bottom: 25px;
-            padding: 18px;
-            background: #ffe3ed;
-            color: #b1184a;
+        #subStatusBox {
+            max-width: 600px;
+            margin: 30px auto;
+            background: white;
+            padding: 22px;
+            border-radius: 16px;
+            border: 1px solid #f3c1d7;
+            box-shadow: 0 10px 25px rgba(214,51,108,0.15);
+        }
+
+        #subStatusBox div {
+            margin: 6px 0;
+        }
+
+        #billingBtn {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            width: 100%;
             border-radius: 12px;
-            text-align: center;
+            cursor: pointer;
+            font-size: 15px;
             font-weight: 600;
         }
 
-        #subBanner a {
-            display:inline-block;
-            margin-top:10px;
-            padding:8px 16px;
-            background: var(--primary);
-            color:white;
-            border-radius:10px;
-            text-decoration:none;
+        #recipientSection {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
         }
 
-        /* Recipients */
-        .recipient {
+        .recipient-card {
             background: white;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom:18px;
-            border: 1px solid #f8cde6;
-            box-shadow: 0 8px 25px rgba(214,51,108,0.12);
+            border-radius: 14px;
+            padding: 18px;
+            border: 1px solid #f4bdd6;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+            margin-bottom: 18px;
         }
 
-        .recipient strong {
+        .recipient-card h3 {
+            margin: 0 0 6px 0;
             color: var(--primary);
+            font-size: 20px;
+        }
+
+        .recipient-card small {
+            color: var(--text-soft);
+        }
+
+        .recipient-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
         }
 
         .btn {
-            padding:10px 16px;
-            font-weight:600;
-            border-radius:12px;
-            color:white;
-            border:none;
-            cursor:pointer;
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
         }
 
-        .btn-delete { background: var(--danger); margin-top:12px; }
-        .btn-log { background: var(--secondary); margin-left: 8px; margin-top:12px; }
-        .btn-flower { background: #ff7ac4; margin-left: 8px; margin-top:12px; }
-
-        /* Add form */
-        #addForm input, #addForm select {
-            width:100%;
-            padding:14px;
-            margin-top:15px;
-            border-radius:12px;
-            border:2px solid rgba(214,51,108,0.25);
+        .btn-del {
+            background: #ff5773;
+            color: white;
         }
 
-        #addForm button {
-            width:100%;
-            padding:14px;
-            margin-top:20px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            border:none;
-            color:white;
-            font-size:16px;
-            font-weight:700;
-            border-radius:12px;
-            cursor:pointer;
+        .btn-flower {
+            background: #8b5cf6;
+            color: white;
         }
 
-        #msg {
-            text-align:center;
-            color:var(--primary);
-            margin-top:12px;
-        }
-
-        #manageSub {
-            display:none;
-            margin:30px auto 0;
-            padding:14px 22px;
-            background: var(--primary);
-            color:white;
-            border:none;
-            border-radius:12px;
-            cursor:pointer;
-            font-weight:700;
-        }
-
-        /* Modal backgrounds */
-        .modal {
-            display:none;
-            position:fixed;
-            top:0;left:0;right:0;bottom:0;
-            background:rgba(0,0,0,0.55);
-            justify-content:center;
-            align-items:center;
-            z-index:9999;
-        }
-
-        .modal-content {
-            width:420px;
-            background:white;
-            padding:25px;
-            border-radius:22px;
-            max-height:80vh;
-            overflow-y:auto;
+        #addBtn {
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            color: white;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            font-size: 17px;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 20px;
         }
     </style>
 </head>
-
 <body>
 
 <div id="navbar"></div>
-
-<div class="dashboard">
-    <div id="subBanner"></div>
-
-    <h1>Your Recipients</h1>
-
-    <div id="recipients"></div>
-
-    <h2>Add New Recipient</h2>
-    <div id="addForm">
-        <input id="r_name" placeholder="Recipient Name">
-        <input id="r_email" type="email" placeholder="Recipient Email">
-
-        <select id="r_relationship">
-            <option value="spouse">Spouse</option>
-            <option value="girlfriend">Girlfriend</option>
-            <option value="boyfriend">Boyfriend</option>
-            <option value="mom">Mom</option>
-            <option value="dad">Dad</option>
-            <option value="sister">Sister</option>
-            <option value="brother">Brother</option>
-            <option value="friend">Friend</option>
-            <option value="custom">Custom</option>
-        </select>
-
-        <input id="r_customRel" placeholder="Custom Relationship" style="display:none;">
-
-        <select id="r_frequency">
-            <option value="daily">Daily</option>
-            <option value="every-other-day">Every Other Day</option>
-            <option value="three-times-week">Three Times a Week</option>
-            <option value="weekly">Weekly</option>
-            <option value="bi-weekly">Bi-Weekly</option>
-        </select>
-
-        <select id="r_timings">
-            <option value="morning">Morning</option>
-            <option value="afternoon">Afternoon</option>
-            <option value="evening">Evening</option>
-            <option value="night">Night</option>
-        </select>
-
-        <select id="r_timezone">
-            <option value="America/Chicago">Central</option>
-            <option value="America/New_York">Eastern</option>
-            <option value="America/Denver">Mountain</option>
-            <option value="America/Los_Angeles">Pacific</option>
-        </select>
-
-        <button onclick="addRecipient()">Add Recipient</button>
-    </div>
-
-    <p id="msg"></p>
-
-    <button id="manageSub">Manage Subscription</button>
-</div>
-
-<!-- Message Log Modal -->
-<div class="modal" id="logModal">
-    <div class="modal-content">
-        <h2 style="color:#d6336c;">Message Log</h2>
-        <div id="logContent">Loading…</div>
-        <button class="btn" style="margin-top:15px;background:#d6336c;" onclick="closeLog()">Close</button>
-    </div>
-</div>
-
-<!-- Flower Modal -->
-<div class="modal" id="flowerModal">
-    <div class="modal-content">
-        <h2 style="color:#d6336c;">Send a Flower 🌸</h2>
-
-        <select id="flowerType" style="width:100%;padding:12px;margin-top:12px;">
-            <option value="🌹 Rose">🌹 Rose</option>
-            <option value="🌸 Cherry Blossom">🌸 Cherry Blossom</option>
-            <option value="🌻 Sunflower">🌻 Sunflower</option>
-            <option value="🌷 Tulip">🌷 Tulip</option>
-        </select>
-
-        <textarea id="flowerNote" placeholder="Optional note…" style="width:100%;height:90px;margin-top:12px;padding:10px;border-radius:12px;"></textarea>
-
-        <button class="btn" style="margin-top:15px;background:#ff7ac4;" onclick="sendFlower()">Send Flower</button>
-        <button class="btn" style="margin-top:10px;background:#999;" onclick="closeFlower()">Cancel</button>
-    </div>
-</div>
-
 <script src="/js/nav.js" defer></script>
 
+<h1>Your Dashboard</h1>
+
+<div id="subStatusBox">
+    <div><b>Subscription Status:</b> <span id="subStatus">Loading…</span></div>
+    <div><b>Plan:</b> <span id="subPlan">Loading…</span></div>
+    <button id="billingBtn" onclick="openBilling()">Manage Subscription</button>
+</div>
+
+<div id="recipientSection">
+    <h2 style="color: var(--primary); text-align:center;">Your Recipients</h2>
+    <div id="recipientList"></div>
+    <button id="addBtn" onclick="window.location.href='/add-recipient.html'">Add Recipient</button>
+</div>
+
 <script>
-/****************************************************
- * Matches backend EXACTLY
- ****************************************************/
-function hasAccess(sub) {
-    if (!sub) return false;
-
-    const now = new Date();
-
-    if (sub.has_subscription && !sub.subscription_end) return true;
-
-    if (sub.subscription_end && new Date(sub.subscription_end) > now)
-        return true;
-
-    return false;
-}
-
+/******************************************************
+ * LOAD SUBSCRIPTION STATUS
+ ******************************************************/
 async function loadSubscription() {
-    try {
-        const r = await fetch("/api/customer/subscription", {
-            credentials: "include",
-            cache: "no-store"
-        });
-
-        const sub = await r.json();
-
-        const banner = document.getElementById("subBanner");
-        banner.style.display = "block";
-
-        if (hasAccess(sub)) {
-            const names = {
-                basic: "LoveText Basic ❤️",
-                plus: "LoveText Plus 💜",
-                trial: "Free Trial 💖"
-            };
-
-            banner.innerHTML = `You have an active <strong>${names[sub.current_plan] || "Plan"}</strong>.`;
-            document.getElementById("manageSub").style.display = "block";
-        } else {
-            banner.innerHTML = `
-                You do not have an active subscription.<br><br>
-                <a href="/products.html">Choose a Plan</a>
-            `;
-        }
-
-        window.HAS_ACCESS = hasAccess(sub);
-
-    } catch (err) {}
-}
-
-/****************************************************
- * Load Recipients
- ****************************************************/
-async function loadRecipients() {
-    const r = await fetch("/api/customer/recipients", {
+    const res = await fetch("/api/customer/subscription", {
         credentials: "include"
     });
 
-    const list = await r.json();
-    const box = document.getElementById("recipients");
-    box.innerHTML = "";
+    const data = await res.json();
 
-    if (!list.length) {
-        box.innerHTML = `<p style="text-align:center;color:var(--text-soft);">You have no recipients.</p>`;
+    const statusEl = document.getElementById("subStatus");
+    const planEl = document.getElementById("subPlan");
+
+    if (!data.subscribed) {
+        statusEl.innerText = "Not Subscribed";
+        planEl.innerText = "None";
         return;
     }
 
-    list.forEach(r => {
-        box.innerHTML += `
-            <div class="recipient">
-                <strong>${r.name}</strong> (${r.relationship})<br>
-                <span>Email: ${r.email}</span><br>
-                <span>Frequency: ${r.frequency}</span><br>
-                <span>Time: ${r.timings}</span><br>
+    statusEl.innerText = "Active";
+    planEl.innerText = data.current_plan.toUpperCase();
+}
 
-                <button class="btn btn-delete" onclick="del(${r.id})">Delete</button>
-                <button class="btn btn-log" onclick="openLog(${r.id})">Log</button>
-                <button class="btn btn-flower" onclick="openFlower(${r.id})">Send Flower 🌸</button>
+/******************************************************
+ * OPEN BILLING PORTAL
+ ******************************************************/
+async function openBilling() {
+    const res = await fetch("/api/customer/subscription/portal", {
+        credentials: "include"
+    });
+
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+}
+
+/******************************************************
+ * LOAD RECIPIENT LIST
+ ******************************************************/
+async function loadRecipients() {
+    const list = document.getElementById("recipientList");
+    list.innerHTML = "<p>Loading...</p>";
+
+    const res = await fetch("/api/customer/recipients", {
+        credentials: "include"
+    });
+
+    const data = await res.json();
+    list.innerHTML = "";
+
+    if (!Array.isArray(data) || data.length === 0) {
+        list.innerHTML = "<p style='text-align:center;color:#777;'>You have no recipients yet.</p>";
+        return;
+    }
+
+    data.forEach(r => {
+        list.innerHTML += `
+            <div class="recipient-card">
+                <h3>${r.name}</h3>
+                <small>${r.email} • ${r.relationship}</small>
+
+                <div class="recipient-actions">
+                    <button class="btn btn-del" onclick="deleteRecipient(${r.id})">Delete</button>
+                    <button class="btn btn-flower" onclick="sendFlower(${r.id})">Send Flower</button>
+                </div>
             </div>
         `;
     });
 }
 
-/****************************************************
- * Add Recipient
- ****************************************************/
-async function addRecipient() {
-    if (!window.HAS_ACCESS) {
-        document.getElementById("msg").textContent =
-            "You need an active subscription to add recipients.";
-        return;
-    }
-
-    const rel = r_relationship.value === "custom"
-        ? r_customRel.value.trim()
-        : r_relationship.value;
-
-    const payload = {
-        name: r_name.value.trim(),
-        email: r_email.value.trim(),
-        relationship: rel,
-        frequency: r_frequency.value,
-        timings: r_timings.value,
-        timezone: r_timezone.value
-    };
-
-    const r = await fetch("/api/customer/recipients", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
-
-    const data = await r.json();
-
-    if (data.success) {
-        document.getElementById("msg").textContent = "";
-        loadRecipients();
-    } else {
-        document.getElementById("msg").textContent = data.error || "Error adding recipient.";
-    }
-}
-
-/****************************************************
- * Delete
- ****************************************************/
-async function del(id) {
+/******************************************************
+ * DELETE RECIPIENT
+ ******************************************************/
+async function deleteRecipient(id) {
     if (!confirm("Delete this recipient?")) return;
 
     await fetch(`/api/customer/recipients/${id}`, {
@@ -386,101 +221,28 @@ async function del(id) {
     loadRecipients();
 }
 
-/****************************************************
- * Logs
- ****************************************************/
-async function openLog(id) {
-    const r = await fetch(`/api/message-log/${id}`, {
-        credentials: "include"
-    });
+/******************************************************
+ * SEND FLOWER
+ ******************************************************/
+async function sendFlower(id) {
+    const note = prompt("Optional note:");
 
-    const data = await r.json();
-
-    const content = document.getElementById("logContent");
-
-    if (!data.success || !data.messages.length) {
-        content.innerHTML = "<p>No messages yet.</p>";
-    } else {
-        content.innerHTML = data.messages.map(m => `
-            <div style="padding:12px;background:#fafafa;border-radius:10px;margin-bottom:10px;">
-                <strong>${m.message_text}</strong>
-                <div style="font-size:12px;color:#777;">
-                    ${new Date(m.sent_at).toLocaleString()}
-                </div>
-            </div>
-        `).join("");
-    }
-
-    document.getElementById("logModal").style.display = "flex";
-}
-
-function closeLog() {
-    document.getElementById("logModal").style.display = "none";
-}
-
-/****************************************************
- * Flowers
- ****************************************************/
-let CURRENT_FLOWER_ID = null;
-
-function openFlower(id) {
-    CURRENT_FLOWER_ID = id;
-    flowerNote.value = "";
-    document.getElementById("flowerModal").style.display = "flex";
-}
-
-function closeFlower() {
-    document.getElementById("flowerModal").style.display = "none";
-}
-
-async function sendFlower() {
-    const payload = {
-        note: flowerType.value + (flowerNote.value.trim() ? ` — ${flowerNote.value.trim()}` : "")
-    };
-
-    const r = await fetch(`/api/customer/send-flowers/${CURRENT_FLOWER_ID}`, {
+    await fetch(`/api/customer/send-flowers/${id}`, {
         method: "POST",
         credentials: "include",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(payload)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note })
     });
 
-    const data = await r.json();
-
-    if (data.success) {
-        alert("Flower sent 🌸");
-        closeFlower();
-    } else {
-        alert("Error sending flower.");
-    }
+    alert("Flower Sent!");
 }
 
-/****************************************************
- * Billing Portal
- ****************************************************/
-document.getElementById("manageSub").onclick = async () => {
-    const r = await fetch("/api/customer/subscription/portal", {
-        credentials: "include"
-    });
+/******************************************************
+ * INIT
+ ******************************************************/
+loadSubscription();
+loadRecipients();
 
-    const data = await r.json();
-    if (data.url) window.location.href = data.url;
-};
-
-/****************************************************
- * Init
- ****************************************************/
-document.addEventListener("DOMContentLoaded", () => {
-    loadSubscription();
-    loadRecipients();
-
-    r_relationship.onchange = () => {
-        r_customRel.style.display = r_relationship.value === "custom"
-            ? "block"
-            : "none";
-    };
-});
 </script>
-
 </body>
 </html>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <title>Products — LoveTextForHer</title>
 
     <style>
@@ -14,8 +14,8 @@
 
         body {
             margin: 0;
-            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
             font-family: "Inter", sans-serif;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
         }
 
         .product-section {
@@ -43,7 +43,7 @@
             border-radius: 18px;
             padding: 18px;
             border: 1px solid #f8cde6;
-            box-shadow: 0 10px 35px rgba(214, 51, 108, 0.15);
+            box-shadow: 0 10px 35px rgba(214,51,108,0.15);
         }
 
         img.single {
@@ -149,7 +149,7 @@ const PRODUCTS = {
         image: "/img/love-premium.jpg"
     },
 
-    /* MERCH */
+    /* MERCH EXAMPLES */
     "tee-logo-dual": {
         id: "tee-logo-dual",
         name: "LoveText Tee — Front + Back",
@@ -157,57 +157,12 @@ const PRODUCTS = {
         billing: "Premium Shirt",
         subscription: false,
         images: ["/img/IMG_2857.PNG", "/img/IMG_2858.PNG"]
-    },
-    "tee-white-logo-dual": {
-        id: "tee-white-logo-dual",
-        name: "LoveText Tee — White Logo",
-        price: 29.99,
-        billing: "Premium Shirt",
-        subscription: false,
-        images: ["/img/IMG_2856.jpeg", "/img/IMG_2855.jpg"]
-    },
-    "hoodie-classic": {
-        id: "hoodie-classic",
-        name: "Classic Hoodie",
-        price: 49.99,
-        billing: "Premium Hoodie",
-        subscription: false,
-        images: ["/img/hoodie_front.jpg", "/img/hoodie_back.jpg"]
-    },
-    "hoodie-heart": {
-        id: "hoodie-heart",
-        name: "Heart Logo Hoodie",
-        price: 54.99,
-        billing: "Premium Hoodie",
-        subscription: false,
-        images: ["/img/hoodie_heart_front.jpg", "/img/hoodie_heart_back.jpg"]
-    },
-    "hat-logo": {
-        id: "hat-logo",
-        name: "LoveText Logo Hat",
-        price: 24.99,
-        billing: "Cotton Hat",
-        subscription: false,
-        image: "/img/hat_logo.jpg"
-    },
-    "hat-heart": {
-        id: "hat-heart",
-        name: "Heart Embroidery Hat",
-        price: 26.99,
-        billing: "Premium Hat",
-        subscription: false,
-        image: "/img/hat_heart.jpg"
     }
 };
 
 
 /*******************************************************
- * GET CUSTOMER SUBSCRIPTION STATUS
- * Backend returns:
- * {
- *    subscribed: true/false,
- *    current_plan: "none" | "trial" | "basic" | "plus"
- * }
+ * GET SUBSCRIPTION STATUS
  *******************************************************/
 async function getSubscriptionStatus() {
     try {
@@ -219,18 +174,18 @@ async function getSubscriptionStatus() {
         if (!r.ok) return null;
         return await r.json();
 
-    } catch (err) {
+    } catch {
         return null;
     }
 }
 
 
 /*******************************************************
- * DETERMINE BUTTON STATE
+ * BUILD BUTTON BASED ON PLAN
  *******************************************************/
 function buildButton(product, sub) {
-    const subscribed = sub?.subscribed ?? false;
-    const plan = sub?.current_plan ?? "none";
+    const subscribed = sub?.subscribed || false;
+    const plan = sub?.current_plan || "none";
 
     // Not subscribed
     if (!subscribed) {
@@ -243,38 +198,41 @@ function buildButton(product, sub) {
         return `<button class="btn btn-sub" onclick="subscribe('${product.id}')">Subscribe</button>`;
     }
 
-    // Subscribed
-    if (plan === "trial" && product.id === "free-trial")
+    // Subscribed → Current plan
+    if (
+        (plan === "trial" && product.id === "free-trial") ||
+        (plan === "basic" && product.id === "love-basic") ||
+        (plan === "plus" && product.id === "love-plus")
+    ) {
         return `<button class="btn btn-disabled">Current Plan</button>`;
+    }
 
-    if (plan === "basic" && product.id === "love-basic")
-        return `<button class="btn btn-disabled">Current Plan</button>`;
-
-    if (plan === "plus" && product.id === "love-plus")
-        return `<button class="btn btn-disabled">Current Plan</button>`;
-
-    // Trial → Basic / Plus
-    if (plan === "trial" && product.id !== "free-trial")
+    // Trial → Basic/Plus
+    if (plan === "trial" && product.id !== "free-trial") {
         return `<button class="btn btn-sub" onclick="subscribe('${product.id}')">Upgrade</button>`;
+    }
 
-    // Basic → Plus
-    if (plan === "basic" && product.id === "love-plus")
+    // Basic → Plus upgrade
+    if (plan === "basic" && product.id === "love-plus") {
         return `<button class="btn btn-sub" onclick="subscribe('love-plus')">Upgrade</button>`;
+    }
 
-    // Plus → Basic
-    if (plan === "plus" && product.id === "love-basic")
+    // Plus → Basic downgrade
+    if (plan === "plus" && product.id === "love-basic") {
         return `<button class="btn btn-sub" onclick="subscribe('love-basic')">Downgrade</button>`;
+    }
 
-    // No trial after subscription
-    if (product.id === "free-trial")
+    // Trial locked once used
+    if (product.id === "free-trial") {
         return `<button class="btn btn-disabled">Unavailable</button>`;
+    }
 
     return `<button class="btn btn-sub" onclick="subscribe('${product.id}')">Change Plan</button>`;
 }
 
 
 /*******************************************************
- * SUBSCRIBE (Stripe Checkout)
+ * STRIPE — SUBSCRIPTION CHECKOUT
  *******************************************************/
 async function subscribe(productId) {
     const r = await fetch("/api/stripe/checkout", {
@@ -285,22 +243,62 @@ async function subscribe(productId) {
     });
 
     const data = await r.json();
-    if (data.url) window.location.href = data.url;
+
+    if (data.error) {
+        alert(data.error);
+        return;
+    }
+
+    if (data.url) {
+        window.location.href = data.url;
+    }
 }
 
 
 /*******************************************************
- * ADD TO CART
+ * RENDER ALL PRODUCTS
  *******************************************************/
-async function addToCart(product) {
+async function renderProducts() {
+    const sub = await getSubscriptionStatus();
+    const grid = document.getElementById("products");
+    grid.innerHTML = "";
+
+    for (const p of Object.values(PRODUCTS)) {
+        const imgHTML = p.images
+            ? `<div class="dual"><img src="${p.images[0]}"><img src="${p.images[1]}"></div>`
+            : `<img src="${p.image}" class="single">`;
+
+        const btn = p.subscription
+            ? buildButton(p, sub)
+            : `<button class="btn btn-cart" onclick='addToCart("${p.id}")'>Add to Cart</button>`;
+
+        grid.innerHTML += `
+            <div class="card">
+                ${imgHTML}
+                <div class="name">${p.name}</div>
+                <div class="price">$${p.price.toFixed(2)} — ${p.billing}</div>
+                ${btn}
+            </div>
+        `;
+    }
+}
+
+renderProducts();
+
+/*******************************************************
+ * ADD TO CART FOR MERCH
+ *******************************************************/
+async function addToCart(id) {
+    const p = PRODUCTS[id];
+
     const r = await fetch("/api/cart/add", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            productId: product.id,
-            name: product.name,
-            price: product.price
+            productId: p.id,
+            name: p.name,
+            price: p.price
         })
     });
 
@@ -315,38 +313,6 @@ async function addToCart(product) {
         window.location.href = "/cart.html";
     }
 }
-
-
-/*******************************************************
- * RENDER PRODUCT GRID
- *******************************************************/
-async function renderProducts() {
-    const sub = await getSubscriptionStatus();
-    const grid = document.getElementById("products");
-
-    grid.innerHTML = "";
-
-    for (const p of Object.values(PRODUCTS)) {
-        const imgHTML = p.images
-            ? `<div class="dual"><img src="${p.images[0]}"><img src="${p.images[1]}"></div>`
-            : `<img src="${p.image}" class="single">`;
-
-        const btn = p.subscription
-            ? buildButton(p, sub)
-            : `<button class="btn btn-cart" onclick='addToCart(PRODUCTS["${p.id}"])'>Add to Cart</button>`;
-
-        grid.innerHTML += `
-            <div class="card">
-                ${imgHTML}
-                <div class="name">${p.name}</div>
-                <div class="price">$${p.price.toFixed(2)} — ${p.billing}</div>
-                ${btn}
-            </div>
-        `;
-    }
-}
-
-renderProducts();
 </script>
 
 </body>
