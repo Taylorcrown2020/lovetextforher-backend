@@ -5,8 +5,7 @@
     <title>Your Dashboard — LoveTextForHer</title>
 
     <script>
-        // Dashboard is a protected customer page
-        // nav.js handles redirecting if not logged in
+        // Protected customer page — nav.js handles session/auth
     </script>
 
     <style>
@@ -277,7 +276,7 @@ document.getElementById("r_relationship").addEventListener("change", () => {
 });
 
 /* ----------------------------------------------------
-   SUBSCRIPTION BANNER LOGIC
+   SUBSCRIPTION BANNER LOGIC (FIXED!)
 ----------------------------------------------------- */
 function updateSubscriptionBanner(data) {
     const banner = document.getElementById("subscriptionBanner");
@@ -289,6 +288,7 @@ function updateSubscriptionBanner(data) {
         data.plan === "trial" ? "Free Trial" :
         "None";
 
+    // No subscription
     if (!data.subscribed && !data.subscription_end) {
         banner.innerHTML = `
             You do not have a subscription.<br>
@@ -297,27 +297,29 @@ function updateSubscriptionBanner(data) {
         return;
     }
 
+    // Trial
     if (data.is_trial) {
         const end = new Date(data.trial_end).toLocaleDateString();
         banner.innerHTML = `Your Free Trial is active until <strong>${end}</strong> ❤️`;
         return;
     }
 
+    // Canceled but active until date
     if (data.subscription_end) {
         const end = new Date(data.subscription_end).toLocaleDateString();
         banner.innerHTML = `
-            Your subscription remains active until <strong>${end}</strong> ❤️<br>
-            You will continue to receive messages until then.
+            Your subscription remains active until <strong>${end}</strong> ❤️
         `;
         return;
     }
 
+    // Active subscription
     banner.innerHTML =
         `You currently have an active <strong>${planName}</strong> subscription 💖`;
 }
 
 /* ----------------------------------------------------
-   LOAD SUBSCRIPTION STATUS
+   LOAD SUBSCRIPTION STATUS (FIXED!)
 ----------------------------------------------------- */
 async function loadSubscriptionStatus() {
     try {
@@ -326,14 +328,17 @@ async function loadSubscriptionStatus() {
 
         const data = await res.json();
 
-        HAS_SUBSCRIPTION =
-            data.subscribed ||
-            !!data.subscription_end;
-
-        PLAN = data.plan;
+        HAS_SUBSCRIPTION = data.has_subscription;
+        PLAN = data.current_plan;
         ACTIVE_UNTIL = data.subscription_end;
 
-        updateSubscriptionBanner(data);
+        updateSubscriptionBanner({
+            subscribed: data.has_subscription,
+            plan: data.current_plan,
+            is_trial: data.trial_active,
+            trial_end: data.trial_end,
+            subscription_end: data.subscription_end
+        });
 
         document.getElementById("manageSubBtn").style.display =
             HAS_SUBSCRIPTION ? "block" : "none";
