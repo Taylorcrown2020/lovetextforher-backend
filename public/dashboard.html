@@ -368,6 +368,18 @@
             text-align: center;
         }
 
+        .success-banner {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 20px auto;
+            max-width: 700px;
+            text-align: center;
+            font-weight: 600;
+        }
+
         /* MODAL STYLES */
         .modal {
             display: none;
@@ -438,6 +450,9 @@
     <h1>Your Dashboard</h1>
     <div class="subtitle">Manage your subscriptions and recipients</div>
 
+    <!-- SUCCESS BANNER (shows after subscription update) -->
+    <div id="successBanner" style="display: none;"></div>
+
     <!-- SUBSCRIPTION STATUS -->
     <div id="subStatusBox">
         <div class="status-header">
@@ -494,14 +509,43 @@ let currentSubscription = null;
 let currentRecipients = [];
 
 /******************************************************
- * LOAD SUBSCRIPTION STATUS
+ * CHECK FOR UPDATE PARAMETER
+ ******************************************************/
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('updated')) {
+        const banner = document.getElementById('successBanner');
+        banner.style.display = 'block';
+        banner.className = 'success-banner';
+        banner.innerHTML = '✅ Your subscription has been updated successfully!';
+        
+        // Remove the parameter from URL without reload
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        
+        // Hide banner after 5 seconds
+        setTimeout(() => {
+            banner.style.display = 'none';
+        }, 5000);
+    }
+});
+
+/******************************************************
+ * LOAD SUBSCRIPTION STATUS (WITH CACHE BUSTING)
  ******************************************************/
 async function loadSubscription() {
     try {
-        const res = await fetch("/api/customer/subscription?t=" + Date.now(), {
+        // Force fresh data with timestamp + no-cache headers
+        const timestamp = Date.now();
+        const res = await fetch(`/api/customer/subscription?t=${timestamp}`, {
             method: "GET",
             credentials: "include",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            },
             cache: "no-store"
         });
 
@@ -516,7 +560,7 @@ async function loadSubscription() {
         const data = await res.json();
         currentSubscription = data;
 
-        console.log("Subscription data:", data);
+        console.log("📊 Subscription data loaded:", data);
 
         const statusBadge = document.getElementById("statusBadge");
         const planEl = document.getElementById("subPlan");
@@ -528,6 +572,8 @@ async function loadSubscription() {
         const isActive = data.subscribed || data.has_subscription;
         const plan = data.current_plan || "none";
         const limit = data.recipient_limit || 0;
+
+        console.log(`✓ Plan: ${plan} | Active: ${isActive} | Limit: ${limit}`);
 
         // Update status badge
         if (!isActive || plan === "none") {
@@ -558,39 +604,55 @@ async function loadSubscription() {
             billingBtn.onclick = openBilling;
         }
 
-        // Update plan
+        // Update plan display
         planEl.textContent = plan === "none" ? "No Plan" : plan.charAt(0).toUpperCase() + plan.slice(1);
 
-        // Update limit
+        // Update limit display
         if (limit === Infinity) {
             limitEl.textContent = "Unlimited";
         } else {
             limitEl.textContent = limit;
-
-            // Show warning if at/near limit
-            const recipientCount = currentRecipients.length;
-            if (recipientCount >= limit) {
-                limitWarning.style.display = "block";
-                limitWarning.className = "limit-info";
-                limitWarning.innerHTML = `
-                    <strong>⚠️ Recipient Limit Reached</strong><br>
-                    You have ${recipientCount}/${limit} recipients. 
-                    <a href="/products.html" class="upgrade-link">Upgrade your plan</a> to add more.
-                `;
-            } else if (recipientCount >= limit - 1 && limit !== 0) {
-                limitWarning.style.display = "block";
-                limitWarning.className = "limit-info";
-                limitWarning.innerHTML = `
-                    ⚠️ You're at ${recipientCount}/${limit} recipients. 
-                    <a href="/products.html" class="upgrade-link">Upgrade</a> to add more.
-                `;
-            }
         }
 
+        // Update limit warnings after recipients load
+        updateLimitWarnings();
+
     } catch (err) {
-        console.error("Error loading subscription:", err);
+        console.error("❌ Error loading subscription:", err);
         document.getElementById("errorContainer").innerHTML = `
             <div class="error-msg">Error loading subscription status. Please refresh the page.</div>
+        `;
+    }
+}
+
+/******************************************************
+ * UPDATE LIMIT WARNINGS
+ ******************************************************/
+function updateLimitWarnings() {
+    if (!currentSubscription) return;
+    
+    const limit = currentSubscription.recipient_limit || 0;
+    const recipientCount = currentRecipients.length;
+    const limitWarning = document.getElementById("limitWarning");
+    
+    limitWarning.style.display = "none"; // Reset
+    
+    if (limit === Infinity) return;
+    
+    if (recipientCount >= limit) {
+        limitWarning.style.display = "block";
+        limitWarning.className = "limit-info";
+        limitWarning.innerHTML = `
+            <strong>⚠️ Recipient Limit Reached</strong><br>
+            You have ${recipientCount}/${limit} recipients. 
+            <a href="/products.html" class="upgrade-link">Upgrade your plan</a> to add more.
+        `;
+    } else if (recipientCount >= limit - 1 && limit !== 0) {
+        limitWarning.style.display = "block";
+        limitWarning.className = "limit-info";
+        limitWarning.innerHTML = `
+            ⚠️ You're at ${recipientCount}/${limit} recipients. 
+            <a href="/products.html" class="upgrade-link">Upgrade</a> to add more.
         `;
     }
 }
@@ -652,6 +714,7 @@ async function loadRecipients() {
                     <p>Add your first recipient to start sending automated love messages!</p>
                 </div>
             `;
+            updateLimitWarnings();
             return;
         }
 
@@ -694,21 +757,7 @@ async function loadRecipients() {
             `;
         });
 
-        // Update limit warning after loading recipients
-        if (currentSubscription) {
-            const limit = currentSubscription.recipient_limit || 0;
-            const limitWarning = document.getElementById("limitWarning");
-            
-            if (limit !== Infinity && data.length >= limit) {
-                limitWarning.style.display = "block";
-                limitWarning.className = "limit-info";
-                limitWarning.innerHTML = `
-                    <strong>⚠️ Recipient Limit Reached</strong><br>
-                    You have ${data.length}/${limit} recipients. 
-                    <a href="/products.html" class="upgrade-link">Upgrade your plan</a> to add more.
-                `;
-            }
-        }
+        updateLimitWarnings();
 
     } catch (err) {
         console.error("Error loading recipients:", err);
@@ -764,7 +813,7 @@ async function deleteRecipient(id) {
 
         if (data.success) {
             alert("Recipient deleted successfully!");
-            loadRecipients();
+            await loadRecipients(); // Reload to update count
         }
     } catch (err) {
         console.error("Delete error:", err);
@@ -864,13 +913,16 @@ function escapeHtml(text) {
 }
 
 /******************************************************
- * INIT - Load everything
+ * INIT - Load everything with proper sequencing
  ******************************************************/
 async function init() {
+    console.log("🚀 Initializing dashboard...");
     await loadSubscription();
     await loadRecipients();
+    console.log("✅ Dashboard loaded");
 }
 
+// Start initialization
 init();
 
 // Close modal when clicking outside
