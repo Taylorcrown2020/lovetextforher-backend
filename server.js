@@ -103,51 +103,54 @@ try {
      * SUBSCRIPTION UPDATED (renewal / price change / cancel scheduled)
      ***********************************************************/
     if (type === "customer.subscription.updated") {
-        const customerId = obj.customer;
-        const subId = obj.id;
-        
-        // Check if this subscription is actually in our database
-        const check = await db.query(
-            `SELECT stripe_subscription_id, id FROM customers WHERE stripe_customer_id=$1`,
-            [customerId]
-        );
-        
-        // If subscription IDs don't match, this is an old/deleted subscription - ignore it
-        if (check.rows.length === 0 || check.rows[0].stripe_subscription_id !== subId) {
-            console.log(`⚠️  Ignoring update for non-current subscription ${subId}`);
-            return res.json({ received: true });
-        }
-        
-        const customer_db_id = check.rows[0].id;
-        const priceId = obj.items.data[0].price.id;
-
-        let plan = "none";
-        if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
-        if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
-        if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
-
-        // If cancellation scheduled, set subscription_end date
-        // BUT DON'T delete recipients - they keep access until period ends
-        const subscriptionEnd = obj.cancel_at_period_end 
-            ? new Date(obj.current_period_end * 1000)
-            : null;
-
-        await db.query(`
-            UPDATE customers
-            SET
-                has_subscription = $1,
-                current_plan = $2,
-                subscription_end = $3
-            WHERE stripe_customer_id=$4
-        `, [!obj.cancel_at_period_end, plan, subscriptionEnd, customerId]);
-
-        if (obj.cancel_at_period_end) {
-            console.log(`🔄 Subscription will cancel at ${subscriptionEnd.toISOString()}`);
-            console.log(`✅ Customer keeps access until period ends`);
-        } else {
-            console.log(`🔄 Subscription updated: ${plan}`);
-        }
+    const customerId = obj.customer;
+    const subId = obj.id;
+    
+    // Check if this subscription is actually in our database
+    const check = await db.query(
+        `SELECT stripe_subscription_id, id FROM customers WHERE stripe_customer_id=$1`,
+        [customerId]
+    );
+    
+    // If subscription IDs don't match, ignore it
+    if (check.rows.length === 0 || check.rows[0].stripe_subscription_id !== subId) {
+        console.log(`⚠️  Ignoring update for non-current subscription ${subId}`);
+        return res.json({ received: true });
     }
+    
+    const customer_db_id = check.rows[0].id;
+    const priceId = obj.items.data[0].price.id;
+
+    let plan = "none";
+    if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
+    if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
+    if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+
+    // ✅ KEY FIX: Properly set subscription_end when canceling
+    const subscriptionEnd = obj.cancel_at_period_end 
+        ? new Date(obj.current_period_end * 1000)
+        : null;
+
+    // ✅ IMPORTANT: Keep has_subscription as TRUE during cancellation period
+    // It only becomes FALSE when subscription.deleted fires
+    const isStillActive = !obj.cancel_at_period_end;
+
+    await db.query(`
+        UPDATE customers
+        SET
+            has_subscription = $1,
+            current_plan = $2,
+            subscription_end = $3
+        WHERE stripe_customer_id = $4
+    `, [isStillActive, plan, subscriptionEnd, customerId]);
+
+    if (obj.cancel_at_period_end) {
+        console.log(`🔄 Subscription canceling - ends at ${subscriptionEnd.toISOString()}`);
+        console.log(`✅ Customer keeps access until ${subscriptionEnd.toISOString()}`);
+    } else {
+        console.log(`🔄 Subscription updated: ${plan}`);
+    }
+}
 
     /***********************************************************
      * SUBSCRIPTION CANCELED/DELETED
@@ -751,8 +754,10 @@ async function ensureStripeCustomer(customer) {
 }
 
 /***************************************************************
- *  GET SUBSCRIPTION STATUS — FINAL & 100% CORRECT
+ *  FIXED: GET SUBSCRIPTION STATUS ENDPOINT
+ *  Replace this in your backend (Part 4)
  ***************************************************************/
+
 app.get("/api/customer/subscription",
     global.__LT_authCustomer,
     async (req, res) => {
@@ -775,19 +780,34 @@ app.get("/api/customer/subscription",
             return res.status(404).json({ error: "Customer not found" });
 
         const c = q.rows[0];
+        const now = new Date();
 
+        // ✅ CORRECT LOGIC: Check if user has active access
         let subscribed = false;
+        let status = "inactive";
 
-        // Active plan
-        if (c.has_subscription === true) subscribed = true;
-
-        // Canceled but still active until a future date
-        if (c.subscription_end && new Date(c.subscription_end) > new Date())
+        // Case 1: Active subscription (not canceled)
+        if (c.has_subscription === true && !c.subscription_end) {
             subscribed = true;
+            status = "active";
+        }
+
+        // Case 2: Canceled but still in paid period
+        if (c.subscription_end && new Date(c.subscription_end) > now) {
+            subscribed = true;
+            status = "canceling"; // New status!
+        }
+
+        // Case 3: Trial active
+        if (c.trial_active && c.trial_end && new Date(c.trial_end) > now) {
+            subscribed = true;
+            status = "trial";
+        }
 
         return res.json({
             has_subscription: c.has_subscription,
-            subscribed,
+            subscribed,           // TRUE if user has access (active OR canceling)
+            status,               // "active", "canceling", "trial", or "inactive"
             current_plan: c.current_plan,
             trial_active: c.trial_active,
             trial_end: c.trial_end,
