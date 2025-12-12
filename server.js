@@ -2265,36 +2265,6 @@ app.get("/api/admin/message-logs/search", global.__LT_authAdmin, async (req, res
     }
 });
 
-if ((delivery_method === "sms" || delivery_method === "both") && !phone_number) {
-    return res.status(400).json({ error: "Phone number required for SMS delivery" });
-}
-
-// ADD THIS:
-if (phone_number) {
-    // Basic phone validation (US format)
-    const phoneRegex = /^\+?1?\d{10,15}$/;
-    if (!phoneRegex.test(phone_number.replace(/[\s\-\(\)]/g, ''))) {
-        return res.status(400).json({ 
-            error: "Invalid phone number format. Use: +1234567890" 
-        });
-    }
-}
-
-if (type === "customer.subscription.updated") {
-    // ... existing code ...
-    
-    // After updating plan in database:
-    if (!obj.cancel_at_period_end) {
-        // Not canceling, just changing plan
-        const oldPlan = check.rows[0].current_plan;  // Get old plan first!
-        
-        if (oldPlan === "plus" && plan === "basic") {
-            // Downgrade detected - enforce limits
-            await global.__LT_enforceRecipientLimit(customer_db_id, plan);
-        }
-    }
-}
-
 /***************************************************************
  *  SERVER START
  ***************************************************************/
