@@ -1,7 +1,9 @@
 /********************************************************************
- *  NAV.JS — FINAL VERSION (MATCHES NEW SERVER + NEW HTML FILES)
+ *  NAV.JS — FINAL FIXED VERSION
+ *  ✅ Allows homepage access for everyone
+ *  ✅ Proper logout behavior
+ *  ✅ Correct authentication checks
  ********************************************************************/
-
 
 /* ================================================================
    DISABLED NAV PAGES
@@ -15,17 +17,14 @@ const DISABLED = [
     "/reset_request.html"
 ];
 
-
 if (DISABLED.includes(window.location.pathname)) {
     window.SKIP_NAV_JS = true;
 }
-
 
 if (window.SKIP_NAV_JS === true) {
     console.log("⛔ nav.js disabled on this page");
     throw new Error("NAV_DISABLED");
 }
-
 
 /* ================================================================
    HELPER — API
@@ -44,7 +43,6 @@ async function api(path, options = {}) {
     }
 }
 
-
 /* ================================================================
    AUTH HELPERS
 ================================================================ */
@@ -62,7 +60,6 @@ async function getCustomer() {
     }
 }
 
-
 async function getAdmin() {
     try {
         const res = await fetch("/api/admin/me", {
@@ -77,7 +74,6 @@ async function getAdmin() {
     }
 }
 
-
 /* ================================================================
    CART COUNT
 ================================================================ */
@@ -89,7 +85,6 @@ async function getCartCount() {
         return 0;
     }
 }
-
 
 /* ================================================================
    NAV ELEMENT
@@ -103,7 +98,6 @@ function ensureNavbarEl() {
     }
     return el;
 }
-
 
 /* ================================================================
    GLOBAL NAV STYLES
@@ -133,6 +127,7 @@ function ensureNavbarEl() {
             font-size: 20px;
             font-weight: 900;
             color: #d6336c;
+            cursor: pointer;
         }
         .nav-links a {
             margin-left: 22px;
@@ -159,42 +154,40 @@ function ensureNavbarEl() {
     document.head.appendChild(s);
 })();
 
-
 /* ================================================================
    NAV LAYOUTS
 ================================================================ */
 function publicNav() {
     return `
         <div class="nav-inner">
-            <div class="nav-logo">LOVETEXTFORHER</div>
+            <div class="nav-logo" onclick="window.location.href='/index.html'">LOVETEXTFORHER</div>
             <div class="nav-links">
                 <a href="/index.html">Home</a>
+                <a href="/products.html">Plans</a>
                 <a href="/login.html">Login</a>
-                <a href="/register.html">Register</a>
-                <a href="/admin_login.html">Admin</a>
+                <a href="/register.html">Sign Up</a>
             </div>
         </div>`;
 }
 
-
 function customerNav(cartBubble) {
     return `
         <div class="nav-inner">
-            <div class="nav-logo">LOVETEXTFORHER</div>
+            <div class="nav-logo" onclick="window.location.href='/dashboard.html'">LOVETEXTFORHER</div>
             <div class="nav-links">
+                <a href="/index.html">Home</a>
                 <a href="/dashboard.html">Dashboard</a>
-                <a href="/products.html">Products</a>
+                <a href="/products.html">Plans</a>
                 <a href="/cart.html">Cart ${cartBubble}</a>
                 <a href="#" id="logout-customer">Logout</a>
             </div>
         </div>`;
 }
 
-
 function adminNav() {
     return `
         <div class="nav-inner">
-            <div class="nav-logo">ADMIN PANEL</div>
+            <div class="nav-logo" onclick="window.location.href='/admin.html'">ADMIN PANEL</div>
             <div class="nav-links">
                 <a href="/admin.html">Dashboard</a>
                 <a href="/admin_users.html">Users</a>
@@ -205,21 +198,34 @@ function adminNav() {
         </div>`;
 }
 
-
 /* ================================================================
    LOGOUT HANDLERS
 ================================================================ */
 async function logoutCustomer() {
-    await api("/api/customer/logout", { method: "POST" });
-    window.location.href = "/login.html";
+    try {
+        await api("/api/customer/logout", { method: "POST" });
+        // Clear any cached data
+        sessionStorage.clear();
+        // Redirect to login
+        window.location.href = "/login.html";
+    } catch (err) {
+        console.error("Logout error:", err);
+        window.location.href = "/login.html";
+    }
 }
-
 
 async function logoutAdmin() {
-    await api("/api/admin/logout", { method: "POST" });
-    window.location.href = "/admin_login.html";
+    try {
+        await api("/api/admin/logout", { method: "POST" });
+        // Clear any cached data
+        sessionStorage.clear();
+        // Redirect to admin login
+        window.location.href = "/admin_login.html";
+    } catch (err) {
+        console.error("Admin logout error:", err);
+        window.location.href = "/admin_login.html";
+    }
 }
-
 
 /* ================================================================
    INJECT NAVBAR
@@ -228,62 +234,75 @@ async function injectNavbar() {
     const navbar = ensureNavbarEl();
     navbar.innerHTML = "";
 
-
     const path = window.location.pathname;
-
 
     const customer = await getCustomer();
     const admin = await getAdmin();
 
+    console.log("🔍 Current Path:", path);
+    console.log("👤 Customer:", customer ? "Logged in" : "Not logged in");
+    console.log("👨‍💼 Admin:", admin ? "Logged in" : "Not logged in");
 
     // Admin pages
     if (admin && path.startsWith("/admin") && path !== "/admin_login.html") {
         navbar.innerHTML = adminNav();
-        document.getElementById("logout-admin").onclick = logoutAdmin;
+        const logoutBtn = document.getElementById("logout-admin");
+        if (logoutBtn) logoutBtn.onclick = logoutAdmin;
         return;
     }
 
-
-    // Customer pages (NEW — matches your server)
+    // Customer pages (protected routes that need authentication)
     const customerProtectedPages = [
         "/dashboard.html",
-        "/products.html",
         "/cart.html"
     ];
 
-
-    if (customer && customerProtectedPages.includes(path)) {
+    // Show customer nav if logged in AND on customer pages OR homepage/products
+    if (customer && (customerProtectedPages.includes(path) || path === "/index.html" || path === "/" || path === "/products.html")) {
         const count = await getCartCount();
         const bubble = count > 0 ? `<span class="cart-bubble">${count}</span>` : "";
         navbar.innerHTML = customerNav(bubble);
-        document.getElementById("logout-customer").onclick = logoutCustomer;
+        const logoutBtn = document.getElementById("logout-customer");
+        if (logoutBtn) logoutBtn.onclick = logoutCustomer;
         return;
     }
 
-
-    // Default public nav
+    // Default public nav for everyone else
     navbar.innerHTML = publicNav();
 }
 
-
 /* ================================================================
-   ACCESS CONTROL MATCHING SERVER EXACTLY
+   ACCESS CONTROL - ONLY PROTECT TRULY PROTECTED PAGES
 ================================================================ */
 async function enforceAccess() {
     const path = window.location.pathname;
 
-
     const customer = await getCustomer();
     const admin = await getAdmin();
 
+    // Pages that EVERYONE can access (public pages)
+    const publicPages = [
+        "/index.html",
+        "/",
+        "/products.html",
+        "/login.html",
+        "/register.html",
+        "/forgot_password.html",
+        "/reset_password.html"
+    ];
 
+    // Don't enforce access on public pages
+    if (publicPages.includes(path)) {
+        return; // Allow access
+    }
+
+    // Pages that REQUIRE customer login
     const customerProtected = [
         "/dashboard.html",
-        "/products.html",
         "/cart.html"
     ];
 
-
+    // Pages that REQUIRE admin login
     const adminProtected = [
         "/admin.html",
         "/admin_users.html",
@@ -291,36 +310,35 @@ async function enforceAccess() {
         "/admin_kpis.html"
     ];
 
-
-    // CUSTOMER PAGE WITHOUT LOGIN → Redirect
+    // CUSTOMER PAGE WITHOUT LOGIN → Redirect to login
     if (customerProtected.includes(path) && !customer) {
+        console.log("🚫 Not logged in, redirecting to login");
         return (window.location.href = "/login.html");
     }
 
-
-    // ADMIN PAGE WITHOUT LOGIN → Redirect
+    // ADMIN PAGE WITHOUT LOGIN → Redirect to admin login
     if (adminProtected.includes(path) && !admin) {
+        console.log("🚫 Not admin, redirecting to admin login");
         return (window.location.href = "/admin_login.html");
     }
 
-
-    // CUSTOMER TRYING TO VIEW LOGIN/REGISTER
+    // If customer is on login/register, redirect to dashboard
     if (customer && (path === "/login.html" || path === "/register.html")) {
+        console.log("✅ Already logged in, redirecting to dashboard");
         return (window.location.href = "/dashboard.html");
     }
 
-
-    // ADMIN TRYING TO VIEW admin_login
+    // If admin is on admin_login, redirect to admin dashboard
     if (admin && path === "/admin_login.html") {
+        console.log("✅ Already logged in as admin, redirecting to admin dashboard");
         return (window.location.href = "/admin.html");
     }
 }
 
-
 /* ================================================================
    INIT
 ================================================================ */
-document.addEventListener("DOMContentLoaded", () => {
-    injectNavbar();
-    enforceAccess();
+document.addEventListener("DOMContentLoaded", async () => {
+    await injectNavbar();
+    await enforceAccess();
 });
