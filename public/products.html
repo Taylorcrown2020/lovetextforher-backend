@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Products — LoveTextForHer</title>
 
     <style>
@@ -18,6 +19,11 @@
             background: linear-gradient(135deg, #fff7fa, #f6f3ff);
         }
 
+        #navbar { 
+            width: 100%; 
+            height: 95px; 
+        }
+
         .product-section {
             max-width: 1200px;
             margin: 150px auto 60px;
@@ -28,6 +34,7 @@
             font-size: 32px;
             font-weight: 800;
             color: var(--primary);
+            padding: 0 20px;
         }
 
         .grid {
@@ -44,6 +51,11 @@
             padding: 18px;
             border: 1px solid #f8cde6;
             box-shadow: 0 10px 35px rgba(214,51,108,0.15);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
         }
 
         .single-image,
@@ -70,6 +82,7 @@
             font-size: 20px;
             font-weight: 700;
             margin-top: 12px;
+            color: var(--text-dark);
         }
 
         .price {
@@ -86,6 +99,11 @@
             font-weight: 600;
             cursor: pointer;
             border: none;
+            transition: all 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
         }
 
         .btn-subscribe {
@@ -93,14 +111,190 @@
             color: white;
         }
 
+        .btn-subscribe:hover {
+            box-shadow: 0 4px 12px rgba(214,51,108,0.3);
+        }
+
         .btn-add {
             background: linear-gradient(90deg, #8b5cf6, #d6336c);
             color: white;
         }
 
+        .btn-add:hover {
+            box-shadow: 0 4px 12px rgba(139,92,246,0.3);
+        }
+
         .btn-disabled {
             background: #ccc !important;
-            cursor: default !important;
+            cursor: not-allowed !important;
+            color: #666 !important;
+        }
+
+        /* ============== TABLET ============== */
+        @media (max-width: 768px) {
+            #navbar { 
+                height: 85px; 
+            }
+
+            .product-section {
+                margin: 110px auto 50px;
+            }
+
+            .product-title {
+                font-size: 36px;
+                padding: 0 24px;
+            }
+
+            .grid {
+                gap: 28px;
+                padding: 0 24px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .name {
+                font-size: 22px;
+                margin-top: 14px;
+            }
+
+            .price {
+                font-size: 17px;
+                margin: 8px 0 16px;
+            }
+
+            .btn {
+                padding: 14px;
+                font-size: 16px;
+            }
+        }
+
+        /* ============== MOBILE ============== */
+        @media (max-width: 480px) {
+            #navbar { 
+                height: 75px; 
+            }
+
+            .product-section {
+                margin: 90px auto 40px;
+            }
+
+            .product-title {
+                font-size: 38px;
+                padding: 0 20px;
+                font-weight: 900;
+                margin-bottom: 10px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+                margin-top: 35px;
+                padding: 0 20px;
+            }
+
+            .card {
+                padding: 24px 20px;
+                border-radius: 20px;
+                border-width: 2px;
+            }
+
+            .single-image,
+            .dual-images img {
+                max-height: 280px;
+                border-radius: 14px;
+                padding: 10px;
+            }
+
+            .dual-images {
+                gap: 10px;
+            }
+
+            .name {
+                font-size: 24px;
+                font-weight: 800;
+                margin-top: 16px;
+                line-height: 1.3;
+            }
+
+            .price {
+                font-size: 18px;
+                margin: 10px 0 18px;
+                font-weight: 600;
+            }
+
+            .btn {
+                padding: 18px 16px;
+                font-size: 18px;
+                border-radius: 14px;
+                font-weight: 700;
+                min-height: 56px;
+            }
+        }
+
+        /* ============== EXTRA SMALL MOBILE ============== */
+        @media (max-width: 380px) {
+            .product-section {
+                margin: 75px auto 35px;
+            }
+
+            .product-title {
+                font-size: 34px;
+                padding: 0 16px;
+            }
+
+            .grid {
+                gap: 20px;
+                padding: 0 16px;
+            }
+
+            .card {
+                padding: 20px 18px;
+            }
+
+            .single-image,
+            .dual-images img {
+                max-height: 240px;
+            }
+
+            .name {
+                font-size: 22px;
+                margin-top: 14px;
+            }
+
+            .price {
+                font-size: 17px;
+                margin: 9px 0 16px;
+            }
+
+            .btn {
+                padding: 16px 14px;
+                font-size: 17px;
+                min-height: 52px;
+            }
+        }
+
+        /* ============== LARGE DESKTOP ============== */
+        @media (min-width: 1200px) {
+            .grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* ============== LOADING STATE ============== */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 18px;
+            color: var(--text-soft);
+        }
+
+        @media (max-width: 480px) {
+            .loading {
+                font-size: 20px;
+                padding: 80px 20px;
+            }
         }
     </style>
 </head>
@@ -112,7 +306,9 @@
 
 <div class="product-section">
     <div class="product-title">Our Romantic Products</div>
-    <div class="grid" id="productGrid"></div>
+    <div class="grid" id="productGrid">
+        <div class="loading">Loading products...</div>
+    </div>
 </div>
 
 <script>
@@ -269,11 +465,14 @@ function getButton(p, sub) {
 async function loadProducts() {
     const sub = await getSubscription();
     const grid = document.getElementById("productGrid");
+    
+    // Clear loading state
+    grid.innerHTML = "";
 
     Object.values(PRODUCTS).forEach(p => {
         const img = p.images
-            ? `<div class="dual-images"><img src="${p.images[0]}"><img src="${p.images[1]}"></div>`
-            : `<img src="${p.image}" class="single-image">`;
+            ? `<div class="dual-images"><img src="${p.images[0]}" alt="${p.name}"><img src="${p.images[1]}" alt="${p.name}"></div>`
+            : `<img src="${p.image}" class="single-image" alt="${p.name}">`;
 
         const btn = p.subscription
             ? getButton(p, sub)
@@ -294,47 +493,66 @@ async function loadProducts() {
    SUBSCRIBE NOW — Stripe Checkout
 -------------------------------------------------- */
 async function subscribeNow(productId) {
-    const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId })
-    });
+    try {
+        const res = await fetch("/api/stripe/checkout", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId })
+        });
 
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
+        const data = await res.json();
+        
+        if (data.error?.includes("Not logged")) {
+            window.location.href = "/login.html";
+            return;
+        }
+        
+        if (data.url) window.location.href = data.url;
+    } catch (err) {
+        console.error("Subscribe error:", err);
+        alert("Error processing subscription. Please try again.");
+    }
 }
 
 /* --------------------------------------------------
    ADD TO CART
 -------------------------------------------------- */
 async function addToCart(id) {
-    const p = PRODUCTS[id];
+    try {
+        const p = PRODUCTS[id];
 
-    const res = await fetch("/api/cart/add", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            productId: id,
-            name: p.name,
-            price: p.price
-        })
-    });
+        const res = await fetch("/api/cart/add", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                productId: id,
+                name: p.name,
+                price: p.price
+            })
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    if (data.error?.includes("Not logged")) {
-        window.location.href = "/login.html";
-        return;
-    }
+        if (data.error?.includes("Not logged")) {
+            window.location.href = "/login.html";
+            return;
+        }
 
-    if (data.success) {
-        window.location.href = "/cart.html";
+        if (data.success) {
+            window.location.href = "/cart.html";
+        } else {
+            alert(data.error || "Error adding to cart");
+        }
+    } catch (err) {
+        console.error("Add to cart error:", err);
+        alert("Error adding to cart. Please try again.");
     }
 }
 
-loadProducts();
+// Load products on page load
+document.addEventListener('DOMContentLoaded', loadProducts);
 </script>
 
 </body>

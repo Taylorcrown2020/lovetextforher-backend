@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Dashboard — LoveTextForHer</title>
 
     <style>
@@ -44,6 +45,14 @@
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+
+        h2.form-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 40px 0 20px;
+            color: var(--text-dark);
         }
 
         #subscriptionBanner {
@@ -101,7 +110,15 @@
             box-shadow: 0 8px 26px rgba(214,51,108,0.12);
         }
 
-        .recipient-box strong { color: var(--primary); }
+        .recipient-box strong { 
+            color: var(--primary); 
+            font-size: 18px;
+        }
+
+        .recipient-box p {
+            margin: 8px 0;
+            font-size: 15px;
+        }
 
         .delete-btn, .log-btn, .flower-btn {
             padding: 10px 18px;
@@ -111,6 +128,7 @@
             color: white;
             font-weight: 600;
             margin-top: 14px;
+            font-size: 14px;
         }
 
         .delete-btn { background: var(--danger); }
@@ -123,6 +141,7 @@
             margin-top: 15px;
             border-radius: 12px;
             border: 2px solid rgba(214,51,108,0.25);
+            font-size: 15px;
         }
 
         #addForm button {
@@ -143,6 +162,7 @@
             margin-top: 16px;
             color: var(--primary);
             font-weight: 600;
+            font-size: 15px;
         }
 
         #manageSubBtn {
@@ -156,6 +176,7 @@
             border: none;
             cursor: pointer;
             text-align: center;
+            font-size: 16px;
         }
 
         #messageLogModal, #flowerModal {
@@ -166,6 +187,276 @@
             justify-content:center;
             align-items:center;
             z-index:9999;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 420px;
+            padding: 20px;
+            border-radius: 22px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        /* ============== TABLET ============== */
+        @media (max-width: 768px) {
+            #navbar { height: 85px; }
+
+            .dashboard-container {
+                margin: 110px auto 40px;
+                padding: 38px 30px;
+            }
+
+            h1.header-title {
+                font-size: 34px;
+                margin-bottom: 30px;
+            }
+
+            h2.form-title {
+                font-size: 26px;
+                margin: 35px 0 22px;
+            }
+
+            #subscriptionBanner {
+                padding: 20px;
+                font-size: 16px;
+            }
+
+            .recipient-box {
+                padding: 24px;
+                margin-bottom: 20px;
+            }
+
+            .recipient-box strong { font-size: 19px; }
+            .recipient-box p { font-size: 16px; }
+
+            .delete-btn, .log-btn, .flower-btn {
+                padding: 12px 20px;
+                font-size: 15px;
+            }
+
+            #addForm input, #addForm select {
+                padding: 16px;
+                font-size: 16px;
+            }
+
+            #addForm button {
+                padding: 18px;
+                font-size: 17px;
+            }
+
+            #manageSubBtn {
+                padding: 16px 26px;
+                font-size: 17px;
+            }
+        }
+
+        /* ============== MOBILE ============== */
+        @media (max-width: 480px) {
+            #navbar { height: 75px; }
+
+            .dashboard-container {
+                margin: 90px auto 30px;
+                padding: 32px 24px;
+                border-radius: 20px;
+            }
+
+            h1.header-title {
+                font-size: 36px;
+                margin-bottom: 28px;
+                font-weight: 900;
+            }
+
+            h2.form-title {
+                font-size: 28px;
+                margin: 40px 0 24px;
+                font-weight: 800;
+            }
+
+            #subscriptionBanner {
+                padding: 22px 18px;
+                font-size: 17px;
+                border-radius: 14px;
+            }
+
+            #subscriptionBanner a {
+                padding: 14px 22px;
+                font-size: 17px;
+                margin-top: 16px;
+            }
+
+            .countdown-box {
+                padding: 16px;
+                font-size: 16px;
+                margin-top: 18px;
+            }
+
+            .countdown-box strong {
+                font-size: 20px;
+            }
+
+            .recipient-box {
+                padding: 26px 22px;
+                margin-bottom: 22px;
+                border-radius: 16px;
+            }
+
+            .recipient-box strong { 
+                font-size: 21px;
+                display: block;
+                margin-bottom: 10px;
+            }
+
+            .recipient-box p { 
+                font-size: 17px;
+                margin: 10px 0;
+            }
+
+            .delete-btn, .log-btn, .flower-btn {
+                padding: 14px 20px;
+                font-size: 16px;
+                margin-top: 16px;
+                margin-left: 0;
+                display: block;
+                width: 100%;
+            }
+
+            .log-btn, .flower-btn {
+                margin-top: 10px;
+            }
+
+            #addForm input, #addForm select {
+                padding: 18px 16px;
+                font-size: 18px;
+                margin-top: 18px;
+                border-radius: 14px;
+                border-width: 2.5px;
+            }
+
+            #addForm input::placeholder {
+                font-size: 17px;
+            }
+
+            #addForm button {
+                padding: 20px;
+                font-size: 19px;
+                margin-top: 26px;
+                border-radius: 14px;
+                font-weight: 800;
+                min-height: 56px;
+            }
+
+            #msg {
+                font-size: 17px;
+                margin-top: 20px;
+            }
+
+            #manageSubBtn {
+                padding: 18px 30px;
+                font-size: 18px;
+                margin: 35px auto 60px;
+                border-radius: 14px;
+                font-weight: 800;
+                display: block;
+                min-height: 56px;
+            }
+
+            .modal-content {
+                width: 92%;
+                padding: 24px 20px;
+            }
+
+            .modal-content h2 {
+                font-size: 24px;
+            }
+
+            .modal-content label {
+                font-size: 17px;
+            }
+
+            .modal-content select,
+            .modal-content textarea {
+                font-size: 17px;
+                padding: 14px;
+            }
+
+            .modal-content button {
+                padding: 16px 22px;
+                font-size: 17px;
+                min-height: 52px;
+            }
+        }
+
+        /* ============== EXTRA SMALL MOBILE ============== */
+        @media (max-width: 380px) {
+            .dashboard-container {
+                margin: 75px auto 25px;
+                padding: 28px 20px;
+            }
+
+            h1.header-title {
+                font-size: 32px;
+                margin-bottom: 24px;
+            }
+
+            h2.form-title {
+                font-size: 26px;
+                margin: 35px 0 20px;
+            }
+
+            #subscriptionBanner {
+                padding: 20px 16px;
+                font-size: 16px;
+            }
+
+            .recipient-box {
+                padding: 22px 18px;
+            }
+
+            .recipient-box strong { font-size: 19px; }
+            .recipient-box p { font-size: 16px; }
+
+            .delete-btn, .log-btn, .flower-btn {
+                padding: 13px 18px;
+                font-size: 15px;
+            }
+
+            #addForm input, #addForm select {
+                padding: 16px 14px;
+                font-size: 17px;
+            }
+
+            #addForm button {
+                padding: 18px;
+                font-size: 18px;
+            }
+
+            #manageSubBtn {
+                padding: 16px 24px;
+                font-size: 17px;
+            }
+        }
+
+        /* ============== TOUCH TARGETS ============== */
+        @media (max-width: 768px) {
+            button {
+                min-height: 48px;
+            }
+
+            input, select {
+                min-height: 48px;
+            }
+
+            @media (max-width: 480px) {
+                button {
+                    min-height: 52px;
+                }
+
+                input, select {
+                    min-height: 50px;
+                }
+            }
         }
     </style>
 </head>
@@ -240,12 +531,12 @@
 
 <!-- Message Log Modal -->
 <div id="messageLogModal">
-    <div style="background:white; width:420px; padding:20px; border-radius:22px; max-height:80vh; overflow-y:auto;">
+    <div class="modal-content">
         <h2 style="margin-top:0; color:#d6336c;">Message Log</h2>
         <div id="logContent"></div>
 
         <button onclick="closeMessageLog()" style="margin-top:20px; background:#d6336c; color:white;
-            padding:12px 18px; border:none; border-radius:12px; cursor:pointer;">
+            padding:12px 18px; border:none; border-radius:12px; cursor:pointer; width: 100%;">
             Exit
         </button>
     </div>
@@ -253,11 +544,11 @@
 
 <!-- Flower Modal -->
 <div id="flowerModal">
-    <div style="background:white; width:420px; padding:20px; border-radius:22px;">
+    <div class="modal-content">
         <h2 style="margin-top:0; color:#d6336c;">Send a Flower 🌸</h2>
 
-        <label>Select Flower:</label>
-        <select id="flowerType" style="width:100%; padding:12px; margin-top:12px;">
+        <label style="display: block; margin-top: 16px; font-weight: 600;">Select Flower:</label>
+        <select id="flowerType" style="width:100%; padding:12px; margin-top:12px; border-radius: 12px; border: 2px solid rgba(214,51,108,0.25);">
             <option value="🌹 Rose">🌹 Rose</option>
             <option value="🌸 Cherry Blossom">🌸 Cherry Blossom</option>
             <option value="🌻 Sunflower">🌻 Sunflower</option>
@@ -265,15 +556,15 @@
         </select>
 
         <textarea id="flowerNote" placeholder="Optional note…"
-            style="width:100%; height:90px; margin-top:12px; padding:10px; border-radius:12px;"></textarea>
+            style="width:100%; height:90px; margin-top:12px; padding:10px; border-radius:12px; border: 2px solid rgba(214,51,108,0.25);"></textarea>
 
         <button onclick="sendFlower()" style="margin-top:20px; background:#ff7ac4; color:white;
-            padding:12px 18px; border:none; border-radius:12px; cursor:pointer;">
+            padding:12px 18px; border:none; border-radius:12px; cursor:pointer; width: 100%; font-weight: 600;">
             Send Flower
         </button>
 
         <button onclick="closeFlowerModal()" style="margin-top:10px; background:#999; color:white;
-            padding:10px 16px; border:none; border-radius:12px; cursor:pointer;">
+            padding:10px 16px; border:none; border-radius:12px; cursor:pointer; width: 100%; font-weight: 600;">
             Cancel
         </button>
     </div>
@@ -426,7 +717,7 @@ async function loadRecipients() {
         box.innerHTML = "";
 
         if (!list.length) {
-            box.innerHTML = `<p style="text-align:center; color:var(--text-soft);">You have no recipients yet.</p>`;
+            box.innerHTML = `<p style="text-align:center; color:var(--text-soft); font-size: 17px;">You have no recipients yet.</p>`;
             return;
         }
 
