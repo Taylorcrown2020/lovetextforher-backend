@@ -81,23 +81,15 @@
 
         .countdown-box {
             margin-top: 15px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 10px;
-            font-size: 15px;
-            border: 2px dashed var(--warning);
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            font-size: 14px;
         }
 
         .countdown-box strong {
-            font-size: 20px;
+            font-size: 18px;
             color: var(--warning);
-        }
-
-        .countdown-timer {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--danger);
-            margin: 8px 0;
         }
 
         .recipient-box {
@@ -298,17 +290,15 @@ function hasActiveAccess(data) {
 
     const now = new Date();
 
-    // Active subscription (not canceled)
     if (data.has_subscription === true && data.subscription_end === null) return true;
 
-    // Canceled but still within billing period
     if (data.subscription_end && new Date(data.subscription_end) > now) return true;
 
     return false;
 }
 
 /* ============================================================
-   CALCULATE TIME REMAINING (Enhanced with real-time updates)
+   CALCULATE TIME REMAINING
 ============================================================ */
 function getTimeRemaining(endDate) {
     const now = new Date();
@@ -319,32 +309,22 @@ function getTimeRemaining(endDate) {
 
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
     if (days > 0) {
-        return `${days} day${days !== 1 ? 's' : ''}, ${hours} hour${hours !== 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}`;
-    } else if (hours > 0) {
-        return `${hours} hour${hours !== 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        return `${days} day${days !== 1 ? 's' : ''} and ${hours} hour${hours !== 1 ? 's' : ''}`;
     } else {
-        return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        return `${hours} hour${hours !== 1 ? 's' : ''}`;
     }
 }
 
 /* ============================================================
-   UPDATE SUBSCRIPTION BANNER WITH LIVE COUNTDOWN
+   UPDATE SUBSCRIPTION BANNER WITH CANCELLATION INFO
 ============================================================ */
-let countdownInterval = null;
 
 function updateSubscriptionBanner(data) {
     const banner = document.getElementById("subscriptionBanner");
     banner.style.display = "block";
     banner.className = ""; // Reset classes
-
-    // Clear any existing countdown
-    if (countdownInterval) {
-        clearInterval(countdownInterval);
-        countdownInterval = null;
-    }
 
     const active = hasActiveAccess(data);
     const now = new Date();
@@ -360,9 +340,10 @@ function updateSubscriptionBanner(data) {
             month: 'long', 
             day: 'numeric',
             hour: 'numeric',
-            minute: '2-digit',
-            timeZoneName: 'short'
+            minute: '2-digit'
         });
+        
+        const timeLeft = getTimeRemaining(data.subscription_end);
 
         const planNames = {
             basic: "LoveText Basic ❤️",
@@ -370,36 +351,17 @@ function updateSubscriptionBanner(data) {
             trial: "Free Trial 💖"
         };
 
-        // Initial render
-        function updateCountdown() {
-            const timeLeft = getTimeRemaining(data.subscription_end);
-            
-            banner.innerHTML = `
-                ⚠️ <strong>Your subscription has been canceled</strong><br><br>
-                You still have full access to <strong>${planNames[data.current_plan] || "your plan"}</strong> until your billing period ends.
-                <div class="countdown-box">
-                    📅 <strong>Access ends on:</strong><br>
-                    ${endDateStr}<br><br>
-                    ⏰ <strong>Time remaining:</strong><br>
-                    <div class="countdown-timer">${timeLeft || '⚠️ Access has ended'}</div>
-                </div>
-                <small style="display:block; margin-top:10px; opacity:0.8;">
-                    ⚠️ Your recipients and scheduled messages will be deleted when your subscription ends.<br>
-                    You can still add/edit recipients until then.
-                </small>
-            `;
-            
-            // If time has run out, reload the page to reflect changes
-            if (!timeLeft) {
-                setTimeout(() => location.reload(), 2000);
-            }
-        }
-
-        updateCountdown();
-        
-        // Update every minute
-        countdownInterval = setInterval(updateCountdown, 60000);
-        
+        banner.innerHTML = `
+            ⚠️ <strong>Your subscription has been canceled</strong><br><br>
+            You still have access to <strong>${planNames[data.current_plan] || "your plan"}</strong> until your billing period ends.
+            <div class="countdown-box">
+                📅 <strong>Access ends:</strong> ${endDateStr}<br>
+                ⏰ <strong>Time remaining:</strong> ${timeLeft || 'Less than an hour'}
+            </div>
+            <small style="display:block; margin-top:10px; opacity:0.8;">
+                Your recipients and messages will be deleted when your subscription ends.
+            </small>
+        `;
         return;
     }
 
@@ -421,7 +383,7 @@ function updateSubscriptionBanner(data) {
 
     // CASE 3: No subscription
     banner.innerHTML = `
-        ❌ You do not have an active subscription.<br><br>
+        You do not have a subscription.<br><br>
         <a href="/products.html">Choose a Plan</a>
     `;
 }
@@ -685,15 +647,6 @@ document.getElementById("manageSubBtn").addEventListener("click", async () => {
 document.getElementById("r_relationship").addEventListener("change", (e) => {
     const customField = document.getElementById("r_customRel");
     customField.style.display = e.target.value === "custom" ? "block" : "none";
-});
-
-/* ============================================================
-   CLEANUP ON PAGE UNLOAD
-============================================================ */
-window.addEventListener('beforeunload', () => {
-    if (countdownInterval) {
-        clearInterval(countdownInterval);
-    }
 });
 
 /* ============================================================
