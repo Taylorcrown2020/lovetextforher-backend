@@ -121,7 +121,8 @@ if (type === "customer.subscription.updated") {
     if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
     if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
 
-    // If cancellation scheduled, set subscription_end date AND delete recipients
+    // If cancellation scheduled, set subscription_end date
+    // BUT DO NOT DELETE RECIPIENTS YET - they keep access until period ends
     const subscriptionEnd = obj.cancel_at_period_end 
         ? new Date(obj.current_period_end * 1000)
         : null;
@@ -135,21 +136,16 @@ if (type === "customer.subscription.updated") {
         WHERE stripe_customer_id=$4
     `, [!obj.cancel_at_period_end, plan, subscriptionEnd, customerId]);
 
-    // 🔥 NEW: DELETE ALL RECIPIENTS IMMEDIATELY WHEN CANCELED
-    if (obj.cancel_at_period_end) {
-        await db.query(`
-            DELETE FROM users WHERE customer_id = $1
-        `, [customer_db_id]);
-        
-        console.log(`🗑️  Deleted all recipients for customer ${customer_db_id} due to cancellation`);
-    }
+    // 🔥 REMOVED: No longer deleting recipients here
+    // Recipients will only be deleted when subscription actually ends (customer.subscription.deleted)
 
-    console.log(`🔄 Subscription updated: ${plan}${subscriptionEnd ? ' (canceling at period end)' : ''}`);
+    console.log(`🔄 Subscription updated: ${plan}${subscriptionEnd ? ' (canceling at period end: ' + subscriptionEnd.toISOString() + ')' : ''}`);
 }
 
 /***********************************************************
  * SUBSCRIPTION CANCELED/DELETED
  * This fires when subscription actually ends (immediately or at period end)
+ * THIS is where we delete recipients
  ***********************************************************/
 if (type === "customer.subscription.deleted") {
     const customerId = obj.customer;
@@ -163,12 +159,12 @@ if (type === "customer.subscription.deleted") {
     if (custQ.rows.length > 0) {
         const customer_db_id = custQ.rows[0].id;
         
-        // Delete all recipients
+        // 🔥 NOW delete all recipients (subscription truly ended)
         await db.query(`
             DELETE FROM users WHERE customer_id = $1
         `, [customer_db_id]);
         
-        console.log(`🗑️  Deleted all recipients for canceled subscription`);
+        console.log(`🗑️  Deleted all recipients - subscription period ended`);
     }
 
     await db.query(`
@@ -182,7 +178,7 @@ if (type === "customer.subscription.deleted") {
         WHERE stripe_customer_id=$1
     `, [customerId]);
 
-    console.log("❌ Subscription ended");
+    console.log("❌ Subscription ended and recipients deleted");
 }
 
         } catch (err) {
