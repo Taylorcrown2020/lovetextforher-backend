@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <title>Login — LoveTextForHer</title>
 
-    <style>
+<style>
         :root {
             --primary: #d6336c;
             --secondary: #8b5cf6;
             --text-dark: #1a1a1a;
             --text-soft: #5f3a4d;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
@@ -90,6 +94,7 @@
         .links {
             margin-top: 18px;
             text-align: center;
+            line-height: 1.8;
         }
 
         .links a {
@@ -109,6 +114,69 @@
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(25px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ============== MOBILE ============== */
+        @media (max-width: 768px) {
+            #navbar {
+                height: 80px;
+            }
+
+            .login-wrapper {
+                margin: 100px auto 0;
+                padding: 0 20px;
+            }
+
+            .login-card {
+                padding: 32px 24px;
+            }
+
+            .login-card h2 {
+                font-size: 26px;
+                margin-bottom: 18px;
+            }
+
+            input {
+                padding: 14px 12px;
+                font-size: 16px;
+            }
+
+            button {
+                padding: 16px;
+                font-size: 17px;
+            }
+
+            .links {
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-wrapper {
+                margin: 80px auto 0;
+                padding: 0 15px;
+            }
+
+            .login-card {
+                padding: 28px 20px;
+            }
+
+            .login-card h2 {
+                font-size: 24px;
+            }
+
+            input {
+                padding: 13px 12px;
+                font-size: 16px;
+            }
+
+            button {
+                padding: 15px;
+            }
+
+            .links {
+                font-size: 14px;
+            }
         }
     </style>
 </head>

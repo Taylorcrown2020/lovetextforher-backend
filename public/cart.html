@@ -9,12 +9,16 @@
         window.FORCE_PUBLIC_NAV = false;
     </script>
 
-    <style>
+<style>
         :root {
             --primary: #d6336c;
             --secondary: #8b5cf6;
             --text-dark: #1a1a1a;
             --text-soft: #5f3a4d;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
@@ -63,6 +67,7 @@
         .item-price {
             font-size: 15px;
             color: var(--text-soft);
+            margin-top: 4px;
         }
 
         .sub-badge {
@@ -83,6 +88,7 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 15px;
+            padding: 8px 12px;
         }
 
         .cart-total {
@@ -103,6 +109,88 @@
             cursor: pointer;
             float: right;
             box-shadow: 0 10px 35px rgba(214,51,108,0.25);
+            transition: 0.25s;
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* ============== MOBILE ============== */
+        @media (max-width: 768px) {
+            .cart-container {
+                margin: 120px auto 40px;
+                padding: 28px 20px;
+            }
+
+            .cart-title {
+                font-size: 28px;
+                margin-bottom: 20px;
+            }
+
+            .item {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 16px;
+                gap: 12px;
+            }
+
+            .item > div {
+                width: 100%;
+            }
+
+            .item-name {
+                font-size: 17px;
+            }
+
+            .item-price {
+                font-size: 14px;
+            }
+
+            .remove-btn {
+                width: 100%;
+                padding: 10px;
+                background: rgba(214, 51, 108, 0.1);
+                border-radius: 8px;
+                margin-top: 8px;
+            }
+
+            .cart-total {
+                font-size: 20px;
+                text-align: center;
+                margin-top: 20px;
+            }
+
+            .checkout-btn {
+                float: none;
+                width: 100%;
+                padding: 16px;
+                font-size: 16px;
+                margin-top: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cart-container {
+                margin: 100px auto 30px;
+                padding: 24px 15px;
+            }
+
+            .cart-title {
+                font-size: 26px;
+            }
+
+            .item {
+                padding: 14px;
+            }
+
+            .item-name {
+                font-size: 16px;
+            }
+
+            .cart-total {
+                font-size: 19px;
+            }
         }
     </style>
 </head>

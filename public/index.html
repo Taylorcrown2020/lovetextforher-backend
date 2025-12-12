@@ -82,6 +82,7 @@
             position: relative;
             width: 440px;
             height: 420px;
+            flex-shrink: 0;
         }
 
         .glass-card {
@@ -135,6 +136,12 @@
             margin-bottom: 14px;
         }
 
+        .feature div {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
         /* ================= PRODUCTS ================= */
         .products-section {
             max-width: var(--max-width);
@@ -176,6 +183,7 @@
             color: var(--text-light);
             font-size: 15px;
             margin-bottom: 16px;
+            line-height: 1.5;
         }
 
         .product-price {
@@ -193,47 +201,202 @@
             border: none;
             cursor: pointer;
             font-weight: 600;
+            transition: 0.25s;
         }
 
         .product-btn:hover { background: #b8285b; }
 
         /* ============== MOBILE ============== */
         @media (max-width: 768px) {
-
             .hero {
                 flex-direction: column;
                 text-align: center;
-                margin-top: 120px;
+                margin-top: 100px;
+                padding: 0 20px;
+                min-height: auto;
             }
 
-            .hero-title { font-size: 38px; }
-            .hero-sub { font-size: 16px; }
+            .hero-text {
+                max-width: 100%;
+            }
+
+            .hero-title { 
+                font-size: 36px;
+                margin-bottom: 18px;
+            }
+
+            .hero-sub { 
+                font-size: 16px;
+                margin-bottom: 25px;
+                line-height: 1.6;
+            }
+
+            .cta-btn {
+                width: 100%;
+                max-width: 320px;
+                padding: 16px 28px;
+                font-size: 17px;
+            }
 
             .hero-mockup {
                 width: 100%;
-                height: 300px;
+                max-width: 380px;
+                height: 280px;
                 margin-top: 40px;
             }
 
             .glass-card {
-                width: 240px;
-                height: 110px;
+                width: 220px;
+                height: 100px;
             }
 
-            .card-top { top: 0; left: 50%; transform: translateX(-50%) rotate(1deg); }
-            .card-mid { top: 110px; left: 50%; transform: translateX(-50%) rotate(-1deg); }
-            .card-bottom { top: 210px; left: 50%; transform: translateX(-50%) rotate(1deg); }
+            .glass-card .line {
+                height: 8px;
+                margin: 12px 16px;
+            }
+
+            .card-top { 
+                top: 0; 
+                left: 50%; 
+                transform: translateX(-50%) rotate(1deg); 
+            }
+            
+            .card-mid { 
+                top: 95px; 
+                left: 50%; 
+                transform: translateX(-50%) rotate(-1deg); 
+            }
+            
+            .card-bottom { 
+                top: 185px; 
+                left: 50%; 
+                transform: translateX(-50%) rotate(1deg); 
+            }
+
+            .features-strip {
+                padding: 50px 0;
+                margin-top: 50px;
+            }
 
             .features {
                 flex-direction: column;
-                gap: 40px;
+                gap: 35px;
+                padding: 0 20px;
             }
 
-            .feature { width: 100%; }
+            .feature { 
+                width: 100%;
+            }
+
+            .feature svg {
+                width: 40px;
+                height: 40px;
+            }
+
+            .feature div {
+                font-size: 16px;
+            }
+
+            .products-section {
+                margin: 60px auto;
+                padding: 0 20px;
+            }
+
+            .products-title {
+                font-size: 28px;
+                margin-bottom: 30px;
+            }
 
             .products {
                 flex-direction: column;
-                gap: 40px;
+                gap: 24px;
+            }
+
+            .product-card {
+                padding: 24px;
+            }
+
+            .product-title {
+                font-size: 19px;
+            }
+
+            .product-desc {
+                font-size: 14px;
+            }
+
+            .product-price {
+                font-size: 20px;
+            }
+
+            .product-btn {
+                width: 100%;
+                padding: 12px;
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero {
+                margin-top: 80px;
+                padding: 0 15px;
+            }
+
+            .hero-title {
+                font-size: 30px;
+                margin-bottom: 15px;
+            }
+
+            .hero-sub {
+                font-size: 15px;
+            }
+
+            .cta-btn {
+                font-size: 16px;
+                padding: 14px 24px;
+            }
+
+            .hero-mockup {
+                max-width: 300px;
+                height: 240px;
+            }
+
+            .glass-card {
+                width: 180px;
+                height: 85px;
+            }
+
+            .glass-card .line {
+                height: 7px;
+                margin: 10px 14px;
+            }
+
+            .card-mid {
+                top: 80px;
+            }
+
+            .card-bottom {
+                top: 155px;
+            }
+
+            .features-strip {
+                padding: 40px 0;
+            }
+
+            .features {
+                gap: 30px;
+                padding: 0 15px;
+            }
+
+            .products-section {
+                padding: 0 15px;
+            }
+
+            .products-title {
+                font-size: 26px;
+            }
+
+            .product-card {
+                padding: 20px;
             }
         }
     </style>

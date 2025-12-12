@@ -17,6 +17,10 @@
             --text-soft: #5f3a4d;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             font-family: "Inter", sans-serif;
@@ -97,6 +101,67 @@
             color: var(--primary);
             font-weight: 600;
             min-height: 22px;
+        }
+
+        /* ============== MOBILE ============== */
+        @media (max-width: 768px) {
+            #navbar {
+                height: 80px;
+            }
+
+            .box {
+                margin: 100px auto;
+                padding: 32px 24px;
+                max-width: 90%;
+            }
+
+            h2 {
+                font-size: 26px;
+                margin-bottom: 20px;
+            }
+
+            input {
+                padding: 14px 12px;
+                margin-top: 12px;
+                font-size: 16px;
+            }
+
+            button {
+                padding: 16px;
+                margin-top: 22px;
+                font-size: 17px;
+            }
+
+            #msg {
+                margin-top: 12px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .box {
+                margin: 80px auto;
+                padding: 28px 20px;
+            }
+
+            h2 {
+                font-size: 24px;
+                margin-bottom: 18px;
+            }
+
+            input {
+                padding: 13px 12px;
+                margin-top: 10px;
+            }
+
+            button {
+                padding: 15px;
+                margin-top: 20px;
+            }
+
+            #msg {
+                font-size: 14px;
+            }
         }
     </style>
 </head>

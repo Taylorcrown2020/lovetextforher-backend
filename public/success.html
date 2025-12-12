@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Success ❤️</title>
 
     <!-- Customer navbar loads normally -->
@@ -18,12 +19,16 @@
             --text-soft: #5f3a4d;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             font-family: "Inter", sans-serif;
             background: linear-gradient(135deg, #fff7fa, #f6f3ff);
             min-height: 100vh;
-            padding: 120px 20px;
+            padding: 120px 20px 40px;
             text-align: center;
             animation: fadeIn 0.6s ease-out;
         }
@@ -38,18 +43,25 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
+        .success-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
         h2 {
             color: var(--primary);
             font-size: 34px;
             font-weight: 800;
             margin-bottom: 15px;
+            line-height: 1.2;
         }
 
         p {
             color: var(--text-soft);
             font-size: 17px;
             margin-bottom: 35px;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
         a {
@@ -69,6 +81,60 @@
             transform: translateY(-2px);
             box-shadow: 0 12px 28px rgba(214,51,108,0.35);
         }
+
+        /* ============== MOBILE IMPROVEMENTS ============== */
+        @media (max-width: 768px) {
+            body {
+                padding: 100px 15px 30px;
+            }
+
+            #navbar {
+                height: 80px;
+            }
+
+            .success-container {
+                padding: 0 10px;
+            }
+
+            h2 {
+                font-size: 28px;
+                margin-bottom: 12px;
+            }
+
+            p {
+                font-size: 16px;
+                margin-bottom: 30px;
+                padding: 0 5px;
+            }
+
+            a {
+                padding: 16px 32px;
+                font-size: 16px;
+                width: 100%;
+                max-width: 280px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 90px 12px 25px;
+            }
+
+            h2 {
+                font-size: 24px;
+                margin-bottom: 10px;
+            }
+
+            p {
+                font-size: 15px;
+                margin-bottom: 25px;
+            }
+
+            a {
+                padding: 14px 24px;
+                font-size: 15px;
+            }
+        }
     </style>
 </head>
 
@@ -76,13 +142,15 @@
 
 <div id="navbar"></div>
 
-<h2>❤️ Thank You for Your Purchase!</h2>
-<p>
-    Your subscription or merchandise order has been processed successfully.<br>
-    You can now continue using all premium features.
-</p>
+<div class="success-container">
+    <h2>❤️ Thank You for Your Purchase!</h2>
+    <p>
+        Your subscription or merchandise order has been processed successfully.<br>
+        You can now continue using all premium features.
+    </p>
 
-<a href="/dashboard.html">Go to Dashboard</a>
+    <a href="/dashboard.html">Go to Dashboard</a>
+</div>
 
 <script src="/js/nav.js" defer></script>
 
