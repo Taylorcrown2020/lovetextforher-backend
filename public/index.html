@@ -1,403 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LoveTextForHer — Automated Messages for the People You Care About</title>
-
-    <!-- This page must always show the public navbar -->
-    <script> window.FORCE_PUBLIC_NAV = true; </script>
-    <script src="/js/nav.js" defer></script>
+    <meta charset="UTF-8">
+    <title>Your Dashboard — LoveTextForHer</title>
 
     <style>
         :root {
             --primary: #d6336c;
             --secondary: #8b5cf6;
             --primary-light: #ffe3ed;
-            --secondary-light: #ede9fe;
+            --secondary-light: #f3e9ff;
             --text-dark: #1a1a1a;
-            --text-light: #555;
-            --max-width: 1200px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Inter", sans-serif;
+            --text-soft: #5f3a4d;
+            --danger: #c62828;
+            --secondary-btn: #6b4bb8;
+            --warning: #ff9800;
         }
 
         body {
-            background: #fff;
-            color: var(--text-dark);
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
         }
 
-        /* ================= HERO ================= */
-        .hero {
-            max-width: var(--max-width);
-            margin: 150px auto 0;
-            padding: 0 28px;
-            min-height: 520px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        #navbar { width: 100%; height: 95px; }
+
+        .dashboard-container {
+            max-width: 950px;
+            margin: 150px auto;
+            padding: 45px 40px;
+            background: rgba(255,255,255,0.55);
+            backdrop-filter: blur(20px);
+            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 18px 40px rgba(0,0,0,0.08);
         }
 
-        .hero-text { max-width: 520px; }
-
-        .hero-title {
-            font-size: 54px;
-            line-height: 1.15;
+        h1.header-title {
+            text-align: center;
+            font-size: 32px;
             font-weight: 800;
+            margin-bottom: 35px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #subscriptionBanner {
+            display: none;
+            background: #ffe3ed;
+            padding: 18px;
+            border-radius: 12px;
+            text-align: center;
+            color: #b1184a;
+            font-weight: 600;
             margin-bottom: 25px;
         }
 
-        .hero-sub {
-            font-size: 18px;
-            color: var(--text-light);
-            margin-bottom: 30px;
-            line-height: 1.6;
+        #subscriptionBanner.active {
+            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+            color: #2e7d32;
         }
 
-        .cta-btn {
+        #subscriptionBanner.canceling {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            color: #e65100;
+            border: 2px solid #ff9800;
+        }
+
+        #subscriptionBanner a {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 10px 18px;
             background: var(--primary);
-            color: #fff;
-            padding: 14px 28px;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: 0.25s ease;
-            box-shadow: 0 12px 28px rgba(214,51,108,0.25);
-        }
-
-        .cta-btn:hover {
-            background: #b8285b;
-            transform: translateY(-2px);
-        }
-
-        /* ================= HERO MOCKUP ================= */
-        .hero-mockup {
-            position: relative;
-            width: 440px;
-            height: 420px;
-            flex-shrink: 0;
-        }
-
-        .glass-card {
-            position: absolute;
-            width: 320px;
-            height: 140px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.55);
-            backdrop-filter: blur(22px);
-            border: 1px solid rgba(255,255,255,0.7);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-        }
-
-        .glass-card .line {
-            height: 10px;
-            border-radius: 6px;
-            margin: 15px 20px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-        }
-
-        .card-top { top: 0; right: 10px; transform: rotate(2deg); }
-        .card-mid { top: 130px; left: 20px; transform: rotate(-3deg); }
-        .card-bottom { top: 260px; right: 50px; transform: rotate(1deg); }
-
-        /* ================= FEATURES ================= */
-        .features-strip {
-            background: var(--primary-light);
-            padding: 70px 0;
-            margin-top: 70px;
-        }
-
-        .features {
-            max-width: var(--max-width);
-            margin: auto;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 28px;
-        }
-
-        .feature {
-            text-align: center;
-            width: 25%;
-        }
-
-        .feature svg {
-            width: 45px;
-            height: 45px;
-            stroke: var(--primary);
-            stroke-width: 2;
-            fill: none;
-            margin-bottom: 14px;
-        }
-
-        .feature div {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-dark);
-        }
-
-        /* ================= PRODUCTS ================= */
-        .products-section {
-            max-width: var(--max-width);
-            margin: 90px auto;
-            padding: 0 28px;
-        }
-
-        .products-title {
-            text-align: center;
-            font-size: 34px;
-            font-weight: 800;
-            margin-bottom: 40px;
-        }
-
-        .products {
-            display: flex;
-            justify-content: space-between;
-            gap: 32px;
-        }
-
-        .product-card {
-            flex: 1;
-            background: rgba(255,255,255,0.65);
-            backdrop-filter: blur(18px);
-            border-radius: 22px;
-            padding: 28px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.7);
-            box-shadow: 0 25px 45px rgba(0,0,0,0.06);
-        }
-
-        .product-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .product-desc {
-            color: var(--text-light);
-            font-size: 15px;
-            margin-bottom: 16px;
-            line-height: 1.5;
-        }
-
-        .product-price {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 18px;
-        }
-
-        .product-btn {
-            background: var(--primary);
-            color: #fff;
-            padding: 10px 22px;
-            font-size: 15px;
+            color: white;
             border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .countdown-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            font-size: 15px;
+            border: 2px dashed var(--warning);
+        }
+
+        .countdown-box strong {
+            font-size: 20px;
+            color: var(--warning);
+        }
+
+        .countdown-timer {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--danger);
+            margin: 8px 0;
+        }
+
+        .recipient-box {
+            background: rgba(255,255,255,0.75);
+            border: 1px solid #ffe0ec;
+            border-radius: 18px;
+            padding: 22px;
+            margin-bottom: 18px;
+            box-shadow: 0 8px 26px rgba(214,51,108,0.12);
+        }
+
+        .recipient-box strong { color: var(--primary); }
+
+        .delete-btn, .log-btn, .flower-btn {
+            padding: 10px 18px;
+            border-radius: 12px;
             border: none;
             cursor: pointer;
+            color: white;
             font-weight: 600;
-            transition: 0.25s;
+            margin-top: 14px;
         }
 
-        .product-btn:hover { background: #b8285b; }
+        .delete-btn { background: var(--danger); }
+        .log-btn { background: var(--secondary-btn); margin-left: 10px; }
+        .flower-btn { background: #ff7ac4; margin-left: 10px; }
 
-        /* ============== MOBILE ============== */
-        @media (max-width: 768px) {
-            .hero {
-                flex-direction: column;
-                text-align: center;
-                margin-top: 100px;
-                padding: 0 20px;
-                min-height: auto;
-            }
-
-            .hero-text {
-                max-width: 100%;
-            }
-
-            .hero-title { 
-                font-size: 36px;
-                margin-bottom: 18px;
-            }
-
-            .hero-sub { 
-                font-size: 16px;
-                margin-bottom: 25px;
-                line-height: 1.6;
-            }
-
-            .cta-btn {
-                width: 100%;
-                max-width: 320px;
-                padding: 16px 28px;
-                font-size: 17px;
-            }
-
-            .hero-mockup {
-                width: 100%;
-                max-width: 380px;
-                height: 280px;
-                margin-top: 40px;
-            }
-
-            .glass-card {
-                width: 220px;
-                height: 100px;
-            }
-
-            .glass-card .line {
-                height: 8px;
-                margin: 12px 16px;
-            }
-
-            .card-top { 
-                top: 0; 
-                left: 50%; 
-                transform: translateX(-50%) rotate(1deg); 
-            }
-            
-            .card-mid { 
-                top: 95px; 
-                left: 50%; 
-                transform: translateX(-50%) rotate(-1deg); 
-            }
-            
-            .card-bottom { 
-                top: 185px; 
-                left: 50%; 
-                transform: translateX(-50%) rotate(1deg); 
-            }
-
-            .features-strip {
-                padding: 50px 0;
-                margin-top: 50px;
-            }
-
-            .features {
-                flex-direction: column;
-                gap: 35px;
-                padding: 0 20px;
-            }
-
-            .feature { 
-                width: 100%;
-            }
-
-            .feature svg {
-                width: 40px;
-                height: 40px;
-            }
-
-            .feature div {
-                font-size: 16px;
-            }
-
-            .products-section {
-                margin: 60px auto;
-                padding: 0 20px;
-            }
-
-            .products-title {
-                font-size: 28px;
-                margin-bottom: 30px;
-            }
-
-            .products {
-                flex-direction: column;
-                gap: 24px;
-            }
-
-            .product-card {
-                padding: 24px;
-            }
-
-            .product-title {
-                font-size: 19px;
-            }
-
-            .product-desc {
-                font-size: 14px;
-            }
-
-            .product-price {
-                font-size: 20px;
-            }
-
-            .product-btn {
-                width: 100%;
-                padding: 12px;
-                font-size: 16px;
-            }
+        #addForm input, #addForm select {
+            width: 100%;
+            padding: 14px;
+            margin-top: 15px;
+            border-radius: 12px;
+            border: 2px solid rgba(214,51,108,0.25);
         }
 
-        @media (max-width: 480px) {
-            .hero {
-                margin-top: 80px;
-                padding: 0 15px;
-            }
+        #addForm button {
+            width: 100%;
+            padding: 16px;
+            margin-top: 22px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
 
-            .hero-title {
-                font-size: 30px;
-                margin-bottom: 15px;
-            }
+        #msg {
+            text-align: center;
+            margin-top: 16px;
+            color: var(--primary);
+            font-weight: 600;
+        }
 
-            .hero-sub {
-                font-size: 15px;
-            }
+        #manageSubBtn {
+            display: none;
+            margin: 40px auto 70px;
+            padding: 14px 22px;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+        }
 
-            .cta-btn {
-                font-size: 16px;
-                padding: 14px 24px;
-            }
-
-            .hero-mockup {
-                max-width: 300px;
-                height: 240px;
-            }
-
-            .glass-card {
-                width: 180px;
-                height: 85px;
-            }
-
-            .glass-card .line {
-                height: 7px;
-                margin: 10px 14px;
-            }
-
-            .card-mid {
-                top: 80px;
-            }
-
-            .card-bottom {
-                top: 155px;
-            }
-
-            .features-strip {
-                padding: 40px 0;
-            }
-
-            .features {
-                gap: 30px;
-                padding: 0 15px;
-            }
-
-            .products-section {
-                padding: 0 15px;
-            }
-
-            .products-title {
-                font-size: 26px;
-            }
-
-            .product-card {
-                padding: 20px;
-            }
+        #messageLogModal, #flowerModal {
+            display:none;
+            position:fixed;
+            top:0; left:0; right:0; bottom:0;
+            background:rgba(0,0,0,0.55);
+            justify-content:center;
+            align-items:center;
+            z-index:9999;
         }
     </style>
 </head>
@@ -406,111 +182,531 @@
 
 <div id="navbar"></div>
 
-<!-- ========================= HERO ========================= -->
-<section class="hero">
-    <div class="hero-text">
-        <h1 class="hero-title">
-            Thoughtful Messages<br>
-            For Everyone You Care About.
-        </h1>
+<div class="dashboard-container">
 
-        <p class="hero-sub">
-            Whether it's your partner, mom, dad, sister, brother, or best friend —
-            send meaningful messages automatically in the tone and style that fits
-            your unique relationship.
-        </p>
+    <div id="subscriptionBanner"></div>
 
-        <button class="cta-btn" onclick="location.href='/register.html'">
-            Start Sending Love
+    <h1 class="header-title">Your Recipients</h1>
+
+    <div id="recipients"></div>
+
+    <h2 class="form-title">Add New Recipient</h2>
+
+    <div id="addForm">
+        <input id="r_name" placeholder="Recipient Name">
+        <input type="tel" id="phone_number" placeholder="Phone (optional)">
+        <select id="delivery_method">
+            <option value="email">Email Only</option>
+            <option value="sms">SMS Only</option>
+            <option value="both">Both Email & SMS</option>
+        </select>
+        <input id="r_email" type="email" placeholder="Recipient Email">
+
+        <select id="r_relationship">
+            <option value="spouse">Spouse / Partner</option>
+            <option value="girlfriend">Girlfriend</option>
+            <option value="boyfriend">Boyfriend</option>
+            <option value="mom">Mom</option>
+            <option value="dad">Dad</option>
+            <option value="sister">Sister</option>
+            <option value="brother">Brother</option>
+            <option value="friend">Friend</option>
+            <option value="custom">Custom Relationship</option>
+        </select>
+
+        <input id="r_customRel" placeholder="Enter custom relationship" style="display:none;">
+
+        <select id="r_frequency">
+            <option value="daily">Daily</option>
+            <option value="every-other-day">Every Other Day</option>
+            <option value="three-times-week">Three Times a Week</option>
+            <option value="weekly">Weekly</option>
+            <option value="bi-weekly">Bi-Weekly</option>
+        </select>
+
+        <select id="r_timings">
+            <option value="morning">Morning</option>
+            <option value="afternoon">Afternoon</option>
+            <option value="evening">Evening</option>
+            <option value="night">Night</option>
+        </select>
+
+        <select id="r_timezone">
+            <option value="America/Chicago">Central</option>
+            <option value="America/New_York">Eastern</option>
+            <option value="America/Denver">Mountain</option>
+            <option value="America/Los_Angeles">Pacific</option>
+        </select>
+
+        <button onclick="addRecipient()">Add Recipient</button>
+    </div>
+
+    <p id="msg"></p>
+</div>
+
+<button id="manageSubBtn">Manage Subscription</button>
+
+<!-- Message Log Modal -->
+<div id="messageLogModal">
+    <div style="background:white; width:420px; padding:20px; border-radius:22px; max-height:80vh; overflow-y:auto;">
+        <h2 style="margin-top:0; color:#d6336c;">Message Log</h2>
+        <div id="logContent"></div>
+
+        <button onclick="closeMessageLog()" style="margin-top:20px; background:#d6336c; color:white;
+            padding:12px 18px; border:none; border-radius:12px; cursor:pointer;">
+            Exit
         </button>
     </div>
+</div>
 
-    <div class="hero-mockup">
-        <div class="glass-card card-top">
-            <div class="line" style="width: 65%;"></div>
-            <div class="line" style="width: 40%;"></div>
-        </div>
+<!-- Flower Modal -->
+<div id="flowerModal">
+    <div style="background:white; width:420px; padding:20px; border-radius:22px;">
+        <h2 style="margin-top:0; color:#d6336c;">Send a Flower 🌸</h2>
 
-        <div class="glass-card card-mid">
-            <div class="line" style="width: 70%;"></div>
-            <div class="line" style="width: 55%;"></div>
-        </div>
+        <label>Select Flower:</label>
+        <select id="flowerType" style="width:100%; padding:12px; margin-top:12px;">
+            <option value="🌹 Rose">🌹 Rose</option>
+            <option value="🌸 Cherry Blossom">🌸 Cherry Blossom</option>
+            <option value="🌻 Sunflower">🌻 Sunflower</option>
+            <option value="🌷 Tulip">🌷 Tulip</option>
+        </select>
 
-        <div class="glass-card card-bottom">
-            <div class="line" style="width: 50%;"></div>
-            <div class="line" style="width: 35%;"></div>
-        </div>
+        <textarea id="flowerNote" placeholder="Optional note…"
+            style="width:100%; height:90px; margin-top:12px; padding:10px; border-radius:12px;"></textarea>
+
+        <button onclick="sendFlower()" style="margin-top:20px; background:#ff7ac4; color:white;
+            padding:12px 18px; border:none; border-radius:12px; cursor:pointer;">
+            Send Flower
+        </button>
+
+        <button onclick="closeFlowerModal()" style="margin-top:10px; background:#999; color:white;
+            padding:10px 16px; border:none; border-radius:12px; cursor:pointer;">
+            Cancel
+        </button>
     </div>
-</section>
+</div>
 
-<!-- ========================= FEATURES ========================= -->
-<section class="features-strip">
-    <div class="features">
+<script src="/js/nav.js" defer></script>
 
-        <div class="feature">
-            <svg viewBox="0 0 24 24"><path d="M3 12h18M12 3v18" stroke-linecap="round"/></svg>
-            <div>Automated Delivery</div>
-        </div>
+<script>
+/* ============================================================
+   CALCULATE TIME REMAINING
+============================================================ */
+function getTimeRemaining(endDate) {
+    const now = new Date();
+    const end = new Date(endDate);
+    const diff = end - now;
 
-        <div class="feature">
-            <svg viewBox="0 0 24 24">
-                <path d="M4 4h16v12H4z"/>
-                <path d="M8 20h8" stroke-linecap="round"/>
-            </svg>
-            <div>Personalized for Any Relationship</div>
-        </div>
+    if (diff <= 0) return null;
 
-        <div class="feature">
-            <svg viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="8"/>
-                <path d="M12 8v4l2 2" stroke-linecap="round"/>
-            </svg>
-            <div>Secure & Private Messaging</div>
-        </div>
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-        <div class="feature">
-            <svg viewBox="0 0 24 24">
-                <path d="M12 5v14M5 12h14" stroke-linecap="round"/>
-            </svg>
-            <div>Set It Once</div>
-        </div>
+    if (days > 0) {
+        return `${days} day${days !== 1 ? 's' : ''}, ${hours} hour${hours !== 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    } else if (hours > 0) {
+        return `${hours} hour${hours !== 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    } else {
+        return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    }
+}
 
-    </div>
-</section>
+/* ============================================================
+   UPDATE SUBSCRIPTION BANNER WITH LIVE COUNTDOWN
+============================================================ */
+let countdownInterval = null;
+let SUBSCRIPTION_DATA = null;
 
-<!-- ========================= PRODUCTS ========================= -->
-<section class="products-section">
-    <h2 class="products-title">Choose Your Plan</h2>
+function updateSubscriptionBanner(data) {
+    SUBSCRIPTION_DATA = data;
+    
+    const banner = document.getElementById("subscriptionBanner");
+    banner.style.display = "block";
+    banner.className = "";
 
-    <div class="products">
+    // Clear any existing countdown
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
 
-        <div class="product-card">
-            <div class="product-title">LoveText Basic Subscription</div>
-            <div class="product-desc">
-                Daily uplifting messages for up to 3 recipients.
-            </div>
-            <div class="product-price">$4.99 / month</div>
-            <button class="product-btn" onclick="location.href='/register.html'">Sign Up</button>
-        </div>
+    const now = new Date();
 
-        <div class="product-card">
-            <div class="product-title">LoveText Plus Subscription</div>
-            <div class="product-desc">
-                Unlimited recipients. Great for families and large circles.
-            </div>
-            <div class="product-price">$9.99 / month</div>
-            <button class="product-btn" onclick="location.href='/register.html'">Sign Up</button>
-        </div>
+    console.log("📊 Subscription Data:", data);
 
-        <div class="product-card">
-            <div class="product-title">LoveText Free Trial</div>
-            <div class="product-desc">Get full access for 3 days, completely free.</div>
-            <div class="product-price">$0.00</div>
-            <button class="product-btn" onclick="location.href='/register.html'">Try Free</button>
-        </div>
+    // CASE 1: Canceled subscription with grace period
+    if (data.is_canceled && data.subscription_end && new Date(data.subscription_end) > now) {
+        banner.className = "canceling";
+        
+        const endDate = new Date(data.subscription_end);
+        const endDateStr = endDate.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            timeZoneName: 'short'
+        });
 
-    </div>
-</section>
+        const planNames = {
+            basic: "LoveText Basic ❤️",
+            plus: "LoveText Plus 💜",
+            trial: "Free Trial 💖"
+        };
+
+        function updateCountdown() {
+            const timeLeft = getTimeRemaining(data.subscription_end);
+            
+            if (!timeLeft) {
+                banner.innerHTML = `
+                    ⚠️ <strong>Your subscription has ended</strong><br><br>
+                    Please subscribe to continue using LoveTextForHer.
+                    <a href="/products.html">Choose a Plan</a>
+                `;
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                }
+                setTimeout(() => location.reload(), 3000);
+                return;
+            }
+            
+            banner.innerHTML = `
+                ⚠️ <strong>Your subscription has been canceled</strong><br><br>
+                You still have full access to <strong>${planNames[data.current_plan] || "your plan"}</strong> until your billing period ends.
+                <div class="countdown-box">
+                    📅 <strong>Access ends on:</strong><br>
+                    ${endDateStr}<br><br>
+                    ⏰ <strong>Time remaining:</strong><br>
+                    <div class="countdown-timer">${timeLeft}</div>
+                </div>
+                <small style="display:block; margin-top:10px; opacity:0.8;">
+                    ⚠️ Your recipients and scheduled messages will be deleted when your subscription ends.<br>
+                    You can still add/edit recipients until then.
+                </small>
+            `;
+        }
+
+        updateCountdown();
+        countdownInterval = setInterval(updateCountdown, 60000); // Update every minute
+        
+        return;
+    }
+
+    // CASE 2: Active subscription (normal)
+    if (data.subscribed) {
+        banner.className = "active";
+        
+        const planNames = {
+            basic: "LoveText Basic ❤️",
+            plus: "LoveText Plus 💜",
+            trial: "Free Trial 💖"
+        };
+
+        banner.innerHTML = `
+            ✅ You currently have an active <strong>${planNames[data.current_plan] || "subscription"}</strong>.
+        `;
+        return;
+    }
+
+    // CASE 3: No subscription
+    banner.innerHTML = `
+        ❌ You do not have an active subscription.<br><br>
+        <a href="/products.html">Choose a Plan</a>
+    `;
+}
+
+/* ============================================================
+   LOAD SUB STATUS (CONTROLS EVERYTHING)
+============================================================ */
+let HAS_ACCESS = false;
+
+async function loadSubscriptionStatus() {
+    try {
+        const res = await fetch("/api/customer/subscription", {
+            credentials: "include",
+            cache: "no-store"
+        });
+        const data = await res.json();
+
+        console.log("🔍 Full subscription response:", data);
+
+        HAS_ACCESS = data.subscribed === true;
+
+        console.log("✅ HAS_ACCESS:", HAS_ACCESS);
+
+        updateSubscriptionBanner(data);
+
+        document.getElementById("manageSubBtn").style.display =
+            HAS_ACCESS ? "block" : "none";
+
+    } catch (err) {
+        console.error("SUB LOAD ERROR", err);
+    }
+}
+
+/* ============================================================
+   LOAD RECIPIENTS
+============================================================ */
+async function loadRecipients() {
+    try {
+        const res = await fetch("/api/customer/recipients", {
+            credentials: "include"
+        });
+
+        const list = await res.json();
+        const box = document.getElementById("recipients");
+        box.innerHTML = "";
+
+        if (!list.length) {
+            box.innerHTML = `<p style="text-align:center; color:var(--text-soft);">You have no recipients yet.</p>`;
+            return;
+        }
+
+        list.forEach(r => {
+            const deliveryBadge = r.delivery_method === "both" ? "📧📱" : 
+                                 r.delivery_method === "sms" ? "📱" : "📧";
+            
+            box.innerHTML += `
+                <div class="recipient-box">
+                    <strong>${r.name}</strong> (${r.relationship}) ${deliveryBadge}
+                    <p>Email: ${r.email || 'N/A'}</p>
+                    ${r.phone_number ? `<p>Phone: ${r.phone_number}</p>` : ''}
+                    <p>Frequency: ${r.frequency}</p>
+                    <p>Time: ${r.timings}</p>
+
+                    <button class="delete-btn" onclick="deleteRecipient(${r.id})">Delete</button>
+                    <button class="log-btn" onclick="openMessageLog(${r.id})">Message Log</button>
+                    <button class="flower-btn" onclick="openFlowerModal(${r.id})">Send Flower 🌸</button>
+                </div>
+            `;
+        });
+
+    } catch (err) {
+        console.error("RECIPIENT LOAD ERROR", err);
+    }
+}
+
+/* ============================================================
+   ADD RECIPIENT
+============================================================ */
+async function addRecipient() {
+    const msgEl = document.getElementById("msg");
+    
+    if (!HAS_ACCESS) {
+        msgEl.innerText = "You need an active subscription to add recipients.";
+        msgEl.style.color = "var(--danger)";
+        return;
+    }
+
+    const name = r_name.value.trim();
+    const email = r_email.value.trim();
+    const phone = phone_number.value.trim();
+    const delivery = delivery_method.value;
+    const relationship = r_relationship.value === "custom" 
+        ? r_customRel.value.trim() 
+        : r_relationship.value;
+
+    if (!name) {
+        msgEl.innerText = "Name is required.";
+        msgEl.style.color = "var(--danger)";
+        return;
+    }
+
+    if (!email && delivery !== "sms") {
+        msgEl.innerText = "Email is required for email delivery.";
+        msgEl.style.color = "var(--danger)";
+        return;
+    }
+
+    if ((delivery === "sms" || delivery === "both") && !phone) {
+        msgEl.innerText = "Phone number is required for SMS delivery.";
+        msgEl.style.color = "var(--danger)";
+        return;
+    }
+
+    const payload = {
+        name,
+        email,
+        phone_number: phone || null,
+        delivery_method: delivery,
+        relationship,
+        frequency: r_frequency.value,
+        timings: r_timings.value,
+        timezone: r_timezone.value
+    };
+
+    try {
+        const res = await fetch("/api/customer/recipients", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            msgEl.innerText = "Recipient added successfully! ✅";
+            msgEl.style.color = "#28a745";
+            
+            r_name.value = "";
+            r_email.value = "";
+            phone_number.value = "";
+            delivery_method.value = "email";
+            r_relationship.value = "spouse";
+            r_customRel.value = "";
+            r_customRel.style.display = "none";
+            r_frequency.value = "daily";
+            r_timings.value = "morning";
+            r_timezone.value = "America/Chicago";
+            
+            loadRecipients();
+            
+            setTimeout(() => {
+                msgEl.innerText = "";
+            }, 3000);
+        } else {
+            msgEl.innerText = data.error || "Error adding recipient.";
+            msgEl.style.color = "var(--danger)";
+        }
+    } catch (err) {
+        console.error("ADD ERROR:", err);
+        msgEl.innerText = "Network error. Please try again.";
+        msgEl.style.color = "var(--danger)";
+    }
+}
+
+/* ============================================================
+   DELETE RECIPIENT
+============================================================ */
+async function deleteRecipient(id) {
+    if (!confirm("Delete this recipient?")) return;
+
+    await fetch(`/api/customer/recipients/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+    });
+
+    loadRecipients();
+}
+
+/* ============================================================
+   MESSAGE LOG
+============================================================ */
+async function openMessageLog(id) {
+    const modal = document.getElementById("messageLogModal");
+    const content = document.getElementById("logContent");
+
+    content.innerHTML = "Loading…";
+
+    const res = await fetch(`/api/message-log/${id}`, {
+        credentials: "include"
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+        content.innerHTML = "<p>Error loading messages.</p>";
+    } else if (!data.messages.length) {
+        content.innerHTML = "<p>No messages yet.</p>";
+    } else {
+        content.innerHTML = data.messages
+            .map(m => `
+                <div style="padding:12px; margin-bottom:10px; background:#fafafa; border-radius:12px;">
+                    <strong>${m.message_text}</strong>
+                    <div style="font-size:12px; color:#777;">
+                        ${new Date(m.sent_at).toLocaleString()}
+                    </div>
+                </div>
+            `)
+            .join("");
+    }
+
+    modal.style.display = "flex";
+}
+
+function closeMessageLog() {
+    document.getElementById("messageLogModal").style.display = "none";
+}
+
+/* ============================================================
+   FLOWER SENDING
+============================================================ */
+let CURRENT_FLOWER_RECIPIENT = null;
+
+function openFlowerModal(id) {
+    CURRENT_FLOWER_RECIPIENT = id;
+    flowerNote.value = "";
+    document.getElementById("flowerModal").style.display = "flex";
+}
+
+function closeFlowerModal() {
+    document.getElementById("flowerModal").style.display = "none";
+}
+
+async function sendFlower() {
+    const flower = flowerType.value;
+    const note = flowerNote.value.trim();
+    const message = `${flower}${note ? " — " + note : ""}`;
+
+    const res = await fetch(`/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: message })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        alert("Flower sent 🌸");
+        closeFlowerModal();
+    } else {
+        alert("Error sending flower.");
+    }
+}
+
+/* ============================================================
+   STRIPE BILLING PORTAL
+============================================================ */
+document.getElementById("manageSubBtn").addEventListener("click", async () => {
+    const res = await fetch("/api/customer/subscription/portal", {
+        credentials: "include"
+    });
+
+    const data = await res.json();
+
+    if (data.url) window.location.href = data.url;
+});
+
+/* ============================================================
+   CUSTOM RELATIONSHIP TOGGLE
+============================================================ */
+document.getElementById("r_relationship").addEventListener("change", (e) => {
+    const customField = document.getElementById("r_customRel");
+    customField.style.display = e.target.value === "custom" ? "block" : "none";
+});
+
+/* ============================================================
+   CLEANUP
+============================================================ */
+window.addEventListener('beforeunload', () => {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+});
+
+/* ============================================================
+   INIT
+============================================================ */
+document.addEventListener("DOMContentLoaded", () => {
+    loadSubscriptionStatus();
+    loadRecipients();
+});
+</script>
 
 </body>
 </html>

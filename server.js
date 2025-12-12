@@ -26,7 +26,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 /***************************************************************
- *  STRIPE WEBHOOK — MUST BE FIRST (RAW BODY)
+ *  STRIPE WEBHOOK — COMPLETE FIXED VERSION
  ***************************************************************/
 app.post(
     "/api/stripe/webhook",
@@ -55,7 +55,7 @@ app.post(
         const type = event.type;
         const obj = event.data.object;
 
-        console.log(`⚡ WEBHOOK: ${type}`);
+        console.log(`⚡ WEBHOOK: ${type} - Event ID: ${event.id}`);
 
         try {
             /***********************************************************
@@ -65,8 +65,13 @@ app.post(
             if (type === "checkout.session.completed") {
                 const customerId = obj.customer;
                 const subId = obj.subscription;
-                if (!subId) return res.json({ received: true });
+                
+                if (!subId) {
+                    console.log("⚠️  No subscription in checkout session");
+                    return res.json({ received: true });
+                }
 
+                // Retrieve full subscription details
                 const sub = await stripe.subscriptions.retrieve(subId);
                 const priceId = sub.items.data[0].price.id;
 
@@ -77,6 +82,8 @@ app.post(
 
                 // trial_end exists only for trial
                 const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
+
+                console.log(`📝 Creating subscription: ${plan} (Status: ${sub.status})`);
 
                 await db.query(`
                     UPDATE customers
@@ -91,98 +98,192 @@ app.post(
                     WHERE stripe_customer_id = $3
                 `, [plan, subId, customerId, trialEnd]);
 
-                console.log(`🎉 Subscription started: ${plan}`);
+                console.log(`🎉 Subscription started: ${plan} (${subId})`);
             }
 
-/***********************************************************
- * SUBSCRIPTION UPDATED (renewal / price change / cancel scheduled)
- ***********************************************************/
-if (type === "customer.subscription.updated") {
-    const customerId = obj.customer;
-    const subId = obj.id;
-    
-    // Check if this subscription is actually in our database
-    const check = await db.query(
-        `SELECT stripe_subscription_id, id FROM customers WHERE stripe_customer_id=$1`,
-        [customerId]
-    );
-    
-    // If subscription IDs don't match, this is an old/deleted subscription - ignore it
-    if (check.rows.length === 0 || check.rows[0].stripe_subscription_id !== subId) {
-        console.log(`⚠️  Ignoring update for non-current subscription ${subId}`);
-        return res.json({ received: true });
-    }
-    
-    const customer_db_id = check.rows[0].id;
-    const priceId = obj.items.data[0].price.id;
+            /***********************************************************
+             * SUBSCRIPTION UPDATED (renewal / price change / cancel scheduled)
+             ***********************************************************/
+            if (type === "customer.subscription.updated") {
+                const customerId = obj.customer;
+                const subId = obj.id;
+                const status = obj.status;
+                
+                console.log(`📊 Subscription status: ${status}`);
+                
+                // Check if this subscription is in our database
+                const check = await db.query(
+                    `SELECT stripe_subscription_id, id, current_plan FROM customers WHERE stripe_customer_id=$1`,
+                    [customerId]
+                );
+                
+                if (check.rows.length === 0) {
+                    console.log(`⚠️  Customer not found: ${customerId}`);
+                    return res.json({ received: true });
+                }
 
-    let plan = "none";
-    if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
-    if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
-    if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+                const dbSubId = check.rows[0].stripe_subscription_id;
+                
+                // If subscription IDs don't match, this might be an old subscription
+                if (dbSubId && dbSubId !== subId) {
+                    console.log(`⚠️  Subscription ID mismatch. DB: ${dbSubId}, Webhook: ${subId}`);
+                    
+                    // Check if the webhook subscription is newer
+                    const dbSub = await stripe.subscriptions.retrieve(dbSubId).catch(() => null);
+                    const webhookSub = obj;
+                    
+                    // If DB subscription doesn't exist anymore, update to new one
+                    if (!dbSub) {
+                        console.log(`✅ Updating to new subscription: ${subId}`);
+                    } else {
+                        console.log(`⚠️  Ignoring update for non-current subscription ${subId}`);
+                        return res.json({ received: true });
+                    }
+                }
+                
+                const customer_db_id = check.rows[0].id;
+                const priceId = obj.items.data[0].price.id;
 
-    // If cancellation scheduled, set subscription_end date
-    // BUT DO NOT DELETE RECIPIENTS YET - they keep access until period ends
-    const subscriptionEnd = obj.cancel_at_period_end 
-        ? new Date(obj.current_period_end * 1000)
-        : null;
+                let plan = "none";
+                if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
+                if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
+                if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
 
-    await db.query(`
-        UPDATE customers
-        SET
-            has_subscription = $1,
-            current_plan = $2,
-            subscription_end = $3
-        WHERE stripe_customer_id=$4
-    `, [!obj.cancel_at_period_end, plan, subscriptionEnd, customerId]);
+                // 🔥 CRITICAL: Only process if subscription is active or past_due
+                if (!['active', 'trialing', 'past_due'].includes(status)) {
+                    console.log(`⚠️  Ignoring update for subscription with status: ${status}`);
+                    return res.json({ received: true });
+                }
 
-    // 🔥 REMOVED: No longer deleting recipients here
-    // Recipients will only be deleted when subscription actually ends (customer.subscription.deleted)
+                // Set subscription_end if cancellation scheduled
+                const subscriptionEnd = obj.cancel_at_period_end 
+                    ? new Date(obj.current_period_end * 1000)
+                    : null;
 
-    console.log(`🔄 Subscription updated: ${plan}${subscriptionEnd ? ' (canceling at period end: ' + subscriptionEnd.toISOString() + ')' : ''}`);
-}
+                // 🔥 KEY: has_subscription stays TRUE even when canceled (until period ends)
+                await db.query(`
+                    UPDATE customers
+                    SET
+                        has_subscription = true,
+                        current_plan = $1,
+                        stripe_subscription_id = $2,
+                        subscription_end = $3
+                    WHERE stripe_customer_id=$4
+                `, [plan, subId, subscriptionEnd, customerId]);
 
-/***********************************************************
- * SUBSCRIPTION CANCELED/DELETED
- * This fires when subscription actually ends (immediately or at period end)
- * THIS is where we delete recipients
- ***********************************************************/
-if (type === "customer.subscription.deleted") {
-    const customerId = obj.customer;
-    
-    // Get customer DB ID before cleanup
-    const custQ = await db.query(
-        `SELECT id FROM customers WHERE stripe_customer_id=$1`,
-        [customerId]
-    );
-    
-    if (custQ.rows.length > 0) {
-        const customer_db_id = custQ.rows[0].id;
-        
-        // 🔥 NOW delete all recipients (subscription truly ended)
-        await db.query(`
-            DELETE FROM users WHERE customer_id = $1
-        `, [customer_db_id]);
-        
-        console.log(`🗑️  Deleted all recipients - subscription period ended`);
-    }
+                if (obj.cancel_at_period_end) {
+                    console.log(`⚠️  Subscription scheduled for cancellation at: ${subscriptionEnd.toISOString()}`);
+                } else {
+                    console.log(`🔄 Subscription updated: ${plan}`);
+                }
+            }
 
-    await db.query(`
-        UPDATE customers
-        SET 
-            has_subscription = false,
-            current_plan = 'none',
-            stripe_subscription_id = NULL,
-            trial_active = false,
-            subscription_end = NULL
-        WHERE stripe_customer_id=$1
-    `, [customerId]);
+            /***********************************************************
+             * SUBSCRIPTION DELETED
+             * Only fires when subscription ACTUALLY ends
+             ***********************************************************/
+            if (type === "customer.subscription.deleted") {
+                const customerId = obj.customer;
+                const subId = obj.id;
+                const status = obj.status;
+                
+                console.log(`🗑️  Subscription deleted: ${subId} (Status: ${status})`);
+                
+                // Verify this is the current subscription in our DB
+                const check = await db.query(
+                    `SELECT stripe_subscription_id, id FROM customers WHERE stripe_customer_id=$1`,
+                    [customerId]
+                );
+                
+                if (check.rows.length === 0) {
+                    console.log(`⚠️  Customer not found for deletion: ${customerId}`);
+                    return res.json({ received: true });
+                }
 
-    console.log("❌ Subscription ended and recipients deleted");
-}
+                const dbSubId = check.rows[0].stripe_subscription_id;
+                
+                // Only delete if this matches our current subscription
+                if (dbSubId !== subId) {
+                    console.log(`⚠️  Ignoring deletion of non-current subscription. DB: ${dbSubId}, Webhook: ${subId}`);
+                    return res.json({ received: true });
+                }
+                
+                const customer_db_id = check.rows[0].id;
+                
+                // Delete all recipients
+                await db.query(`
+                    DELETE FROM users WHERE customer_id = $1
+                `, [customer_db_id]);
+                
+                console.log(`🗑️  Deleted all recipients for customer ${customer_db_id}`);
+
+                // Clear subscription data
+                await db.query(`
+                    UPDATE customers
+                    SET 
+                        has_subscription = false,
+                        current_plan = 'none',
+                        stripe_subscription_id = NULL,
+                        trial_active = false,
+                        subscription_end = NULL
+                    WHERE stripe_customer_id=$1
+                `, [customerId]);
+
+                console.log("❌ Subscription ended - access terminated");
+            }
+
+            /***********************************************************
+             * SUBSCRIPTION CREATED
+             * Usually fires right after checkout.session.completed
+             * We can handle this to be extra safe
+             ***********************************************************/
+            if (type === "customer.subscription.created") {
+                const customerId = obj.customer;
+                const subId = obj.id;
+                const status = obj.status;
+                const priceId = obj.items.data[0].price.id;
+
+                console.log(`🆕 Subscription created: ${subId} (Status: ${status})`);
+
+                // Check if we already processed this via checkout.session.completed
+                const existing = await db.query(
+                    `SELECT stripe_subscription_id FROM customers WHERE stripe_customer_id=$1`,
+                    [customerId]
+                );
+
+                if (existing.rows.length > 0 && existing.rows[0].stripe_subscription_id === subId) {
+                    console.log(`✅ Subscription already processed via checkout`);
+                    return res.json({ received: true });
+                }
+
+                // If not processed yet, handle it here
+                let plan = "none";
+                if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
+                if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
+                if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+
+                const trialEnd = obj.trial_end ? new Date(obj.trial_end * 1000) : null;
+
+                await db.query(`
+                    UPDATE customers
+                    SET 
+                        has_subscription = true,
+                        current_plan = $1,
+                        stripe_subscription_id = $2,
+                        stripe_customer_id = $3,
+                        trial_active = ($1 = 'trial'),
+                        trial_end = $4,
+                        subscription_end = NULL
+                    WHERE stripe_customer_id = $3
+                `, [plan, subId, customerId, trialEnd]);
+
+                console.log(`🎉 Subscription created (fallback): ${plan}`);
+            }
 
         } catch (err) {
             console.error("❌ Webhook handler error:", err);
+            console.error("Event type:", type);
+            console.error("Event data:", JSON.stringify(obj, null, 2));
         }
 
         return res.json({ received: true });
@@ -985,7 +1086,7 @@ async function countRecipients(customerId) {
 }
 
 /***************************************************************
- *  ADD RECIPIENT
+ *  ADD RECIPIENT — FIXED ACCESS CHECK
  ***************************************************************/
 app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) => {
     try {
@@ -999,10 +1100,12 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
 
         const customer = customerQ.rows[0];
         
-        // Check if subscription is active
+        // 🔥 FIXED: Check if subscription is ACTUALLY active (including grace period)
         const now = new Date();
-        const isActive = customer.has_subscription || 
-                        (customer.subscription_end && new Date(customer.subscription_end) > now);
+        const hasActiveSubscription = customer.has_subscription === true;
+        const hasGracePeriod = customer.subscription_end && new Date(customer.subscription_end) > now;
+        
+        const isActive = hasActiveSubscription || hasGracePeriod;
         
         if (!isActive) {
             return res.status(403).json({ 
@@ -1077,6 +1180,8 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
             ]
         );
 
+        console.log(`✅ Recipient added for customer ${customer.id} (Grace period: ${hasGracePeriod})`);
+
         return res.json({ success: true });
 
     } catch (err) {
@@ -1084,6 +1189,17 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
         return res.status(500).json({ error: "Server error adding recipient" });
     }
 });
+
+/***************************************************************
+ *  HELPER: COUNT RECIPIENTS
+ ***************************************************************/
+async function countRecipients(customerId) {
+    const q = await global.__LT_pool.query(
+        "SELECT COUNT(*) FROM users WHERE customer_id=$1",
+        [customerId]
+    );
+    return Number(q.rows[0].count);
+}
 
 /***************************************************************
  *  DELETE RECIPIENT
@@ -1678,6 +1794,7 @@ function calculateNextDelivery(freq, timing) {
 
 /***************************************************************
  *  CRON JOB — AUTOMATIC MESSAGE SENDER (EVERY MINUTE)
+ *  FIXED: Respects grace period for canceled subscriptions
  ***************************************************************/
 cron.schedule("* * * * *", async () => {
     console.log("⏱  CRON: scanning for due messages…");
@@ -1687,20 +1804,30 @@ cron.schedule("* * * * *", async () => {
     try {
         const now = new Date();
 
-        // Get all recipients due for a message
+        // 🔥 FIXED QUERY: Check for active subscription OR grace period
         const due = await client.query(`
-            SELECT u.*, c.has_subscription, c.subscription_end
+            SELECT u.*, 
+                   c.has_subscription, 
+                   c.subscription_end,
+                   c.current_plan
             FROM users u
             JOIN customers c ON u.customer_id = c.id
             WHERE u.is_active = true
               AND u.next_delivery <= $1
+              AND (
+                  c.has_subscription = true 
+                  OR (c.subscription_end IS NOT NULL AND c.subscription_end > $1)
+              )
         `, [now]);
+
+        console.log(`📬 Found ${due.rows.length} messages to send`);
 
         for (const r of due.rows) {
             try {
-                // Check if customer still has active subscription
-                const isActive = r.has_subscription || 
-                                (r.subscription_end && new Date(r.subscription_end) > now);
+                // Double-check access (redundant but safe)
+                const hasActiveSubscription = r.has_subscription === true;
+                const hasGracePeriod = r.subscription_end && new Date(r.subscription_end) > now;
+                const isActive = hasActiveSubscription || hasGracePeriod;
                 
                 if (!isActive) {
                     console.log(`⚠️  Skipping ${r.email} - subscription inactive`);
@@ -1747,7 +1874,8 @@ cron.schedule("* * * * *", async () => {
                     WHERE id=$2
                 `, [next, r.id]);
 
-                console.log(`💘 Love message sent → ${r.name}`);
+                const gracePeriodInfo = hasGracePeriod ? ' (grace period)' : '';
+                console.log(`💘 Love message sent → ${r.name}${gracePeriodInfo}`);
 
             } catch (innerErr) {
                 console.error("❌ Error sending automated message:", innerErr);
