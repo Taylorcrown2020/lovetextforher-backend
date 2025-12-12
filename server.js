@@ -2295,31 +2295,6 @@ if (type === "customer.subscription.updated") {
     }
 }
 
-const priceId = global.__LT_prices[productId];
-if (!priceId) {
-    return res.status(400).json({ error: "Invalid product" });
-}
-
-// ADD THIS:
-// Verify it's actually a valid Stripe price
-try {
-    const price = await global.__LT_stripe.prices.retrieve(priceId);
-    if (!price.active) {
-        return res.status(400).json({ error: "Product no longer available" });
-    }
-} catch (err) {
-    return res.status(400).json({ error: "Invalid product ID" });
-}
-
-const rateLimit = require('express-rate-limit');
-
-const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // limit each IP to 100 requests per windowMs
-});
-
-app.use('/api/', apiLimiter);
-
 /***************************************************************
  *  SERVER START
  ***************************************************************/
