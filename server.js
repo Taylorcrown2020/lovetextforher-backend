@@ -588,7 +588,7 @@ app.post("/api/customer/register", async (req, res) => {
 
 
 /***************************************************************
- *  CUSTOMER LOGIN
+ *  ENHANCED CUSTOMER LOGIN (for comparison)
  ***************************************************************/
 app.post("/api/customer/login", async (req, res) => {
     try {
@@ -616,13 +616,16 @@ app.post("/api/customer/login", async (req, res) => {
             role: "customer"
         });
 
+        // Set cookie with exact same options used in clearCookie
         res.cookie("customer_token", token, {
             httpOnly: true,
             secure: true,
             sameSite: "none",
             path: "/",
-            maxAge: 7 * 86400 * 1000
+            maxAge: 7 * 86400 * 1000 // 7 days
         });
+
+        console.log("✅ Customer logged in:", customer.email);
 
         return res.json({ success: true });
 
@@ -634,21 +637,32 @@ app.post("/api/customer/login", async (req, res) => {
 
 
 /***************************************************************
- *  CUSTOMER LOGOUT
+ *  FIXED CUSTOMER LOGOUT
  ***************************************************************/
 app.post("/api/customer/logout", (req, res) => {
+    // Clear the customer token cookie with ALL possible options
     res.clearCookie("customer_token", {
         httpOnly: true,
         secure: true,
         sameSite: "none",
         path: "/"
     });
-    return res.json({ success: true });
+
+    // Also try clearing without some options (in case of mismatch)
+    res.clearCookie("customer_token", {
+        path: "/"
+    });
+
+    res.clearCookie("customer_token");
+
+    console.log("👋 Customer logged out");
+
+    return res.json({ success: true, message: "Logged out successfully" });
 });
 
 
 /***************************************************************
- *  ADMIN LOGIN
+ *  ENHANCED ADMIN LOGIN (for comparison)
  ***************************************************************/
 app.post("/api/admin/login", async (req, res) => {
     try {
@@ -676,13 +690,16 @@ app.post("/api/admin/login", async (req, res) => {
             role: "admin"
         });
 
+        // Set cookie with exact same options used in clearCookie
         res.cookie("admin_token", token, {
             httpOnly: true,
             secure: true,
             sameSite: "none",
             path: "/",
-            maxAge: 7 * 86400 * 1000
+            maxAge: 7 * 86400 * 1000 // 7 days
         });
+
+        console.log("✅ Admin logged in:", admin.email);
 
         return res.json({ success: true });
 
@@ -694,16 +711,27 @@ app.post("/api/admin/login", async (req, res) => {
 
 
 /***************************************************************
- *  ADMIN LOGOUT
+ *  FIXED ADMIN LOGOUT
  ***************************************************************/
 app.post("/api/admin/logout", (req, res) => {
+    // Clear the admin token cookie with ALL possible options
     res.clearCookie("admin_token", {
         httpOnly: true,
         secure: true,
         sameSite: "none",
         path: "/"
     });
-    return res.json({ success: true });
+
+    // Also try clearing without some options (in case of mismatch)
+    res.clearCookie("admin_token", {
+        path: "/"
+    });
+
+    res.clearCookie("admin_token");
+
+    console.log("👋 Admin logged out");
+
+    return res.json({ success: true, message: "Logged out successfully" });
 });
 
 
