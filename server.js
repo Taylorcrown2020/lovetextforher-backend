@@ -2071,6 +2071,131 @@ async function calculateLastMonthMRR(lastMonthStart) {
 }
 
 /***************************************************************
+ *  ADMIN — GET ALL CUSTOMERS
+ ***************************************************************/
+app.get("/api/admin/customers", global.__LT_authAdmin, async (req, res) => {
+    try {
+        const q = await global.__LT_pool.query(
+            `SELECT 
+                id, 
+                email, 
+                name, 
+                has_subscription, 
+                current_plan,
+                stripe_customer_id,
+                stripe_subscription_id,
+                created_at
+             FROM customers
+             ORDER BY id DESC`
+        );
+
+        return res.json(q.rows);
+
+    } catch (err) {
+        console.error("ADMIN CUSTOMERS ERROR:", err);
+        return res.status(500).json({ error: "Server error loading customers" });
+    }
+});
+
+/***************************************************************
+ *  ADMIN — DELETE CUSTOMER (and all their recipients)
+ ***************************************************************/
+app.delete("/api/admin/customer/:id", global.__LT_authAdmin, async (req, res) => {
+    try {
+        const customerId = req.params.id;
+
+        // First delete all recipients for this customer
+        await global.__LT_pool.query(
+            "DELETE FROM users WHERE customer_id=$1",
+            [customerId]
+        );
+
+        // Then delete the customer
+        await global.__LT_pool.query(
+            "DELETE FROM customers WHERE id=$1",
+            [customerId]
+        );
+
+        return res.json({ success: true, deleted: customerId });
+
+    } catch (err) {
+        console.error("ADMIN DELETE CUSTOMER ERROR:", err);
+        return res.status(500).json({ 
+            success: false, 
+            error: "Server error deleting customer" 
+        });
+    }
+});
+
+/***************************************************************
+ *  ADMIN — SEARCH MESSAGE LOGS BY CUSTOMER
+ ***************************************************************/
+app.get("/api/admin/message-logs/search", global.__LT_authAdmin, async (req, res) => {
+    try {
+        const query = req.query.query;
+
+        if (!query) {
+            return res.status(400).json({ error: "Search query required" });
+        }
+
+        // Try to find customer by email or ID
+        let customer;
+        
+        // Check if query is a number (customer ID)
+        if (!isNaN(query)) {
+            const custQ = await global.__LT_pool.query(
+                `SELECT id, email, name, has_subscription, current_plan, created_at
+                 FROM customers WHERE id=$1`,
+                [parseInt(query)]
+            );
+            customer = custQ.rows[0];
+        }
+        
+        // If not found or not a number, search by email
+        if (!customer) {
+            const custQ = await global.__LT_pool.query(
+                `SELECT id, email, name, has_subscription, current_plan, created_at
+                 FROM customers WHERE email ILIKE $1`,
+                [`%${query}%`]
+            );
+            customer = custQ.rows[0];
+        }
+
+        if (!customer) {
+            return res.json({ customer: null, recipients: [], logs: [] });
+        }
+
+        // Get all recipients for this customer
+        const recipientsQ = await global.__LT_pool.query(
+            `SELECT id, email, name, relationship, is_active, created_at
+             FROM users
+             WHERE customer_id=$1
+             ORDER BY id DESC`,
+            [customer.id]
+        );
+
+        // Get all message logs for this customer
+        const logsQ = await global.__LT_pool.query(
+            `SELECT id, recipient_id, email, message, sent_at
+             FROM message_logs
+             WHERE customer_id=$1
+             ORDER BY sent_at DESC`,
+            [customer.id]
+        );
+
+        return res.json({
+            customer: customer,
+            recipients: recipientsQ.rows,
+            logs: logsQ.rows
+        });
+
+    } catch (err) {
+        console.error("ADMIN MESSAGE LOGS SEARCH ERROR:", err);
+        return res.status(500).json({ error: "Server error searching message logs" });
+    }
+});
+
+/***************************************************************
  *  SERVER START
  ***************************************************************/
 app.listen(PORT, () => {

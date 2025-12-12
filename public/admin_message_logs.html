@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin — Message Logs</title>
+
+    <!-- Disable nav.js for admin pages -->
+    <script>
+        window.SKIP_NAV_JS = true;
+    </script>
+
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --text-dark: #1a1a1a;
+            --card-bg: rgba(255,255,255,0.55);
+            --max-width: 1200px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+            padding-top: 120px;
+            min-height: 100vh;
+        }
+
+        /* NAVBAR */
+        #navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 18px;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 2px 14px rgba(0,0,0,0.08);
+            z-index: 1000;
+        }
+
+        #navbar-inner {
+            max-width: var(--max-width);
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: 20px;
+            color: var(--primary);
+        }
+
+        #navbar a {
+            margin-left: 22px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        #navbar a:hover { color: var(--primary); }
+
+        /* PAGE HEADER */
+        h2 {
+            text-align: center;
+            font-size: 34px;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
+        }
+
+        /* CONTAINER */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* SEARCH BOX */
+        .search-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 18px;
+            padding: 28px;
+            margin-bottom: 32px;
+            box-shadow: 0 10px 35px rgba(214,51,108,0.15);
+        }
+
+        .search-section h3 {
+            color: var(--primary);
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid rgba(214,51,108,0.2);
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.25s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-search {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.25s;
+            box-shadow: 0 6px 20px rgba(214,51,108,0.25);
+        }
+
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 32px rgba(214,51,108,0.35);
+        }
+
+        .btn-clear {
+            padding: 12px 20px;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            background: transparent;
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.25s;
+        }
+
+        .btn-clear:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* CUSTOMER INFO */
+        .customer-info {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 35px rgba(214,51,108,0.15);
+        }
+
+        .customer-info h3 {
+            color: var(--primary);
+            margin-bottom: 12px;
+            font-size: 20px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .info-item {
+            font-size: 14px;
+            color: #444;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* RECIPIENT SECTION */
+        .recipient-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 35px rgba(214,51,108,0.15);
+            transition: 0.25s;
+        }
+
+        .recipient-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 45px rgba(214,51,108,0.25);
+        }
+
+        .recipient-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(214,51,108,0.1);
+        }
+
+        .recipient-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .recipient-email {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .message-count {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* MESSAGE LOG */
+        .message-log {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .message-text {
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .message-date {
+            font-size: 12px;
+            color: #999;
+            font-style: italic;
+        }
+
+        .no-messages {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        /* STATES */
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        .error {
+            text-align: center;
+            color: #dc3545;
+            padding: 40px;
+        }
+
+        .empty {
+            text-align: center;
+            color: #777;
+            padding: 40px;
+        }
+
+        #results {
+            margin-top: 24px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ADMIN AUTH CHECK -->
+<script>
+async function verifyAdmin() {
+    try {
+        const res = await fetch("/api/admin/me", {
+            credentials: "include",
+            cache: "no-store"
+        });
+
+        if (!res.ok) {
+            window.location.href = "/admin_login.html";
+            return false;
+        }
+
+        const data = await res.json();
+
+        if (!data?.admin || data.admin.role !== "admin") {
+            window.location.href = "/admin_login.html";
+            return false;
+        }
+
+        return true;
+
+    } catch {
+        window.location.href = "/admin_login.html";
+        return false;
+    }
+}
+</script>
+
+<!-- STATIC ADMIN NAVBAR -->
+<div id="navbar">
+    <div id="navbar-inner">
+        <div class="logo">LOVETEXTFORHER</div>
+        <div>
+            <a href="/admin.html">Dashboard</a>
+            <a href="/admin_users.html">Users</a>
+            <a href="/admin_customers.html">Customers</a>
+            <a href="/admin_message_logs.html">Message Logs</a>
+            <a href="/admin_kpis.html">KPIs</a>
+            <a href="#" id="logout-admin">Logout</a>
+        </div>
+    </div>
+</div>
+
+<h2>Message Logs</h2>
+
+<div class="container">
+    <!-- SEARCH SECTION -->
+    <div class="search-section">
+        <h3>Search Customer Logs</h3>
+        <div class="search-box">
+            <input 
+                type="text" 
+                id="search-input" 
+                class="search-input" 
+                placeholder="Enter customer email or ID..."
+                onkeypress="if(event.key==='Enter') searchLogs()"
+            >
+            <button class="btn-search" onclick="searchLogs()">Search</button>
+            <button class="btn-clear" onclick="clearSearch()">Clear</button>
+        </div>
+    </div>
+
+    <!-- RESULTS SECTION -->
+    <div id="results"></div>
+</div>
+
+<script>
+// ---------------------------------------------
+// SEARCH LOGS
+// ---------------------------------------------
+async function searchLogs() {
+    const query = document.getElementById('search-input').value.trim();
+    
+    if (!query) {
+        alert('Please enter a customer email or ID');
+        return;
+    }
+
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = '<p class="loading">Searching...</p>';
+
+    try {
+        const res = await fetch(`/api/admin/message-logs/search?query=${encodeURIComponent(query)}`, {
+            credentials: "include",
+            cache: "no-store"
+        });
+
+        if (!res.ok) {
+            const error = await res.json();
+            resultsDiv.innerHTML = `<p class="error">${error.error || 'Failed to load message logs'}</p>`;
+            return;
+        }
+
+        const data = await res.json();
+
+        if (!data.customer) {
+            resultsDiv.innerHTML = '<p class="empty">No customer found with that email or ID.</p>';
+            return;
+        }
+
+        displayResults(data);
+
+    } catch (err) {
+        console.error('Search error:', err);
+        resultsDiv.innerHTML = '<p class="error">Error searching logs. Check console for details.</p>';
+    }
+}
+
+// ---------------------------------------------
+// DISPLAY RESULTS
+// ---------------------------------------------
+function displayResults(data) {
+    const resultsDiv = document.getElementById('results');
+    
+    // Customer Info
+    let html = `
+        <div class="customer-info">
+            <h3>Customer Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">ID:</span> ${data.customer.id}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email:</span> ${data.customer.email}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Name:</span> ${data.customer.name || 'N/A'}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Plan:</span> ${data.customer.current_plan || 'none'}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Subscription:</span> ${data.customer.has_subscription ? '✓ Active' : '✗ Inactive'}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Total Recipients:</span> ${data.recipients.length}
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Recipients and Messages
+    if (data.recipients.length === 0) {
+        html += '<p class="empty">This customer has no recipients.</p>';
+    } else {
+        data.recipients.forEach(recipient => {
+            const messages = data.logs.filter(log => log.recipient_id === recipient.id);
+            
+            html += `
+                <div class="recipient-section">
+                    <div class="recipient-header">
+                        <div>
+                            <div class="recipient-name">${recipient.name}</div>
+                            <div class="recipient-email">${recipient.email}</div>
+                        </div>
+                        <div class="message-count">${messages.length} messages</div>
+                    </div>
+            `;
+
+            if (messages.length === 0) {
+                html += '<div class="no-messages">No messages sent yet</div>';
+            } else {
+                messages.forEach(msg => {
+                    const sentDate = new Date(msg.sent_at).toLocaleString('en-US', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                    });
+
+                    html += `
+                        <div class="message-log">
+                            <div class="message-text">${msg.message}</div>
+                            <div class="message-date">Sent: ${sentDate}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            html += '</div>';
+        });
+    }
+
+    resultsDiv.innerHTML = html;
+}
+
+// ---------------------------------------------
+// CLEAR SEARCH
+// ---------------------------------------------
+function clearSearch() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('results').innerHTML = '';
+}
+
+// ---------------------------------------------
+// LOGOUT ADMIN
+// ---------------------------------------------
+document.getElementById("logout-admin").addEventListener("click", async (e) => {
+    e.preventDefault();
+    await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "include"
+    });
+    window.location.href = "/admin_login.html";
+});
+
+// ---------------------------------------------
+// INIT PAGE
+// ---------------------------------------------
+(async () => {
+    await verifyAdmin();
+})();
+</script>
+
+</body>
+</html>

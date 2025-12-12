@@ -97,7 +97,14 @@
             box-shadow: 0 18px 45px rgba(214,51,108,0.25);
         }
 
-        .email {
+        .customer-email {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .detail {
             color: #444;
             font-size: 15px;
             margin-top: 4px;
@@ -118,6 +125,24 @@
         .btn-delete:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 32px rgba(214,51,108,0.35);
+        }
+
+        .loading {
+            text-align: center;
+            opacity: 0.6;
+            padding: 40px;
+        }
+
+        .error {
+            text-align: center;
+            color: #dc3545;
+            padding: 40px;
+        }
+
+        .empty {
+            text-align: center;
+            color: #777;
+            padding: 40px;
         }
     </style>
 </head>
@@ -173,13 +198,13 @@ async function verifyAdmin() {
 <h2>Customer Accounts</h2>
 
 <div id="list">
-    <p style="text-align:center; opacity:0.6;">Loading customers...</p>
+    <p class="loading">Loading customers...</p>
 </div>
 
 
 <script>
 // ---------------------------------------------
-// LOAD CUSTOMERS (Matches New Server Response)
+// LOAD CUSTOMERS
 // ---------------------------------------------
 async function loadCustomers() {
     try {
@@ -190,7 +215,7 @@ async function loadCustomers() {
 
         if (!res.ok) {
             document.getElementById("list").innerHTML =
-                "<p style='text-align:center;color:red;'>Failed to load customers.</p>";
+                "<p class='error'>Failed to load customers. Please try again.</p>";
             return;
         }
 
@@ -199,25 +224,30 @@ async function loadCustomers() {
         box.innerHTML = "";
 
         if (customers.length === 0) {
-            box.innerHTML = `<p style="color:#777;text-align:center;">No customers found.</p>`;
+            box.innerHTML = `<p class="empty">No customers found.</p>`;
             return;
         }
 
         customers.forEach(c => {
+            const createdDate = c.created_at ? new Date(c.created_at).toLocaleDateString() : 'N/A';
+            
             box.innerHTML += `
                 <div class="customer" id="customer-${c.id}">
-                    <strong>${c.email}</strong>
+                    <div class="customer-email">${c.email}</div>
 
-                    <div class="email">Customer ID: ${c.id}</div>
-                    <div class="email">Name: ${c.name || "(none)"}</div>
+                    <div class="detail">Customer ID: ${c.id}</div>
+                    <div class="detail">Name: ${c.name || "(not set)"}</div>
+                    <div class="detail">Created: ${createdDate}</div>
 
-                    <div class="email">
-                        Subscription: ${c.has_subscription ? "Active" : "None"}
+                    <div class="detail">
+                        Subscription: ${c.has_subscription ? "✓ Active" : "✗ None"}
                     </div>
 
-                    <div class="email">
-                        Current Plan: ${c.current_plan || "None"}
+                    <div class="detail">
+                        Current Plan: ${c.current_plan || "none"}
                     </div>
+
+                    ${c.stripe_customer_id ? `<div class="detail">Stripe ID: ${c.stripe_customer_id}</div>` : ''}
 
                     <button class="btn-delete" onclick="deleteCustomer(${c.id})">
                         Delete Customer
@@ -227,8 +257,9 @@ async function loadCustomers() {
         });
 
     } catch (err) {
+        console.error("Load customers error:", err);
         document.getElementById("list").innerHTML =
-            "<p style='text-align:center;color:red;'>Error loading customers.</p>";
+            "<p class='error'>Error loading customers. Check console for details.</p>";
     }
 }
 
@@ -237,7 +268,7 @@ async function loadCustomers() {
 // DELETE CUSTOMER (Backend also deletes recipients)
 // ---------------------------------------------
 async function deleteCustomer(id) {
-    if (!confirm("Delete this customer AND all related recipients?")) return;
+    if (!confirm("Delete this customer AND all related recipients? This cannot be undone.")) return;
 
     try {
         const res = await fetch(`/api/admin/customer/${id}`, {
@@ -250,11 +281,19 @@ async function deleteCustomer(id) {
         if (data.success) {
             const el = document.getElementById(`customer-${id}`);
             if (el) el.remove();
+            
+            // Check if list is now empty
+            const remaining = document.querySelectorAll('.customer');
+            if (remaining.length === 0) {
+                document.getElementById('list').innerHTML = 
+                    "<p class='empty'>No customers found.</p>";
+            }
         } else {
             alert(data.error || "Error deleting customer.");
         }
 
-    } catch {
+    } catch (err) {
+        console.error("Delete error:", err);
         alert("Network error deleting customer.");
     }
 }
@@ -263,7 +302,8 @@ async function deleteCustomer(id) {
 // ---------------------------------------------
 // LOGOUT ADMIN
 // ---------------------------------------------
-document.getElementById("logout-admin").addEventListener("click", async () => {
+document.getElementById("logout-admin").addEventListener("click", async (e) => {
+    e.preventDefault();
     await fetch("/api/admin/logout", {
         method: "POST",
         credentials: "include"
