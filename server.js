@@ -57,139 +57,143 @@ app.post(
 
         console.log(`⚡ WEBHOOK: ${type}`);
 
-        try {
-            /***********************************************************
-             * CHECKOUT COMPLETED
-             * (Trial OR Paid subscription created fresh)
-             ***********************************************************/
-            if (type === "checkout.session.completed") {
-                const customerId = obj.customer;
-                const subId = obj.subscription;
-                if (!subId) return res.json({ received: true });
+/***************************************************************
+ *  COMPLETE WEBHOOK HANDLERS - REPLACE IN YOUR server.js
+ *  Place these inside your /api/stripe/webhook route
+ ***************************************************************/
 
-                const sub = await stripe.subscriptions.retrieve(subId);
-                const priceId = sub.items.data[0].price.id;
+try {
+    /***********************************************************
+     * CHECKOUT COMPLETED
+     * (Trial OR Paid subscription created fresh)
+     ***********************************************************/
+    if (type === "checkout.session.completed") {
+        const customerId = obj.customer;
+        const subId = obj.subscription;
+        if (!subId) return res.json({ received: true });
 
-                let plan = "none";
-                if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
-                if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
-                if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+        const sub = await stripe.subscriptions.retrieve(subId);
+        const priceId = sub.items.data[0].price.id;
 
-                // trial_end exists only for trial
-                const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
+        let plan = "none";
+        if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
+        if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
+        if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
 
-                await db.query(`
-                    UPDATE customers
-                    SET 
-                        has_subscription = true,
-                        current_plan = $1,
-                        stripe_subscription_id = $2,
-                        stripe_customer_id = $3,
-                        trial_active = ($1 = 'trial'),
-                        trial_end = $4,
-                        subscription_end = NULL
-                    WHERE stripe_customer_id = $3
-                `, [plan, subId, customerId, trialEnd]);
+        // trial_end exists only for trial
+        const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000) : null;
 
-                console.log(`🎉 Subscription started: ${plan}`);
-            }
-
-/***********************************************************
- * SUBSCRIPTION UPDATED (renewal / price change / cancel scheduled)
- ***********************************************************/
-if (type === "customer.subscription.updated") {
-    const customerId = obj.customer;
-    const subId = obj.id;
-    
-    // Check if this subscription is actually in our database
-    const check = await db.query(
-        `SELECT stripe_subscription_id, id FROM customers WHERE stripe_customer_id=$1`,
-        [customerId]
-    );
-    
-    // If subscription IDs don't match, this is an old/deleted subscription - ignore it
-    if (check.rows.length === 0 || check.rows[0].stripe_subscription_id !== subId) {
-        console.log(`⚠️  Ignoring update for non-current subscription ${subId}`);
-        return res.json({ received: true });
-    }
-    
-    const customer_db_id = check.rows[0].id;
-    const priceId = obj.items.data[0].price.id;
-
-    let plan = "none";
-    if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
-    if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
-    if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
-
-    // If cancellation scheduled, set subscription_end date AND delete recipients
-    const subscriptionEnd = obj.cancel_at_period_end 
-        ? new Date(obj.current_period_end * 1000)
-        : null;
-
-    await db.query(`
-        UPDATE customers
-        SET
-            has_subscription = $1,
-            current_plan = $2,
-            subscription_end = $3
-        WHERE stripe_customer_id=$4
-    `, [!obj.cancel_at_period_end, plan, subscriptionEnd, customerId]);
-
-    // 🔥 NEW: DELETE ALL RECIPIENTS IMMEDIATELY WHEN CANCELED
-    if (obj.cancel_at_period_end) {
         await db.query(`
-            DELETE FROM users WHERE customer_id = $1
-        `, [customer_db_id]);
-        
-        console.log(`🗑️  Deleted all recipients for customer ${customer_db_id} due to cancellation`);
+            UPDATE customers
+            SET 
+                has_subscription = true,
+                current_plan = $1,
+                stripe_subscription_id = $2,
+                stripe_customer_id = $3,
+                trial_active = ($1 = 'trial'),
+                trial_end = $4,
+                subscription_end = NULL
+            WHERE stripe_customer_id = $3
+        `, [plan, subId, customerId, trialEnd]);
+
+        console.log(`🎉 Subscription started: ${plan}`);
     }
 
-    console.log(`🔄 Subscription updated: ${plan}${subscriptionEnd ? ' (canceling at period end)' : ''}`);
-}
-
-/***********************************************************
- * SUBSCRIPTION CANCELED/DELETED
- * This fires when subscription actually ends (immediately or at period end)
- ***********************************************************/
-if (type === "customer.subscription.deleted") {
-    const customerId = obj.customer;
-    
-    // Get customer DB ID before cleanup
-    const custQ = await db.query(
-        `SELECT id FROM customers WHERE stripe_customer_id=$1`,
-        [customerId]
-    );
-    
-    if (custQ.rows.length > 0) {
-        const customer_db_id = custQ.rows[0].id;
+    /***********************************************************
+     * SUBSCRIPTION UPDATED (renewal / price change / cancel scheduled)
+     ***********************************************************/
+    if (type === "customer.subscription.updated") {
+        const customerId = obj.customer;
+        const subId = obj.id;
         
-        // Delete all recipients
+        // Check if this subscription is actually in our database
+        const check = await db.query(
+            `SELECT stripe_subscription_id, id FROM customers WHERE stripe_customer_id=$1`,
+            [customerId]
+        );
+        
+        // If subscription IDs don't match, this is an old/deleted subscription - ignore it
+        if (check.rows.length === 0 || check.rows[0].stripe_subscription_id !== subId) {
+            console.log(`⚠️  Ignoring update for non-current subscription ${subId}`);
+            return res.json({ received: true });
+        }
+        
+        const customer_db_id = check.rows[0].id;
+        const priceId = obj.items.data[0].price.id;
+
+        let plan = "none";
+        if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
+        if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
+        if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+
+        // If cancellation scheduled, set subscription_end date
+        // BUT DON'T delete recipients - they keep access until period ends
+        const subscriptionEnd = obj.cancel_at_period_end 
+            ? new Date(obj.current_period_end * 1000)
+            : null;
+
         await db.query(`
-            DELETE FROM users WHERE customer_id = $1
-        `, [customer_db_id]);
-        
-        console.log(`🗑️  Deleted all recipients for canceled subscription`);
+            UPDATE customers
+            SET
+                has_subscription = $1,
+                current_plan = $2,
+                subscription_end = $3
+            WHERE stripe_customer_id=$4
+        `, [!obj.cancel_at_period_end, plan, subscriptionEnd, customerId]);
+
+        if (obj.cancel_at_period_end) {
+            console.log(`🔄 Subscription will cancel at ${subscriptionEnd.toISOString()}`);
+            console.log(`✅ Customer keeps access until period ends`);
+        } else {
+            console.log(`🔄 Subscription updated: ${plan}`);
+        }
     }
 
-    await db.query(`
-        UPDATE customers
-        SET 
-            has_subscription = false,
-            current_plan = 'none',
-            stripe_subscription_id = NULL,
-            trial_active = false,
-            subscription_end = NULL
-        WHERE stripe_customer_id=$1
-    `, [customerId]);
-
-    console.log("❌ Subscription ended");
-}
-
-        } catch (err) {
-            console.error("❌ Webhook handler error:", err);
+    /***********************************************************
+     * SUBSCRIPTION CANCELED/DELETED
+     * This fires when subscription ACTUALLY ends (at period end or immediately)
+     * NOW we delete recipients and revoke access
+     ***********************************************************/
+    if (type === "customer.subscription.deleted") {
+        const customerId = obj.customer;
+        
+        // Get customer DB ID before cleanup
+        const custQ = await db.query(
+            `SELECT id FROM customers WHERE stripe_customer_id=$1`,
+            [customerId]
+        );
+        
+        if (custQ.rows.length > 0) {
+            const customer_db_id = custQ.rows[0].id;
+            
+            // NOW delete all recipients (subscription has actually ended)
+            await db.query(`
+                DELETE FROM users WHERE customer_id = $1
+            `, [customer_db_id]);
+            
+            console.log(`🗑️  Subscription ended - Deleted all recipients for customer ${customer_db_id}`);
         }
 
-        return res.json({ received: true });
+        // Update customer record
+        await db.query(`
+            UPDATE customers
+            SET 
+                has_subscription = false,
+                current_plan = 'none',
+                stripe_subscription_id = NULL,
+                trial_active = false,
+                subscription_end = NULL
+            WHERE stripe_customer_id=$1
+        `, [customerId]);
+
+        console.log("❌ Subscription fully ended - Access revoked");
+    }
+
+} catch (err) {
+    console.error("❌ Webhook handler error:", err);
+}
+
+return res.json({ received: true });
     }
 );
 
