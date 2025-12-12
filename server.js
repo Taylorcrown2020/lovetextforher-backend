@@ -99,10 +99,15 @@ try {
         console.log(`🎉 Subscription started: ${plan}`);
     }
 
-    /***********************************************************
-     * SUBSCRIPTION UPDATED (renewal / price change / cancel scheduled)
-     ***********************************************************/
-    if (type === "customer.subscription.updated") {
+/***************************************************************
+ *  UPDATED WEBHOOK HANDLER - Handles BOTH cancellation types
+ *  Replace in your server.js webhook section
+ ***************************************************************/
+
+/***********************************************************
+ * SUBSCRIPTION UPDATED (renewal / price change / cancel scheduled)
+ ***********************************************************/
+if (type === "customer.subscription.updated") {
     const customerId = obj.customer;
     const subId = obj.id;
     
@@ -112,7 +117,7 @@ try {
         [customerId]
     );
     
-    // If subscription IDs don't match, ignore it
+    // If subscription IDs don't match, this is an old/deleted subscription - ignore it
     if (check.rows.length === 0 || check.rows[0].stripe_subscription_id !== subId) {
         console.log(`⚠️  Ignoring update for non-current subscription ${subId}`);
         return res.json({ received: true });
@@ -126,15 +131,42 @@ try {
     if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
     if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
 
-    // ✅ KEY FIX: Properly set subscription_end when canceling
-    const subscriptionEnd = obj.cancel_at_period_end 
+    // Check subscription status
+    const isCanceled = obj.status === "canceled";
+    const isCanceling = obj.cancel_at_period_end === true;
+    
+    // Set subscription_end date
+    const subscriptionEnd = isCanceling 
         ? new Date(obj.current_period_end * 1000)
         : null;
 
-    // ✅ IMPORTANT: Keep has_subscription as TRUE during cancellation period
-    // It only becomes FALSE when subscription.deleted fires
-    const isStillActive = !obj.cancel_at_period_end;
+    // If subscription status is "canceled", it was canceled immediately
+    // In this case, subscription.deleted will NOT fire, so we handle it here
+    if (isCanceled) {
+        console.log(`❌ IMMEDIATE CANCELLATION DETECTED`);
+        
+        // Delete all recipients immediately
+        await db.query(`
+            DELETE FROM users WHERE customer_id = $1
+        `, [customer_db_id]);
+        
+        // Update customer record
+        await db.query(`
+            UPDATE customers
+            SET 
+                has_subscription = false,
+                current_plan = 'none',
+                stripe_subscription_id = NULL,
+                trial_active = false,
+                subscription_end = NULL
+            WHERE stripe_customer_id=$1
+        `, [customerId]);
+        
+        console.log(`🗑️  Immediate cancel - Deleted all recipients for customer ${customer_db_id}`);
+        return res.json({ received: true });
+    }
 
+    // Normal update or scheduled cancellation
     await db.query(`
         UPDATE customers
         SET
@@ -142,40 +174,54 @@ try {
             current_plan = $2,
             subscription_end = $3
         WHERE stripe_customer_id = $4
-    `, [isStillActive, plan, subscriptionEnd, customerId]);
+    `, [!isCanceling, plan, subscriptionEnd, customerId]);
 
-    if (obj.cancel_at_period_end) {
-        console.log(`🔄 Subscription canceling - ends at ${subscriptionEnd.toISOString()}`);
-        console.log(`✅ Customer keeps access until ${subscriptionEnd.toISOString()}`);
+    if (isCanceling) {
+        console.log(`🔄 Subscription scheduled to cancel at ${subscriptionEnd.toISOString()}`);
+        console.log(`✅ Customer keeps access until period ends`);
     } else {
         console.log(`🔄 Subscription updated: ${plan}`);
     }
 }
 
-    /***********************************************************
-     * SUBSCRIPTION CANCELED/DELETED
-     * This fires when subscription ACTUALLY ends (at period end or immediately)
-     * NOW we delete recipients and revoke access
-     ***********************************************************/
-    if (type === "customer.subscription.deleted") {
-        const customerId = obj.customer;
+/***********************************************************
+ * SUBSCRIPTION CANCELED/DELETED
+ * This fires when subscription ends at period end (NOT for immediate cancels)
+ ***********************************************************/
+if (type === "customer.subscription.deleted") {
+    const customerId = obj.customer;
+    
+    // Get customer DB ID
+    const custQ = await db.query(
+        `SELECT id FROM customers WHERE stripe_customer_id=$1`,
+        [customerId]
+    );
+    
+    if (custQ.rows.length > 0) {
+        const customer_db_id = custQ.rows[0].id;
         
-        // Get customer DB ID before cleanup
-        const custQ = await db.query(
-            `SELECT id FROM customers WHERE stripe_customer_id=$1`,
-            [customerId]
-        );
+        // Delete all recipients (subscription period ended)
+        await db.query(`
+            DELETE FROM users WHERE customer_id = $1
+        `, [customer_db_id]);
         
-        if (custQ.rows.length > 0) {
-            const customer_db_id = custQ.rows[0].id;
-            
-            // NOW delete all recipients (subscription has actually ended)
-            await db.query(`
-                DELETE FROM users WHERE customer_id = $1
-            `, [customer_db_id]);
-            
-            console.log(`🗑️  Subscription ended - Deleted all recipients for customer ${customer_db_id}`);
-        }
+        console.log(`🗑️  Period ended - Deleted all recipients for customer ${customer_db_id}`);
+    }
+
+    // Update customer record
+    await db.query(`
+        UPDATE customers
+        SET 
+            has_subscription = false,
+            current_plan = 'none',
+            stripe_subscription_id = NULL,
+            trial_active = false,
+            subscription_end = NULL
+        WHERE stripe_customer_id=$1
+    `, [customerId]);
+
+    console.log("❌ Subscription period fully ended - Access revoked");
+}
 
         // Update customer record
         await db.query(`
@@ -190,7 +236,6 @@ try {
         `, [customerId]);
 
         console.log("❌ Subscription fully ended - Access revoked");
-    }
 
 } catch (err) {
     console.error("❌ Webhook handler error:", err);
@@ -1662,11 +1707,12 @@ global.__LT_sendSMS = async function (to, message) {
 /***************************************************************
  *  NEXT DELIVERY TIME CALCULATOR
  ***************************************************************/
-function calculateNextDelivery(freq, timing) {
+function calculateNextDelivery(freq, timing, timezone) {
+    // Use timezone-aware date library
     const now = new Date();
     const next = new Date(now);
 
-    // TIME OF DAY
+    // TIME OF DAY (this is in UTC!)
     switch (timing) {
         case "morning":    next.setHours(9, 0, 0); break;
         case "afternoon":  next.setHours(13, 0, 0); break;
@@ -2218,6 +2264,61 @@ app.get("/api/admin/message-logs/search", global.__LT_authAdmin, async (req, res
         return res.status(500).json({ error: "Server error searching message logs" });
     }
 });
+
+if ((delivery_method === "sms" || delivery_method === "both") && !phone_number) {
+    return res.status(400).json({ error: "Phone number required for SMS delivery" });
+}
+
+// ADD THIS:
+if (phone_number) {
+    // Basic phone validation (US format)
+    const phoneRegex = /^\+?1?\d{10,15}$/;
+    if (!phoneRegex.test(phone_number.replace(/[\s\-\(\)]/g, ''))) {
+        return res.status(400).json({ 
+            error: "Invalid phone number format. Use: +1234567890" 
+        });
+    }
+}
+
+if (type === "customer.subscription.updated") {
+    // ... existing code ...
+    
+    // After updating plan in database:
+    if (!obj.cancel_at_period_end) {
+        // Not canceling, just changing plan
+        const oldPlan = check.rows[0].current_plan;  // Get old plan first!
+        
+        if (oldPlan === "plus" && plan === "basic") {
+            // Downgrade detected - enforce limits
+            await global.__LT_enforceRecipientLimit(customer_db_id, plan);
+        }
+    }
+}
+
+const priceId = global.__LT_prices[productId];
+if (!priceId) {
+    return res.status(400).json({ error: "Invalid product" });
+}
+
+// ADD THIS:
+// Verify it's actually a valid Stripe price
+try {
+    const price = await global.__LT_stripe.prices.retrieve(priceId);
+    if (!price.active) {
+        return res.status(400).json({ error: "Product no longer available" });
+    }
+} catch (err) {
+    return res.status(400).json({ error: "Invalid product ID" });
+}
+
+const rateLimit = require('express-rate-limit');
+
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
+});
+
+app.use('/api/', apiLimiter);
 
 /***************************************************************
  *  SERVER START

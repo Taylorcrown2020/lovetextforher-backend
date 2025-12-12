@@ -23,6 +23,7 @@
     "express": "^4.21.2",
     "express-rate-limit": "^8.2.1",
     "jsonwebtoken": "^9.0.2",
+    "luxon": "^3.7.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
     "pg": "^8.16.3",
