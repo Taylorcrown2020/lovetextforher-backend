@@ -4,16 +4,18 @@
     <meta charset="UTF-8">
     <title>KPI Dashboard — LoveTextForHer</title>
 
-    <!-- Disable customer nav.js -->
     <script> window.SKIP_NAV_JS = true; </script>
 
     <style>
         :root {
             --primary: #d6336c;
             --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
             --text-dark: #1a1a1a;
             --text-light: #6a6a6a;
-            --max-width: 1200px;
+            --max-width: 1400px;
         }
 
         * {
@@ -24,7 +26,7 @@
         }
 
         body {
-            background: #fff;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
             padding-top: 110px;
             color: var(--text-dark);
         }
@@ -61,6 +63,7 @@
             margin-left: 22px;
             color: var(--text-dark);
             font-weight: 500;
+            transition: color 0.2s;
         }
         #navbar a:hover { color: var(--primary); }
 
@@ -74,58 +77,133 @@
         .kpi-title {
             font-size: 42px;
             font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .kpi-subtitle {
             font-size: 18px;
             color: var(--text-light);
+            margin-top: 8px;
+        }
+
+        /* SECTION HEADERS */
+        .section-header {
+            max-width: var(--max-width);
+            margin: 50px auto 20px;
+            padding: 0 28px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
         }
 
         /* KPI GRID */
         .kpi-grid {
             max-width: var(--max-width);
             margin: auto;
-            padding: 0 28px 90px;
+            padding: 0 28px 40px;
             display: grid;
-            gap: 32px;
+            gap: 24px;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
 
         .kpi-card {
-            background: rgba(255,255,255,0.55);
+            background: rgba(255,255,255,0.85);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.8);
+            border: 1px solid rgba(214,51,108,0.15);
             border-radius: 20px;
             padding: 24px 28px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.06);
             transition: 0.25s ease;
         }
 
         .kpi-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 25px 55px rgba(0,0,0,0.10);
+            box-shadow: 0 20px 45px rgba(214,51,108,0.15);
         }
 
         .kpi-card h3 {
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 22px;
-            font-weight: 700;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-light);
             margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .kpi-number {
-            font-size: 20px;
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .kpi-label {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        .kpi-metric {
+            font-size: 18px;
             font-weight: 600;
-            margin-top: 6px;
+            color: var(--text-dark);
+            margin: 8px 0;
+        }
+
+        .kpi-growth {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .kpi-growth.positive {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .kpi-growth.negative {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .kpi-growth.neutral {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        /* HIGHLIGHT CARD */
+        .kpi-card.highlight {
+            background: linear-gradient(135deg, rgba(214,51,108,0.1), rgba(139,92,246,0.1));
+            border: 2px solid var(--primary);
+        }
+
+        /* LOADING STATE */
+        .loading {
+            text-align: center;
+            padding: 60px;
+            font-size: 18px;
+            color: var(--text-light);
+        }
+
+        /* ERROR STATE */
+        .error {
+            text-align: center;
+            padding: 60px;
+            font-size: 18px;
+            color: var(--danger);
         }
     </style>
 </head>
 
 <body>
 
-<!-- ADMIN AUTH CHECK -->
 <script>
 async function verifyAdmin() {
     try {
@@ -171,19 +249,57 @@ async function verifyAdmin() {
 
 <!-- HEADER -->
 <div class="page-header">
-    <h1 class="kpi-title">System KPIs</h1>
-    <p class="kpi-subtitle">Live analytics for platform performance</p>
+    <h1 class="kpi-title">Business KPIs & Financial Health</h1>
+    <p class="kpi-subtitle" id="updateTime">Loading analytics...</p>
 </div>
 
-<!-- KPI GRID -->
-<div id="kpiGrid" class="kpi-grid">
-    <p style="font-size:18px; text-align:center; opacity:0.6;">Loading KPIs...</p>
+<!-- LOADING -->
+<div id="loadingState" class="loading">
+    <p>📊 Calculating business metrics...</p>
+</div>
+
+<!-- ERROR -->
+<div id="errorState" class="error" style="display:none;">
+    <p>❌ Failed to load KPI data. Please refresh the page.</p>
+</div>
+
+<!-- KPI SECTIONS -->
+<div id="kpiContent" style="display:none;">
+
+    <!-- REVENUE METRICS -->
+    <div class="section-header">💰 Revenue & Growth</div>
+    <div class="kpi-grid" id="revenueGrid"></div>
+
+    <!-- SUBSCRIPTION METRICS -->
+    <div class="section-header">📊 Subscription Health</div>
+    <div class="kpi-grid" id="subscriptionGrid"></div>
+
+    <!-- CUSTOMER METRICS -->
+    <div class="section-header">👥 Customer Metrics</div>
+    <div class="kpi-grid" id="customerGrid"></div>
+
+    <!-- ENGAGEMENT METRICS -->
+    <div class="section-header">💌 Engagement & Activity</div>
+    <div class="kpi-grid" id="engagementGrid"></div>
+
 </div>
 
 <script>
-// ----------------------------------------------------------
-// LOAD KPI RESULTS FROM NEW BACKEND
-// ----------------------------------------------------------
+function formatCurrency(value) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2
+    }).format(value);
+}
+
+function formatGrowth(value) {
+    const num = parseFloat(value);
+    const className = num > 0 ? 'positive' : num < 0 ? 'negative' : 'neutral';
+    const symbol = num > 0 ? '↑' : num < 0 ? '↓' : '→';
+    return `<span class="kpi-growth ${className}">${symbol} ${Math.abs(num).toFixed(2)}%</span>`;
+}
+
 async function loadKPIs() {
     try {
         const res = await fetch("/api/admin/kpis", {
@@ -192,54 +308,144 @@ async function loadKPIs() {
         });
 
         if (!res.ok) {
-            document.getElementById("kpiGrid").innerHTML =
-                "<p style='text-align:center; color:red;'>Failed to load KPI data.</p>";
+            document.getElementById("loadingState").style.display = "none";
+            document.getElementById("errorState").style.display = "block";
             return;
         }
 
         const k = await res.json();
 
-        // Builds correct response based on new KPI schema
-        document.getElementById("kpiGrid").innerHTML = `
+        // Update timestamp
+        document.getElementById("updateTime").innerText = 
+            `Last updated: ${new Date(k.meta.generatedAt).toLocaleString()} • ${k.meta.currentMonth}`;
 
+        // REVENUE METRICS
+        document.getElementById("revenueGrid").innerHTML = `
+            <div class="kpi-card highlight">
+                <h3>Monthly Recurring Revenue</h3>
+                <div class="kpi-number">${formatCurrency(k.revenue.currentMRR)}</div>
+                <div class="kpi-label">Current MRR</div>
+                ${formatGrowth(k.revenue.mrrGrowthPercent)}
+            </div>
+
+            <div class="kpi-card">
+                <h3>Annual Recurring Revenue</h3>
+                <div class="kpi-number">${formatCurrency(k.revenue.currentARR)}</div>
+                <div class="kpi-label">Projected ARR (MRR × 12)</div>
+            </div>
+
+            <div class="kpi-card highlight">
+                <h3>Projected This Month</h3>
+                <div class="kpi-number">${formatCurrency(k.revenue.projectedEndOfMonth)}</div>
+                <div class="kpi-label">Earned: ${formatCurrency(k.revenue.earnedThisMonth)}</div>
+                <div class="kpi-label" style="margin-top:4px;">
+                    ${k.meta.daysIntoMonth} of ${k.meta.daysIntoMonth + k.meta.daysRemainingInMonth} days elapsed
+                </div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Last Month MRR</h3>
+                <div class="kpi-number">${formatCurrency(k.revenue.lastMonthMRR)}</div>
+                <div class="kpi-label">Previous period comparison</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Avg Revenue Per User</h3>
+                <div class="kpi-number">${formatCurrency(k.revenue.avgRevenuePerUser)}</div>
+                <div class="kpi-label">ARPU (Monthly)</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Estimated Customer LTV</h3>
+                <div class="kpi-number">${formatCurrency(k.churn.estimatedLTV)}</div>
+                <div class="kpi-label">Lifetime Value per customer</div>
+            </div>
+        `;
+
+        // SUBSCRIPTION METRICS
+        document.getElementById("subscriptionGrid").innerHTML = `
+            <div class="kpi-card">
+                <h3>Active Subscriptions</h3>
+                <div class="kpi-number">${k.subscriptions.total}</div>
+                <div class="kpi-metric">🆓 Trial: ${k.subscriptions.trial}</div>
+                <div class="kpi-metric">💙 Basic: ${k.subscriptions.basic}</div>
+                <div class="kpi-metric">💜 Plus: ${k.subscriptions.plus}</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Cancellations</h3>
+                <div class="kpi-number">${k.cancellations.canceledThisMonth}</div>
+                <div class="kpi-label">Canceled this month</div>
+                <div class="kpi-metric">Still active: ${k.cancellations.canceledButStillActive}</div>
+                <div class="kpi-metric">Last month: ${k.cancellations.canceledLastMonth}</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Monthly Churn Rate</h3>
+                <div class="kpi-number">${k.churn.monthlyChurnRate}%</div>
+                <div class="kpi-label">Customer churn percentage</div>
+                <div class="kpi-metric">Avg Lifespan: ${k.churn.avgLifespanMonths} months</div>
+            </div>
+        `;
+
+        // CUSTOMER METRICS
+        document.getElementById("customerGrid").innerHTML = `
             <div class="kpi-card">
                 <h3>Total Customers</h3>
                 <div class="kpi-number">${k.customers.total}</div>
+                <div class="kpi-label">All registered users</div>
             </div>
 
             <div class="kpi-card">
-                <h3>Recipients</h3>
-                <div class="kpi-number">Total: ${k.recipients.total}</div>
-                <div class="kpi-number">Active: ${k.recipients.active}</div>
-                <div class="kpi-number">Unsubscribed: ${k.recipients.unsubscribed}</div>
-                <div class="kpi-number">30d Growth: ${k.recipients.netGrowth}</div>
+                <h3>Active Subscribers</h3>
+                <div class="kpi-number">${k.customers.activeSubscribers}</div>
+                <div class="kpi-label">Currently paying customers</div>
             </div>
 
             <div class="kpi-card">
-                <h3>Stripe Subscriptions</h3>
-                <div class="kpi-number">Active: ${k.subscriptions.active}</div>
-                <div class="kpi-number">MRR: $${k.subscriptions.mrr}</div>
-                <div class="kpi-number">Churn: ${(k.subscriptions.churnRate * 100).toFixed(2)}%</div>
-            </div>
-
-            <div class="kpi-card">
-                <h3>Cart Metrics</h3>
-                <div class="kpi-number">Total Carts: ${k.carts.total}</div>
-                <div class="kpi-number">Active Carts: ${k.carts.active}</div>
-                <div class="kpi-number">Avg Cart Value: $${k.carts.avgCartValue.toFixed(2)}</div>
-                <div class="kpi-number">Recoverable Revenue: $${k.carts.recoverableRevenue.toFixed(2)}</div>
+                <h3>New This Month</h3>
+                <div class="kpi-number">${k.customers.newThisMonth}</div>
+                <div class="kpi-label">Customer acquisitions</div>
             </div>
         `;
+
+        // ENGAGEMENT METRICS
+        document.getElementById("engagementGrid").innerHTML = `
+            <div class="kpi-card">
+                <h3>Total Recipients</h3>
+                <div class="kpi-number">${k.recipients.total}</div>
+                <div class="kpi-metric">Active: ${k.recipients.active}</div>
+                <div class="kpi-metric">Added this month: ${k.recipients.addedThisMonth}</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Messages Sent</h3>
+                <div class="kpi-number">${k.messages.totalSent.toLocaleString()}</div>
+                <div class="kpi-label">All-time total</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>This Month</h3>
+                <div class="kpi-number">${k.messages.sentThisMonth.toLocaleString()}</div>
+                <div class="kpi-label">Messages sent</div>
+                <div class="kpi-metric">Last month: ${k.messages.sentLastMonth.toLocaleString()}</div>
+            </div>
+        `;
+
+        // Show content
+        document.getElementById("loadingState").style.display = "none";
+        document.getElementById("kpiContent").style.display = "block";
+
     } catch (err) {
-        document.getElementById("kpiGrid").innerHTML =
-            "<p style='text-align:center; color:red;'>Error loading KPIs.</p>";
+        console.error("KPI LOAD ERROR:", err);
+        document.getElementById("loadingState").style.display = "none";
+        document.getElementById("errorState").style.display = "block";
     }
 }
 
-// ----------------------------------------------------------
 // LOGOUT
-// ----------------------------------------------------------
-document.getElementById("logout-admin").addEventListener("click", async () => {
+document.getElementById("logout-admin").addEventListener("click", async (e) => {
+    e.preventDefault();
     await fetch("/api/admin/logout", {
         method: "POST",
         credentials: "include"
@@ -247,9 +453,7 @@ document.getElementById("logout-admin").addEventListener("click", async () => {
     window.location.href = "/admin_login.html";
 });
 
-// ----------------------------------------------------------
 // INIT
-// ----------------------------------------------------------
 (async () => {
     const ok = await verifyAdmin();
     if (ok) loadKPIs();

@@ -103,7 +103,7 @@ if (type === "customer.subscription.updated") {
     
     // Check if this subscription is actually in our database
     const check = await db.query(
-        `SELECT stripe_subscription_id FROM customers WHERE stripe_customer_id=$1`,
+        `SELECT stripe_subscription_id, id FROM customers WHERE stripe_customer_id=$1`,
         [customerId]
     );
     
@@ -113,6 +113,7 @@ if (type === "customer.subscription.updated") {
         return res.json({ received: true });
     }
     
+    const customer_db_id = check.rows[0].id;
     const priceId = obj.items.data[0].price.id;
 
     let plan = "none";
@@ -120,7 +121,7 @@ if (type === "customer.subscription.updated") {
     if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
     if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
 
-    // If cancellation scheduled, set subscription_end date
+    // If cancellation scheduled, set subscription_end date AND delete recipients
     const subscriptionEnd = obj.cancel_at_period_end 
         ? new Date(obj.current_period_end * 1000)
         : null;
@@ -128,35 +129,61 @@ if (type === "customer.subscription.updated") {
     await db.query(`
         UPDATE customers
         SET
-            has_subscription = true,
-            current_plan = $1,
-            subscription_end = $2
-        WHERE stripe_customer_id=$3
-    `, [plan, subscriptionEnd, customerId]);
+            has_subscription = $1,
+            current_plan = $2,
+            subscription_end = $3
+        WHERE stripe_customer_id=$4
+    `, [!obj.cancel_at_period_end, plan, subscriptionEnd, customerId]);
+
+    // 🔥 NEW: DELETE ALL RECIPIENTS IMMEDIATELY WHEN CANCELED
+    if (obj.cancel_at_period_end) {
+        await db.query(`
+            DELETE FROM users WHERE customer_id = $1
+        `, [customer_db_id]);
+        
+        console.log(`🗑️  Deleted all recipients for customer ${customer_db_id} due to cancellation`);
+    }
 
     console.log(`🔄 Subscription updated: ${plan}${subscriptionEnd ? ' (canceling at period end)' : ''}`);
 }
 
-            /***********************************************************
-             * SUBSCRIPTION CANCELED/DELETED
-             * This fires when subscription actually ends (immediately or at period end)
-             ***********************************************************/
-            if (type === "customer.subscription.deleted") {
-                const customerId = obj.customer;
+/***********************************************************
+ * SUBSCRIPTION CANCELED/DELETED
+ * This fires when subscription actually ends (immediately or at period end)
+ ***********************************************************/
+if (type === "customer.subscription.deleted") {
+    const customerId = obj.customer;
+    
+    // Get customer DB ID before cleanup
+    const custQ = await db.query(
+        `SELECT id FROM customers WHERE stripe_customer_id=$1`,
+        [customerId]
+    );
+    
+    if (custQ.rows.length > 0) {
+        const customer_db_id = custQ.rows[0].id;
+        
+        // Delete all recipients
+        await db.query(`
+            DELETE FROM users WHERE customer_id = $1
+        `, [customer_db_id]);
+        
+        console.log(`🗑️  Deleted all recipients for canceled subscription`);
+    }
 
-await db.query(`
-    UPDATE customers
-    SET 
-        has_subscription = false,
-        current_plan = 'none',
-        stripe_subscription_id = NULL,
-        trial_active = false,
-        subscription_end = NULL
-    WHERE stripe_customer_id=$1
-`, [customerId]);
+    await db.query(`
+        UPDATE customers
+        SET 
+            has_subscription = false,
+            current_plan = 'none',
+            stripe_subscription_id = NULL,
+            trial_active = false,
+            subscription_end = NULL
+        WHERE stripe_customer_id=$1
+    `, [customerId]);
 
-                console.log("❌ Subscription ended");
-            }
+    console.log("❌ Subscription ended");
+}
 
         } catch (err) {
             console.error("❌ Webhook handler error:", err);
@@ -1737,6 +1764,311 @@ cron.schedule("* * * * *", async () => {
         client.release();
     }
 });
+
+/***************************************************************
+ *  COMPREHENSIVE KPI ENDPOINT FOR ADMIN DASHBOARD
+ *  Add this to your backend (Part 5 or 6)
+ ***************************************************************/
+
+app.get("/api/admin/kpis", global.__LT_authAdmin, async (req, res) => {
+    try {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        // Start of current month
+        const monthStart = new Date(currentYear, currentMonth, 1);
+        
+        // Start of last month
+        const lastMonthStart = new Date(currentYear, currentMonth - 1, 1);
+        const lastMonthEnd = new Date(currentYear, currentMonth, 0, 23, 59, 59);
+
+        /***********************************************************
+         * 1. CUSTOMER METRICS
+         ***********************************************************/
+        const totalCustomers = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM customers`
+        );
+
+        const activeSubscribers = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM customers 
+             WHERE has_subscription = true 
+             OR (subscription_end IS NOT NULL AND subscription_end > $1)`,
+            [now]
+        );
+
+        const newCustomersThisMonth = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM customers 
+             WHERE created_at >= $1`,
+            [monthStart]
+        );
+
+        /***********************************************************
+         * 2. SUBSCRIPTION BREAKDOWN BY PLAN
+         ***********************************************************/
+        const planBreakdown = await global.__LT_pool.query(
+            `SELECT 
+                current_plan,
+                COUNT(*) as count
+             FROM customers
+             WHERE has_subscription = true
+             OR (subscription_end IS NOT NULL AND subscription_end > $1)
+             GROUP BY current_plan`,
+            [now]
+        );
+
+        const planCounts = {
+            trial: 0,
+            basic: 0,
+            plus: 0
+        };
+
+        planBreakdown.rows.forEach(row => {
+            if (row.current_plan in planCounts) {
+                planCounts[row.current_plan] = Number(row.count);
+            }
+        });
+
+        /***********************************************************
+         * 3. CANCELLATION METRICS
+         ***********************************************************/
+        const canceledButActive = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM customers
+             WHERE subscription_end IS NOT NULL 
+             AND subscription_end > $1
+             AND has_subscription = true`,
+            [now]
+        );
+
+        const canceledThisMonth = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM customers
+             WHERE subscription_end >= $1 
+             AND subscription_end IS NOT NULL`,
+            [monthStart]
+        );
+
+        const canceledLastMonth = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM customers
+             WHERE subscription_end >= $1 
+             AND subscription_end <= $2`,
+            [lastMonthStart, lastMonthEnd]
+        );
+
+        /***********************************************************
+         * 4. MONTHLY RECURRING REVENUE (MRR)
+         ***********************************************************/
+        // Pricing (update these to match your actual prices)
+        const PRICES = {
+            trial: 0,      // Free trial
+            basic: 9.99,   // Update to your actual price
+            plus: 19.99    // Update to your actual price
+        };
+
+        const currentMRR = 
+            (planCounts.basic * PRICES.basic) +
+            (planCounts.plus * PRICES.plus);
+
+        const projectedMonthlyRevenue = currentMRR;
+
+        // Calculate ARR (Annual Recurring Revenue)
+        const currentARR = currentMRR * 12;
+
+        /***********************************************************
+         * 5. CHURN RATE CALCULATION
+         ***********************************************************/
+        const startOfLastMonthSubs = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM customers
+             WHERE (has_subscription = true OR subscription_end > $1)
+             AND created_at < $2`,
+            [lastMonthStart, lastMonthStart]
+        );
+
+        const lastMonthSubCount = Number(startOfLastMonthSubs.rows[0].count);
+        const lastMonthChurned = Number(canceledLastMonth.rows[0].count);
+        
+        const churnRate = lastMonthSubCount > 0 
+            ? (lastMonthChurned / lastMonthSubCount) * 100 
+            : 0;
+
+        /***********************************************************
+         * 6. RECIPIENT METRICS
+         ***********************************************************/
+        const totalRecipients = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM users`
+        );
+
+        const activeRecipients = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM users WHERE is_active = true`
+        );
+
+        const recipientsAddedThisMonth = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM users WHERE created_at >= $1`,
+            [monthStart]
+        );
+
+        /***********************************************************
+         * 7. MESSAGE METRICS
+         ***********************************************************/
+        const totalMessagesSent = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM message_logs`
+        );
+
+        const messagesThisMonth = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM message_logs WHERE sent_at >= $1`,
+            [monthStart]
+        );
+
+        const messagesLastMonth = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM message_logs 
+             WHERE sent_at >= $1 AND sent_at <= $2`,
+            [lastMonthStart, lastMonthEnd]
+        );
+
+        /***********************************************************
+         * 8. GROWTH METRICS
+         ***********************************************************/
+        const lastMonthMRR = await calculateLastMonthMRR(lastMonthStart);
+        
+        const mrrGrowth = lastMonthMRR > 0 
+            ? ((currentMRR - lastMonthMRR) / lastMonthMRR) * 100 
+            : 0;
+
+        /***********************************************************
+         * 9. PROJECTED END-OF-MONTH REVENUE
+         ***********************************************************/
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const currentDay = now.getDate();
+        const daysRemaining = daysInMonth - currentDay;
+        
+        // Daily MRR rate
+        const dailyMRR = currentMRR / daysInMonth;
+        
+        // Projected revenue for remaining days
+        const projectedRemainingRevenue = dailyMRR * daysRemaining;
+        
+        // Already earned this month (prorated)
+        const earnedSoFar = dailyMRR * currentDay;
+
+        /***********************************************************
+         * 10. CUSTOMER LIFETIME VALUE (LTV) ESTIMATE
+         ***********************************************************/
+        const avgCustomerLifespanMonths = churnRate > 0 
+            ? 1 / (churnRate / 100) 
+            : 12; // Default to 12 months if no churn
+
+        const avgRevenuePerUser = Number(activeSubscribers.rows[0].count) > 0
+            ? currentMRR / Number(activeSubscribers.rows[0].count)
+            : 0;
+
+        const estimatedLTV = avgRevenuePerUser * avgCustomerLifespanMonths;
+
+        /***********************************************************
+         * RETURN COMPREHENSIVE KPI OBJECT
+         ***********************************************************/
+        return res.json({
+            // Core Metrics
+            customers: {
+                total: Number(totalCustomers.rows[0].count),
+                activeSubscribers: Number(activeSubscribers.rows[0].count),
+                newThisMonth: Number(newCustomersThisMonth.rows[0].count)
+            },
+
+            // Subscription Breakdown
+            subscriptions: {
+                trial: planCounts.trial,
+                basic: planCounts.basic,
+                plus: planCounts.plus,
+                total: planCounts.trial + planCounts.basic + planCounts.plus
+            },
+
+            // Cancellation Metrics
+            cancellations: {
+                canceledButStillActive: Number(canceledButActive.rows[0].count),
+                canceledThisMonth: Number(canceledThisMonth.rows[0].count),
+                canceledLastMonth: Number(canceledLastMonth.rows[0].count)
+            },
+
+            // Revenue Metrics
+            revenue: {
+                currentMRR: currentMRR.toFixed(2),
+                currentARR: currentARR.toFixed(2),
+                lastMonthMRR: lastMonthMRR.toFixed(2),
+                mrrGrowthPercent: mrrGrowth.toFixed(2),
+                earnedThisMonth: earnedSoFar.toFixed(2),
+                projectedEndOfMonth: (earnedSoFar + projectedRemainingRevenue).toFixed(2),
+                avgRevenuePerUser: avgRevenuePerUser.toFixed(2)
+            },
+
+            // Churn & Retention
+            churn: {
+                monthlyChurnRate: churnRate.toFixed(2),
+                estimatedLTV: estimatedLTV.toFixed(2),
+                avgLifespanMonths: avgCustomerLifespanMonths.toFixed(1)
+            },
+
+            // Recipients
+            recipients: {
+                total: Number(totalRecipients.rows[0].count),
+                active: Number(activeRecipients.rows[0].count),
+                addedThisMonth: Number(recipientsAddedThisMonth.rows[0].count)
+            },
+
+            // Messages
+            messages: {
+                totalSent: Number(totalMessagesSent.rows[0].count),
+                sentThisMonth: Number(messagesThisMonth.rows[0].count),
+                sentLastMonth: Number(messagesLastMonth.rows[0].count)
+            },
+
+            // Date Context
+            meta: {
+                generatedAt: now.toISOString(),
+                currentMonth: monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+                daysIntoMonth: currentDay,
+                daysRemainingInMonth: daysRemaining
+            }
+        });
+
+    } catch (err) {
+        console.error("KPI ERROR:", err);
+        return res.status(500).json({ error: "Failed to calculate KPIs" });
+    }
+});
+
+/***********************************************************
+ * HELPER: CALCULATE LAST MONTH'S MRR
+ ***********************************************************/
+async function calculateLastMonthMRR(lastMonthStart) {
+    const PRICES = {
+        trial: 0,
+        basic: 9.99,
+        plus: 19.99
+    };
+
+    const lastMonthEnd = new Date(lastMonthStart);
+    lastMonthEnd.setMonth(lastMonthEnd.getMonth() + 1);
+    lastMonthEnd.setDate(0);
+    lastMonthEnd.setHours(23, 59, 59);
+
+    const lastMonthSubs = await global.__LT_pool.query(
+        `SELECT 
+            current_plan,
+            COUNT(*) as count
+         FROM customers
+         WHERE (has_subscription = true OR subscription_end > $1)
+         AND created_at < $2
+         GROUP BY current_plan`,
+        [lastMonthEnd, lastMonthEnd]
+    );
+
+    let lastMonthMRR = 0;
+    lastMonthSubs.rows.forEach(row => {
+        const price = PRICES[row.current_plan] || 0;
+        lastMonthMRR += price * Number(row.count);
+    });
+
+    return lastMonthMRR;
+}
 
 /***************************************************************
  *  SERVER START

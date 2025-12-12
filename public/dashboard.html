@@ -14,6 +14,7 @@
             --text-soft: #5f3a4d;
             --danger: #c62828;
             --secondary-btn: #6b4bb8;
+            --warning: #ff9800;
         }
 
         body {
@@ -56,6 +57,17 @@
             margin-bottom: 25px;
         }
 
+        #subscriptionBanner.active {
+            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+            color: #2e7d32;
+        }
+
+        #subscriptionBanner.canceling {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            color: #e65100;
+            border: 2px solid #ff9800;
+        }
+
         #subscriptionBanner a {
             display: inline-block;
             margin-top: 12px;
@@ -65,6 +77,19 @@
             border-radius: 10px;
             text-decoration: none;
             font-weight: 600;
+        }
+
+        .countdown-box {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .countdown-box strong {
+            font-size: 18px;
+            color: var(--warning);
         }
 
         .recipient-box {
@@ -162,11 +187,11 @@
     <div id="addForm">
         <input id="r_name" placeholder="Recipient Name">
         <input type="tel" id="phone_number" placeholder="Phone (optional)">
-<select id="delivery_method">
-    <option value="email">Email Only</option>
-    <option value="sms">SMS Only</option>
-    <option value="both">Both Email & SMS</option>
-</select>
+        <select id="delivery_method">
+            <option value="email">Email Only</option>
+            <option value="sms">SMS Only</option>
+            <option value="both">Both Email & SMS</option>
+        </select>
         <input id="r_email" type="email" placeholder="Recipient Email">
 
         <select id="r_relationship">
@@ -273,15 +298,52 @@ function hasActiveAccess(data) {
 }
 
 /* ============================================================
-   UPDATE SUBSCRIPTION BANNER
+   CALCULATE TIME REMAINING
+============================================================ */
+function getTimeRemaining(endDate) {
+    const now = new Date();
+    const end = new Date(endDate);
+    const diff = end - now;
+
+    if (diff <= 0) return null;
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+    if (days > 0) {
+        return `${days} day${days !== 1 ? 's' : ''} and ${hours} hour${hours !== 1 ? 's' : ''}`;
+    } else {
+        return `${hours} hour${hours !== 1 ? 's' : ''}`;
+    }
+}
+
+/* ============================================================
+   UPDATE SUBSCRIPTION BANNER WITH CANCELLATION INFO
 ============================================================ */
 function updateSubscriptionBanner(data) {
     const banner = document.getElementById("subscriptionBanner");
     banner.style.display = "block";
+    banner.className = ""; // Reset classes
 
     const active = hasActiveAccess(data);
+    const now = new Date();
 
-    if (active) {
+    // CASE 1: Active subscription WITH cancellation scheduled
+    if (active && data.subscription_end && new Date(data.subscription_end) > now) {
+        banner.className = "canceling";
+        
+        const endDate = new Date(data.subscription_end);
+        const endDateStr = endDate.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+        
+        const timeLeft = getTimeRemaining(data.subscription_end);
+
         const planNames = {
             basic: "LoveText Basic ❤️",
             plus: "LoveText Plus 💜",
@@ -289,19 +351,36 @@ function updateSubscriptionBanner(data) {
         };
 
         banner.innerHTML = `
-            You currently have an active <strong>${planNames[data.current_plan] || "subscription"}</strong>.
+            ⚠️ <strong>Your subscription has been canceled</strong><br><br>
+            You still have access to <strong>${planNames[data.current_plan] || "your plan"}</strong> until your billing period ends.
+            <div class="countdown-box">
+                📅 <strong>Access ends:</strong> ${endDateStr}<br>
+                ⏰ <strong>Time remaining:</strong> ${timeLeft || 'Less than an hour'}
+            </div>
+            <small style="display:block; margin-top:10px; opacity:0.8;">
+                Your recipients and messages will be deleted when your subscription ends.
+            </small>
         `;
         return;
     }
 
-    if (data.subscription_end) {
-        const end = new Date(data.subscription_end).toLocaleDateString();
+    // CASE 2: Active subscription (normal)
+    if (active) {
+        banner.className = "active";
+        
+        const planNames = {
+            basic: "LoveText Basic ❤️",
+            plus: "LoveText Plus 💜",
+            trial: "Free Trial 💖"
+        };
+
         banner.innerHTML = `
-            Your subscription ends on <strong>${end}</strong>.
+            ✅ You currently have an active <strong>${planNames[data.current_plan] || "subscription"}</strong>.
         `;
         return;
     }
 
+    // CASE 3: No subscription
     banner.innerHTML = `
         You do not have a subscription.<br><br>
         <a href="/products.html">Choose a Plan</a>
