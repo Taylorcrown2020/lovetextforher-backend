@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account ❤️</title>
 
     <!-- Use public navbar rules -->
@@ -326,17 +327,18 @@ function closeMobileMenu() {
     body.style.overflow = '';
 }
 
-// REMOVED: Auto-redirect check that was causing issues
-// The register page should always be accessible
-
 // -------------------------------------------------
 // REGISTER USER — Fully compatible with server.js
 // -------------------------------------------------
 async function registerUser() {
+    const nameInput = document.getElementById("name");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const msgBox = document.getElementById("msg");
+
     const name = nameInput.value.trim();
     const email = emailInput.value.trim();
-    const pass = password.value.trim();
-    const msgBox = msg;
+    const pass = passwordInput.value.trim();
 
     msgBox.innerText = "";
 
@@ -367,18 +369,13 @@ async function registerUser() {
     }
 }
 
-
 // -------------------------------------------------
 // ENTER key submits the form
 // -------------------------------------------------
 document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") registerUser();
 });
-</script>
 
-<script>
-const nameInput = document.getElementById("name");
-const emailInput = document.getElementById("email");
 </script>
 
 </body>
