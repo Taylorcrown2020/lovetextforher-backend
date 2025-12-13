@@ -326,23 +326,8 @@ function closeMobileMenu() {
     body.style.overflow = '';
 }
 
-// -------------------------------------------------
-// If already logged in → go to dashboard
-// -------------------------------------------------
-document.addEventListener("DOMContentLoaded", async () => {
-    try {
-        const res = await fetch("/api/customer/me", {
-            credentials: "include"
-        });
-        if (!res.ok) return;
-
-        const me = await res.json();
-        if (me?.id) {
-            window.location.href = "/dashboard.html";
-        }
-    } catch {}
-});
-
+// REMOVED: Auto-redirect check that was causing issues
+// The register page should always be accessible
 
 // -------------------------------------------------
 // REGISTER USER — Fully compatible with server.js

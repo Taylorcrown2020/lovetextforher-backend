@@ -362,7 +362,7 @@
             <li><a href="/dashboard.html" onclick="closeMobileMenu()">Dashboard</a></li>
             <li><a href="/products.html" onclick="closeMobileMenu()">Products</a></li>
             <li><a href="/cart.html" onclick="closeMobileMenu()">Cart</a></li>
-            <li><a href="/login.html" onclick="closeMobileMenu()">Logout</a></li>
+            <li><a href="#" onclick="handleLogout(event); return false;">Logout</a></li>
         </ul>
     </div>
 </div>
@@ -402,6 +402,31 @@ function closeMobileMenu() {
     btn.classList.remove('active');
     nav.classList.remove('active');
     body.style.overflow = '';
+}
+
+/* --------------------------------------------------
+   LOGOUT FUNCTION
+-------------------------------------------------- */
+async function handleLogout(event) {
+    if (event) event.preventDefault();
+    
+    try {
+        // Call logout endpoint
+        await fetch("/api/customer/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+        
+        // Clear any local state
+        sessionStorage.clear();
+        
+        // Redirect to login
+        window.location.href = "/login.html";
+    } catch (err) {
+        console.error("Logout error:", err);
+        // Still redirect even if error
+        window.location.href = "/login.html";
+    }
 }
 
 /* --------------------------------------------------
