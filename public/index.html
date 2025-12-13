@@ -30,9 +30,9 @@
         body {
             background: #fff;
             color: var(--text-dark);
+            overflow-x: hidden;
         }
 
-        
         /* ================= PROMO BANNER ================= */
         .promo-banner {
             position: fixed;
@@ -40,9 +40,9 @@
             left: 0;
             right: 0;
             background: linear-gradient(135deg, #ffe3ed, #ffcfe0);
-            padding: 12px 20px;
+            padding: 8px 20px;
             text-align: center;
-            z-index: 1001;
+            z-index: 998;
             border-bottom: 1px solid rgba(214, 51, 108, 0.2);
             box-shadow: 0 2px 10px rgba(214, 51, 108, 0.15);
         }
@@ -53,36 +53,37 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .promo-badge {
             background: var(--primary);
             color: white;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 13px;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
 
         .promo-text {
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 600;
             color: #b81847;
+            line-height: 1.2;
         }
 
         .promo-cta {
             background: var(--primary);
             color: white;
-            padding: 6px 16px;
-            border-radius: 8px;
-            font-size: 14px;
+            padding: 4px 14px;
+            border-radius: 6px;
+            font-size: 12px;
             font-weight: 600;
             text-decoration: none;
             transition: 0.2s;
-            margin-left: 8px;
+            margin-left: 6px;
         }
 
         .promo-cta:hover {
@@ -90,182 +91,19 @@
             transform: translateY(-1px);
         }
 
-        /* ================= HERO ================= */
-        .hero {
-            max-width: var(--max-width);
-            margin: 150px auto 0;
-            padding: 0 28px;
-            min-height: 520px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .hero-text { max-width: 520px; }
-
-        .hero-title {
-            font-size: 54px;
-            line-height: 1.15;
-            font-weight: 800;
-            margin-bottom: 25px;
-        }
-
-        .hero-sub {
-            font-size: 18px;
-            color: var(--text-light);
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-
-        .cta-btn {
-            background: var(--primary);
-            color: #fff;
-            padding: 14px 28px;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: 0.25s ease;
-            box-shadow: 0 12px 28px rgba(214,51,108,0.25);
-        }
-
-        .cta-btn:hover {
-            background: #b8285b;
-            transform: translateY(-2px);
-        }
-
-        /* ================= HERO MOCKUP ================= */
-        .hero-mockup {
-            position: relative;
-            width: 440px;
-            height: 420px;
-        }
-
-        .glass-card {
-            position: absolute;
-            width: 320px;
-            height: 140px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.55);
-            backdrop-filter: blur(22px);
-            border: 1px solid rgba(255,255,255,0.7);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-        }
-
-        .glass-card .line {
-            height: 10px;
-            border-radius: 6px;
-            margin: 15px 20px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-        }
-
-        .card-top { top: 0; right: 10px; transform: rotate(2deg); }
-        .card-mid { top: 130px; left: 20px; transform: rotate(-3deg); }
-        .card-bottom { top: 260px; right: 50px; transform: rotate(1deg); }
-
-        /* ================= FEATURES ================= */
-        .features-strip {
-            background: var(--primary-light);
-            padding: 70px 0;
-            margin-top: 70px;
-        }
-
-        .features {
-            max-width: var(--max-width);
-            margin: auto;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 28px;
-        }
-
-        .feature {
-            text-align: center;
-            width: 25%;
-        }
-
-        .feature svg {
-            width: 45px;
-            height: 45px;
-            stroke: var(--primary);
-            stroke-width: 2;
-            fill: none;
-            margin-bottom: 14px;
-        }
-
-        /* ================= PRODUCTS ================= */
-        .products-section {
-            max-width: var(--max-width);
-            margin: 90px auto;
-            padding: 0 28px;
-        }
-
-        .products-title {
-            text-align: center;
-            font-size: 34px;
-            font-weight: 800;
-            margin-bottom: 40px;
-        }
-
-        .products {
-            display: flex;
-            justify-content: space-between;
-            gap: 32px;
-        }
-
-        .product-card {
-            flex: 1;
-            background: rgba(255,255,255,0.65);
-            backdrop-filter: blur(18px);
-            border-radius: 22px;
-            padding: 28px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.7);
-            box-shadow: 0 25px 45px rgba(0,0,0,0.06);
-        }
-
-        .product-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .product-desc {
-            color: var(--text-light);
-            font-size: 15px;
-            margin-bottom: 16px;
-        }
-
-        .product-price {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 18px;
-        }
-
-        .product-btn {
-            background: var(--primary);
-            color: #fff;
-            padding: 10px 22px;
-            font-size: 15px;
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .product-btn:hover { background: #b8285b; }
-
-/* ================= MOBILE MENU ================= */
+        /* ================= MOBILE MENU ================= */
         .mobile-menu-btn {
             display: none;
             position: fixed;
-            top: 20px;
+            top: 45px;
             right: 20px;
             z-index: 1000;
-            background: none;
-            border: none;
+            background: white;
+            border: 1px solid rgba(214, 51, 108, 0.2);
             cursor: pointer;
             padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .mobile-menu-btn span {
@@ -346,7 +184,7 @@
         /* ================= HERO ================= */
         .hero {
             max-width: var(--max-width);
-            margin: 150px auto 0;
+            margin: 180px auto 0;
             padding: 0 28px;
             min-height: 520px;
             display: flex;
@@ -525,6 +363,10 @@
                 display: none !important;
             }
 
+            body {
+                padding-top: 40px;
+            }
+
             .hero {
                 flex-direction: column;
                 text-align: center;
@@ -654,6 +496,31 @@
                 width: 100%;
                 padding: 14px 22px;
                 font-size: 16px;
+            }
+
+            /* Mobile promo banner adjustments */
+            .promo-banner {
+                padding: 6px 16px;
+            }
+
+            .promo-banner-content {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .promo-badge {
+                font-size: 10px;
+                padding: 2px 8px;
+            }
+
+            .promo-text {
+                font-size: 11px;
+            }
+
+            .promo-cta {
+                font-size: 11px;
+                padding: 3px 12px;
+                margin-left: 0;
             }
         }
     </style>

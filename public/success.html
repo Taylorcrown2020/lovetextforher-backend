@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Success ❤️</title>
 
-    <!-- Customer navbar loads normally -->
-    <script>
-        window.FORCE_PUBLIC_NAV = false;
-    </script>
-
     <style>
         :root {
             --primary: #d6336c;
@@ -20,22 +15,108 @@
         }
 
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
 
         body {
-            margin: 0;
             font-family: "Inter", sans-serif;
             background: linear-gradient(135deg, #fff7fa, #f6f3ff);
             min-height: 100vh;
-            padding: 120px 20px 40px;
-            text-align: center;
-            animation: fadeIn 0.6s ease-out;
+            overflow-x: hidden;
+        }
+
+        /* ================= MOBILE MENU ================= */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: -10px;
+            z-index: 1000;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 28px;
+            height: 3px;
+            background: var(--text-dark);
+            margin: 5px 0;
+            transition: 0.3s;
+            border-radius: 2px;
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(-45deg) translate(-6px, 6px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(45deg) translate(-6px, -6px);
+        }
+
+        .mobile-nav-overlay {
+            display: none;
+            position: fixed;
+            top: 10px;
+            right: -100%;
+            width: 100%;
+            height: 100vh;
+            background: #fff;
+            z-index: 999;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+
+        .mobile-nav-overlay.active {
+            right: 0;
+        }
+
+        .mobile-nav-content {
+            padding: 80px 30px 40px;
+        }
+
+        .mobile-nav-links {
+            list-style: none;
+            margin-bottom: 40px;
+        }
+
+        .mobile-nav-links li {
+            margin-bottom: 30px;
+        }
+
+        .mobile-nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 20px;
+            font-weight: 600;
+            display: block;
+            padding: 10px 0;
+            transition: color 0.2s;
+        }
+
+        .mobile-nav-links a:hover {
+            color: var(--primary);
         }
 
         #navbar {
             width: 100%;
             height: 95px;
+        }
+
+        .success-wrapper {
+            max-width: 600px;
+            margin: 140px auto 40px;
+            padding: 0 20px;
+            text-align: center;
+            animation: fadeIn 0.6s ease-out;
         }
 
         @keyframes fadeIn {
@@ -44,16 +125,19 @@
         }
 
         .success-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 0 15px;
+            background: rgba(255,255,255,0.55);
+            backdrop-filter: blur(20px);
+            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.75);
+            padding: 48px 36px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.08);
         }
 
         h2 {
             color: var(--primary);
             font-size: 34px;
             font-weight: 800;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             line-height: 1.2;
         }
 
@@ -66,13 +150,13 @@
 
         a {
             display: inline-block;
-            padding: 14px 28px;
+            padding: 16px 32px;
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             color: white;
             text-decoration: none;
             border-radius: 12px;
             font-weight: 700;
-            font-size: 15px;
+            font-size: 16px;
             box-shadow: 0 8px 22px rgba(214, 51, 108, 0.25);
             transition: 0.25s;
         }
@@ -82,57 +166,82 @@
             box-shadow: 0 12px 28px rgba(214,51,108,0.35);
         }
 
-        /* ============== MOBILE IMPROVEMENTS ============== */
+        a:active {
+            transform: translateY(0);
+        }
+
+        /* ============== MOBILE ============== */
         @media (max-width: 768px) {
-            body {
-                padding: 100px 15px 30px;
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .mobile-nav-overlay {
+                display: block;
             }
 
             #navbar {
-                height: 80px;
+                display: none !important;
+            }
+
+            body {
+                padding-top: 60px;
+            }
+
+            .success-wrapper {
+                margin: 60px auto 30px;
+                padding: 0 20px;
             }
 
             .success-container {
-                padding: 0 10px;
+                padding: 40px 28px;
+                border-radius: 18px;
             }
 
             h2 {
                 font-size: 28px;
-                margin-bottom: 12px;
+                margin-bottom: 18px;
             }
 
             p {
                 font-size: 16px;
                 margin-bottom: 30px;
-                padding: 0 5px;
+                line-height: 1.65;
             }
 
             a {
-                padding: 16px 32px;
-                font-size: 16px;
+                padding: 18px 32px;
+                font-size: 17px;
                 width: 100%;
-                max-width: 280px;
+                max-width: 300px;
+                display: block;
+                margin: 0 auto;
             }
         }
 
-        @media (max-width: 480px) {
-            body {
-                padding: 90px 12px 25px;
+        @media (max-width: 380px) {
+            .success-wrapper {
+                margin: 50px auto 25px;
+                padding: 0 16px;
+            }
+
+            .success-container {
+                padding: 36px 24px;
             }
 
             h2 {
-                font-size: 24px;
-                margin-bottom: 10px;
+                font-size: 26px;
+                margin-bottom: 16px;
             }
 
             p {
                 font-size: 15px;
-                margin-bottom: 25px;
+                margin-bottom: 28px;
             }
 
             a {
-                padding: 14px 24px;
-                font-size: 15px;
+                padding: 17px 28px;
+                font-size: 16px;
             }
         }
     </style>
@@ -140,26 +249,69 @@
 
 <body>
 
+<button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+    <span></span>
+    <span></span>
+    <span></span>
+</button>
+
+<div class="mobile-nav-overlay" id="mobileNav">
+    <div class="mobile-nav-content">
+        <ul class="mobile-nav-links">
+            <li><a href="/dashboard.html" onclick="closeMobileMenu()">Dashboard</a></li>
+            <li><a href="/products.html" onclick="closeMobileMenu()">Products</a></li>
+            <li><a href="/cart.html" onclick="closeMobileMenu()">Cart</a></li>
+            <li><a href="#" onclick="handleLogout(event); return false;">Logout</a></li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    window.FORCE_PUBLIC_NAV = false;
+</script>
+
 <div id="navbar"></div>
 
-<div class="success-container">
-    <h2>❤️ Thank You for Your Purchase!</h2>
-    <p>
-        Your subscription or merchandise order has been processed successfully.<br>
-        You can now continue using all premium features.
-    </p>
+<div class="success-wrapper">
+    <div class="success-container">
+        <h2>❤️ Thank You for Your Purchase!</h2>
+        <p>
+            Your subscription or merchandise order has been processed successfully.<br>
+            You can now continue using all premium features.
+        </p>
 
-    <a href="/dashboard.html">Go to Dashboard</a>
+        <a href="/dashboard.html">Go to Dashboard</a>
+    </div>
 </div>
 
 <script src="/js/nav.js" defer></script>
 
 <script>
-/* ---------------------------------------------------------
-   After successful purchase:
-   - Clear the cart on customer side (merch only)
-   - Refresh subscription data (Stripe webhook already updates DB)
----------------------------------------------------------- */
+function toggleMobileMenu() {
+    const btn = document.querySelector('.mobile-menu-btn');
+    const nav = document.getElementById('mobileNav');
+    const body = document.body;
+    
+    btn.classList.toggle('active');
+    nav.classList.toggle('active');
+    
+    if (nav.classList.contains('active')) {
+        body.style.overflow = 'hidden';
+    } else {
+        body.style.overflow = '';
+    }
+}
+
+function closeMobileMenu() {
+    const btn = document.querySelector('.mobile-menu-btn');
+    const nav = document.getElementById('mobileNav');
+    const body = document.body;
+    
+    btn.classList.remove('active');
+    nav.classList.remove('active');
+    body.style.overflow = '';
+}
+
 async function finalize() {
     try {
         await fetch("/api/cart/clear", {
