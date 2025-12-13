@@ -32,6 +32,64 @@
             color: var(--text-dark);
         }
 
+        
+        /* ================= PROMO BANNER ================= */
+        .promo-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #ffe3ed, #ffcfe0);
+            padding: 12px 20px;
+            text-align: center;
+            z-index: 1001;
+            border-bottom: 1px solid rgba(214, 51, 108, 0.2);
+            box-shadow: 0 2px 10px rgba(214, 51, 108, 0.15);
+        }
+
+        .promo-banner-content {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .promo-badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .promo-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: #b81847;
+        }
+
+        .promo-cta {
+            background: var(--primary);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.2s;
+            margin-left: 8px;
+        }
+
+        .promo-cta:hover {
+            background: #b8285b;
+            transform: translateY(-1px);
+        }
+
         /* ================= HERO ================= */
         .hero {
             max-width: var(--max-width);
@@ -602,6 +660,15 @@
 </head>
 
 <body>
+
+<!-- Promo Banner -->
+<div class="promo-banner">
+    <div class="promo-banner-content">
+        <span class="promo-badge">Free Trial</span>
+        <span class="promo-text">Limited Time Only — Try LoveTextForHer Free for 3 Days</span>
+        <a href="/register.html" class="promo-cta">Get Started →</a>
+    </div>
+</div>
 
 <!-- Mobile Menu Button -->
 <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
