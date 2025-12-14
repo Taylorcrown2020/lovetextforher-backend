@@ -1926,8 +1926,8 @@ app.get("/api/admin/kpis", global.__LT_authAdmin, async (req, res) => {
         // Pricing (update these to match your actual prices)
         const PRICES = {
             trial: 0,      // Free trial
-            basic: 9.99,   // Update to your actual price
-            plus: 19.99    // Update to your actual price
+            basic: 4.99,   // Update to your actual price
+            plus: 9.99    // Update to your actual price
         };
 
         const currentMRR = 
@@ -2107,8 +2107,8 @@ app.get("/api/admin/kpis", global.__LT_authAdmin, async (req, res) => {
 async function calculateLastMonthMRR(lastMonthStart) {
     const PRICES = {
         trial: 0,
-        basic: 9.99,
-        plus: 19.99
+        basic: 4.99,
+        plus: 9.99
     };
 
     const lastMonthEnd = new Date(lastMonthStart);
@@ -2323,6 +2323,129 @@ cron.schedule("0 * * * *", async () => {
 
     } catch (err) {
         console.error("❌ TRIAL CLEANUP ERROR:", err);
+    }
+});
+
+/***************************************************************
+ *  ADD THESE MISSING ENDPOINTS TO PART 6
+ ***************************************************************/
+
+// FIX 1: Add cart clear endpoint
+app.post("/api/cart/clear", global.__LT_authCustomer, async (req, res) => {
+    try {
+        await global.__LT_pool.query(
+            "UPDATE carts SET items='[]' WHERE customer_id=$1",
+            [req.user.id]
+        );
+        return res.json({ success: true });
+    } catch (err) {
+        console.error("CART CLEAR ERROR:", err);
+        return res.status(500).json({ error: "Server error" });
+    }
+});
+
+// FIX 2: Add password reset endpoints with correct paths
+app.post("/api/reset/request", async (req, res) => {
+    try {
+        let { email } = req.body;
+        email = global.__LT_sanitize(email);
+
+        if (!email)
+            return res.status(400).json({ error: "Email required" });
+
+        const q = await global.__LT_pool.query(
+            "SELECT id FROM customers WHERE email=$1",
+            [email]
+        );
+
+        // ALWAYS act like success (security)
+        if (!q.rows.length)
+            return res.json({ success: true });
+
+        const customerId = q.rows[0].id;
+
+        // Invalidate older tokens
+        await global.__LT_pool.query(
+            `UPDATE password_reset_tokens SET used=true WHERE customer_id=$1`,
+            [customerId]
+        );
+
+        const token = crypto.randomBytes(32).toString("hex");
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+        await global.__LT_pool.query(
+            `INSERT INTO password_reset_tokens (customer_id, token, expires_at)
+             VALUES ($1,$2,$3)`,
+            [customerId, token, expiresAt]
+        );
+
+        const resetURL =
+            `${process.env.BASE_URL}/reset_password.html?token=${token}`;
+
+        const html = `
+            <div style="font-family:Arial;padding:20px;">
+                <h2>Password Reset Request</h2>
+                <p>Click below to reset your password (15 min expiration).</p>
+                <a href="${resetURL}" style="color:#d6336c;">Reset Password</a>
+            </div>
+        `;
+
+        await global.__LT_sendEmail(
+            email,
+            "Reset Your Password",
+            html,
+            `Reset your password: ${resetURL}`
+        );
+
+        return res.json({ success: true });
+
+    } catch (err) {
+        console.error("PASSWORD REQUEST ERROR:", err);
+        return res.status(500).json({ error: "Server error requesting reset" });
+    }
+});
+
+app.post("/api/reset/confirm", async (req, res) => {
+    try {
+        let { token, password } = req.body;
+
+        if (!token || !password)
+            return res.status(400).json({ error: "Missing fields" });
+
+        if (password.length < 6)
+            return res.status(400).json({ error: "Password too short" });
+
+        const q = await global.__LT_pool.query(
+            `SELECT * FROM password_reset_tokens
+             WHERE token=$1 AND used=false`,
+            [token]
+        );
+
+        if (!q.rows.length)
+            return res.status(400).json({ error: "Invalid or expired token" });
+
+        const record = q.rows[0];
+
+        if (new Date() > new Date(record.expires_at))
+            return res.status(400).json({ error: "Token expired" });
+
+        const hash = await bcrypt.hash(password, 10);
+
+        await global.__LT_pool.query(
+            `UPDATE customers SET password_hash=$1 WHERE id=$2`,
+            [hash, record.customer_id]
+        );
+
+        await global.__LT_pool.query(
+            `UPDATE password_reset_tokens SET used=true WHERE token=$1`,
+            [token]
+        );
+
+        return res.json({ success: true });
+
+    } catch (err) {
+        console.error("PASSWORD RESET ERROR:", err);
+        return res.status(500).json({ error: "Server error resetting password" });
     }
 });
 
