@@ -491,16 +491,16 @@ app.post("/api/customer/register", async (req, res) => {
 
         const hash = await bcrypt.hash(password, 10);
 
-        await global.__LT_pool.query(
-            `INSERT INTO customers
-                (email, password_hash, name,
-                 has_subscription, current_plan,
-                 trial_active, trial_end,
-                 stripe_customer_id, stripe_subscription_id,
-                 subscription_end)
-             VALUES ($1,$2,$3,false,'none',false,NULL,NULL,NULL,NULL)`,
-            [email, hash, name]
-        );
+await global.__LT_pool.query(
+    `INSERT INTO customers
+        (email, password_hash, name,
+         has_subscription, current_plan,
+         trial_active, trial_end, trial_used,
+         stripe_customer_id, stripe_subscription_id,
+         subscription_end)
+     VALUES ($1,$2,$3,false,'none',false,NULL,false,NULL,NULL,NULL)`,
+    [email, hash, name]
+);
 
         return res.json({ success: true });
 
