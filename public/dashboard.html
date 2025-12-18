@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Dashboard — LoveTextForHer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -26,12 +29,11 @@
 
         body {
             font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #fafafa;
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
             overflow-x: hidden;
             line-height: 1.6;
         }
 
-        /* ================= MOBILE MENU ================= */
         .mobile-menu-btn {
             display: none;
             position: fixed;
@@ -110,37 +112,107 @@
             color: var(--primary);
         }
 
-        #navbar { width: 100%; height: 95px; }
+        #navbar { 
+            width: 100%; 
+            height: 95px; 
+        }
 
         .dashboard-container {
             max-width: 1200px;
-            margin: 100px auto 60px;
+            margin: 120px auto 60px;
             padding: 0 40px;
         }
 
-        h1.header-title {
+        .header-section {
             text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header-subtitle {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        h1.header-title {
             font-size: 48px;
-            font-weight: 900;
-            margin-bottom: 16px;
+            font-weight: 800;
+            margin-bottom: 12px;
             color: var(--text-dark);
             letter-spacing: -0.02em;
+            line-height: 1.2;
         }
 
-        .subtitle {
+        .header-description {
+            font-size: 16px;
+            color: #6b7280;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        #subscriptionBanner {
+            display: none;
+            background: white;
+            padding: 24px 32px;
+            border-radius: 20px;
             text-align: center;
-            font-size: 18px;
-            color: #666;
-            margin-bottom: 60px;
-            font-weight: 400;
+            margin-bottom: 50px;
+            border: 2px solid #e5e7eb;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            font-size: 15px;
+            color: #4b5563;
+            font-weight: 500;
         }
 
-        h2.form-title {
-            font-size: 32px;
-            font-weight: 800;
-            margin: 60px 0 30px;
-            color: var(--text-dark);
-            letter-spacing: -0.01em;
+        #subscriptionBanner.active {
+            background: linear-gradient(135deg, #d6336c 0%, #e91e8c 100%);
+            color: white;
+            border-color: #d6336c;
+        }
+
+        #subscriptionBanner.canceling {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            color: #e65100;
+            border-color: #ff9800;
+        }
+
+        #subscriptionBanner a {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.3px;
+            transition: all 0.3s ease;
+        }
+
+        #subscriptionBanner a:hover {
+            background: #b8285a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(214,51,108,0.3);
+        }
+
+        .countdown-box {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .countdown-box strong {
+            font-size: 16px;
+            color: var(--warning);
+            font-weight: 700;
         }
 
         .section-header {
@@ -155,6 +227,7 @@
             font-weight: 800;
             color: var(--text-dark);
             margin: 0;
+            letter-spacing: -0.01em;
         }
 
         .recipients-grid {
@@ -164,102 +237,66 @@
             margin-bottom: 60px;
         }
 
-        #subscriptionBanner {
-            display: none;
-            background: white;
-            padding: 24px 32px;
-            border-radius: 16px;
-            text-align: center;
-            color: #333;
-            font-weight: 500;
-            margin-bottom: 40px;
-            border: 2px solid #e0e0e0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-
-        #subscriptionBanner.active {
-            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
-            color: #2e7d32;
-            border-color: #81c784;
-        }
-
-        #subscriptionBanner.canceling {
-            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
-            color: #e65100;
-            border-color: #ff9800;
-        }
-
-        #subscriptionBanner a {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 10px 18px;
-            background: var(--primary);
-            color: white;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .countdown-box {
-            margin-top: 15px;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        .countdown-box strong {
-            font-size: 18px;
-            color: var(--warning);
-        }
-
         .recipient-box {
             background: white;
-            border: 2px solid #e8e8e8;
-            border-radius: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
             padding: 28px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             transition: all 0.3s ease;
             position: relative;
         }
 
         .recipient-box:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
             border-color: var(--primary);
-            box-shadow: 0 8px 24px rgba(214,51,108,0.15);
-            transform: translateY(-2px);
+        }
+
+        .recipient-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
         }
 
         .recipient-box strong { 
             color: var(--text-dark); 
-            font-size: 20px;
-            display: block;
-            margin-bottom: 8px;
+            font-size: 22px;
             font-weight: 700;
+            letter-spacing: -0.01em;
         }
 
         .recipient-badge {
             display: inline-block;
             background: var(--primary-light);
             color: var(--primary);
-            padding: 4px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 13px;
-            font-weight: 600;
-            margin-left: 8px;
+            font-weight: 700;
+            text-transform: capitalize;
+            letter-spacing: 0.3px;
+        }
+
+        .recipient-details {
+            margin: 16px 0;
         }
 
         .recipient-box p {
             margin: 10px 0;
-            font-size: 15px;
-            color: #666;
+            font-size: 14px;
+            color: #6b7280;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-weight: 500;
         }
 
         .recipient-box p strong {
             font-size: 14px;
-            color: #888;
+            color: #4b5563;
             font-weight: 600;
             display: inline;
             margin: 0;
@@ -273,16 +310,18 @@
         }
 
         .delete-btn, .log-btn, .flower-btn {
-            padding: 10px 18px;
+            padding: 12px 18px;
             border-radius: 10px;
             border: none;
             cursor: pointer;
             color: white;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 14px;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             flex: 1;
             min-width: 100px;
+            letter-spacing: 0.3px;
+            font-family: "Inter", sans-serif;
         }
 
         .delete-btn { 
@@ -291,7 +330,8 @@
         
         .delete-btn:hover {
             background: #a01f1f;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(198,40,40,0.3);
         }
         
         .log-btn { 
@@ -300,7 +340,8 @@
         
         .log-btn:hover {
             background: #5a3a9a;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(107,75,184,0.3);
         }
         
         .flower-btn { 
@@ -309,29 +350,57 @@
         
         .flower-btn:hover {
             background: #ff5ab0;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,122,196,0.3);
+        }
+
+        .form-section {
+            margin-top: 60px;
+        }
+
+        .form-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 30px;
+            color: var(--text-dark);
+            letter-spacing: -0.01em;
+            text-align: center;
         }
 
         #addForm {
             background: white;
-            border: 2px solid #e8e8e8;
-            border-radius: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
             padding: 40px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             max-width: 600px;
             margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
         }
 
         #addForm input, #addForm select {
             width: 100%;
             padding: 14px 16px;
-            margin-top: 12px;
-            border-radius: 10px;
-            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
             font-size: 15px;
-            font-family: inherit;
+            font-family: "Inter", sans-serif;
+            font-weight: 500;
             transition: all 0.2s ease;
             background: white;
+            color: var(--text-dark);
         }
 
         #addForm input:focus, #addForm select:focus {
@@ -346,24 +415,29 @@
             margin-top: 28px;
             border-radius: 12px;
             border: none;
-            background: var(--primary);
+            background: linear-gradient(90deg, var(--primary), #e91e8c);
             color: white;
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 12px rgba(214,51,108,0.3);
+            letter-spacing: 0.3px;
+            font-family: "Inter", sans-serif;
         }
 
         #addForm button:hover {
-            background: #b8285a;
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(214,51,108,0.4);
         }
 
+        #addForm button:active {
+            transform: scale(0.98);
+        }
+
         #msg {
             text-align: center;
-            margin-top: 16px;
+            margin-top: 20px;
             color: var(--primary);
             font-weight: 600;
             font-size: 15px;
@@ -374,7 +448,7 @@
             margin: 60px auto;
             padding: 16px 32px;
             border-radius: 12px;
-            background: var(--primary);
+            background: linear-gradient(90deg, var(--primary), #e91e8c);
             color: white;
             font-weight: 700;
             border: none;
@@ -383,35 +457,124 @@
             font-size: 16px;
             transition: all 0.3s ease;
             box-shadow: 0 4px 12px rgba(214,51,108,0.3);
+            letter-spacing: 0.3px;
+            font-family: "Inter", sans-serif;
         }
 
         #manageSubBtn:hover {
-            background: #b8285a;
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(214,51,108,0.4);
         }
 
         #messageLogModal, #flowerModal {
-            display:none;
-            position:fixed;
-            top:0; left:0; right:0; bottom:0;
-            background:rgba(0,0,0,0.55);
-            justify-content:center;
-            align-items:center;
-            z-index:9999;
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
         }
 
         .modal-content {
             background: white;
             width: 90%;
-            max-width: 420px;
-            padding: 20px;
-            border-radius: 22px;
+            max-width: 480px;
+            padding: 32px;
+            border-radius: 24px;
             max-height: 80vh;
             overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
-        /* ============== MOBILE ============== */
+        .modal-content h2 {
+            margin-top: 0;
+            color: var(--primary);
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            letter-spacing: -0.01em;
+        }
+
+        .modal-content label {
+            display: block;
+            margin-top: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .modal-content select,
+        .modal-content textarea {
+            width: 100%;
+            padding: 12px 16px;
+            margin-top: 8px;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            font-family: "Inter", sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .modal-content select:focus,
+        .modal-content textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(214,51,108,0.1);
+        }
+
+        .modal-content button {
+            margin-top: 20px;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 700;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            font-family: "Inter", sans-serif;
+            letter-spacing: 0.3px;
+        }
+
+        .modal-content button:first-of-type {
+            background: var(--primary);
+            color: white;
+        }
+
+        .modal-content button:first-of-type:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(214,51,108,0.3);
+        }
+
+        .log-item {
+            padding: 16px;
+            margin-bottom: 12px;
+            background: #fafafa;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .log-item strong {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-dark);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .log-item .log-date {
+            font-size: 13px;
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
         @media (max-width: 768px) {
             .mobile-menu-btn {
                 display: block;
@@ -430,23 +593,29 @@
             }
 
             .dashboard-container {
-                margin: 20px 16px 40px;
-                padding: 0 16px;
-                max-width: 100%;
+                margin: 30px auto 40px;
+                padding: 0 20px;
+            }
+
+            .header-section {
+                margin-bottom: 40px;
+            }
+
+            .header-subtitle {
+                font-size: 12px;
+                letter-spacing: 1.5px;
             }
 
             h1.header-title {
                 font-size: 36px;
-                margin-bottom: 12px;
             }
 
-            .subtitle {
-                font-size: 16px;
-                margin-bottom: 40px;
+            .header-description {
+                font-size: 15px;
             }
 
             .section-header h2,
-            h2.form-title {
+            .form-title {
                 font-size: 28px;
                 margin: 40px 0 24px;
             }
@@ -454,6 +623,10 @@
             .recipients-grid {
                 grid-template-columns: 1fr;
                 gap: 16px;
+            }
+
+            .recipient-box {
+                padding: 24px 20px;
             }
 
             #addForm {
@@ -468,6 +641,10 @@
                 width: 100%;
                 min-width: auto;
             }
+
+            .modal-content {
+                padding: 24px 20px;
+            }
         }
 
         @media (max-width: 380px) {
@@ -475,12 +652,8 @@
                 font-size: 32px;
             }
 
-            .subtitle {
-                font-size: 15px;
-            }
-
             .section-header h2,
-            h2.form-title {
+            .form-title {
                 font-size: 24px;
             }
 
@@ -520,8 +693,11 @@
 
     <div id="subscriptionBanner"></div>
 
-    <h1 class="header-title">Your Dashboard</h1>
-    <p class="subtitle">Manage your recipients and spread love with personalized messages</p>
+    <div class="header-section">
+        <div class="header-subtitle">Your Personal Dashboard</div>
+        <h1 class="header-title">Manage Your Recipients</h1>
+        <p class="header-description">Create meaningful connections with personalized messages and thoughtful gestures</p>
+    </div>
 
     <div class="section-header">
         <h2>Your Recipients</h2>
@@ -529,100 +705,119 @@
 
     <div class="recipients-grid" id="recipients"></div>
 
-    <h2 class="form-title">Add New Recipient</h2>
+    <div class="form-section">
+        <h2 class="form-title">Add New Recipient</h2>
 
-    <div id="addForm">
-        <input id="r_name" placeholder="Recipient Name">
-        <input type="tel" id="phone_number" placeholder="Phone (optional)">
-        <select id="delivery_method">
-            <option value="email">Email Only</option>
-            <option value="sms">SMS Only</option>
-            <option value="both">Both Email & SMS</option>
-        </select>
-        <input id="r_email" type="email" placeholder="Recipient Email">
+        <div id="addForm">
+            <div class="form-group">
+                <label class="form-label" for="r_name">Recipient Name</label>
+                <input id="r_name" placeholder="Enter name">
+            </div>
 
-        <select id="r_relationship">
-            <option value="spouse">Spouse / Partner</option>
-            <option value="girlfriend">Girlfriend</option>
-            <option value="boyfriend">Boyfriend</option>
-            <option value="mom">Mom</option>
-            <option value="dad">Dad</option>
-            <option value="sister">Sister</option>
-            <option value="brother">Brother</option>
-            <option value="friend">Friend</option>
-            <option value="custom">Custom Relationship</option>
-        </select>
+            <div class="form-group">
+                <label class="form-label" for="delivery_method">Delivery Method</label>
+                <select id="delivery_method">
+                    <option value="email">Email Only</option>
+                    <option value="sms">SMS Only</option>
+                    <option value="both">Both Email & SMS</option>
+                </select>
+            </div>
 
-        <input id="r_customRel" placeholder="Enter custom relationship" style="display:none;">
+            <div class="form-group">
+                <label class="form-label" for="r_email">Email Address</label>
+                <input id="r_email" type="email" placeholder="recipient@example.com">
+            </div>
 
-        <select id="r_frequency">
-            <option value="daily">Daily</option>
-            <option value="every-other-day">Every Other Day</option>
-            <option value="three-times-week">Three Times a Week</option>
-            <option value="weekly">Weekly</option>
-            <option value="bi-weekly">Bi-Weekly</option>
-        </select>
+            <div class="form-group">
+                <label class="form-label" for="phone_number">Phone Number (Optional)</label>
+                <input type="tel" id="phone_number" placeholder="+1 (555) 123-4567">
+            </div>
 
-        <select id="r_timings">
-            <option value="morning">Morning</option>
-            <option value="afternoon">Afternoon</option>
-            <option value="evening">Evening</option>
-            <option value="night">Night</option>
-        </select>
+            <div class="form-group">
+                <label class="form-label" for="r_relationship">Relationship</label>
+                <select id="r_relationship">
+                    <option value="spouse">Spouse / Partner</option>
+                    <option value="girlfriend">Girlfriend</option>
+                    <option value="boyfriend">Boyfriend</option>
+                    <option value="mom">Mom</option>
+                    <option value="dad">Dad</option>
+                    <option value="sister">Sister</option>
+                    <option value="brother">Brother</option>
+                    <option value="friend">Friend</option>
+                    <option value="custom">Custom Relationship</option>
+                </select>
+            </div>
 
-        <select id="r_timezone">
-            <option value="America/Chicago">Central</option>
-            <option value="America/New_York">Eastern</option>
-            <option value="America/Denver">Mountain</option>
-            <option value="America/Los_Angeles">Pacific</option>
-        </select>
+            <div class="form-group" id="customRelGroup" style="display:none;">
+                <label class="form-label" for="r_customRel">Custom Relationship</label>
+                <input id="r_customRel" placeholder="Enter custom relationship">
+            </div>
 
-        <button onclick="addRecipient()">Add Recipient</button>
+            <div class="form-group">
+                <label class="form-label" for="r_frequency">Message Frequency</label>
+                <select id="r_frequency">
+                    <option value="daily">Daily</option>
+                    <option value="every-other-day">Every Other Day</option>
+                    <option value="three-times-week">Three Times a Week</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="bi-weekly">Bi-Weekly</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="r_timings">Preferred Time</label>
+                <select id="r_timings">
+                    <option value="morning">Morning</option>
+                    <option value="afternoon">Afternoon</option>
+                    <option value="evening">Evening</option>
+                    <option value="night">Night</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="r_timezone">Timezone</label>
+                <select id="r_timezone">
+                    <option value="America/Chicago">Central Time</option>
+                    <option value="America/New_York">Eastern Time</option>
+                    <option value="America/Denver">Mountain Time</option>
+                    <option value="America/Los_Angeles">Pacific Time</option>
+                </select>
+            </div>
+
+            <button onclick="addRecipient()">Add Recipient</button>
+        </div>
+
+        <p id="msg"></p>
     </div>
-
-    <p id="msg"></p>
 </div>
 
 <button id="manageSubBtn">Manage Subscription</button>
 
-<!-- Message Log Modal -->
 <div id="messageLogModal">
     <div class="modal-content">
-        <h2 style="margin-top:0; color:#d6336c;">Message Log</h2>
+        <h2>Message History</h2>
         <div id="logContent"></div>
-
-        <button onclick="closeMessageLog()" style="margin-top:20px; background:#d6336c; color:white;
-            padding:12px 18px; border:none; border-radius:12px; cursor:pointer; width: 100%;">
-            Exit
-        </button>
+        <button onclick="closeMessageLog()">Close</button>
     </div>
 </div>
 
-<!-- Flower Modal -->
 <div id="flowerModal">
     <div class="modal-content">
-        <h2 style="margin-top:0; color:#d6336c;">Send a Flower 🌸</h2>
+        <h2>Send a Flower 🌸</h2>
 
-        <label style="display: block; margin-top: 16px; font-weight: 600;">Select Flower:</label>
-        <select id="flowerType" style="width:100%; padding:12px; margin-top:12px; border-radius: 12px; border: 2px solid rgba(214,51,108,0.25);">
+        <label for="flowerType">Select Flower</label>
+        <select id="flowerType">
             <option value="🌹 Rose">🌹 Rose</option>
             <option value="🌸 Cherry Blossom">🌸 Cherry Blossom</option>
             <option value="🌻 Sunflower">🌻 Sunflower</option>
             <option value="🌷 Tulip">🌷 Tulip</option>
         </select>
 
-        <textarea id="flowerNote" placeholder="Optional note…"
-            style="width:100%; height:90px; margin-top:12px; padding:10px; border-radius:12px; border: 2px solid rgba(214,51,108,0.25);"></textarea>
+        <label for="flowerNote">Personal Note (Optional)</label>
+        <textarea id="flowerNote" placeholder="Add a personal message..." rows="4"></textarea>
 
-        <button onclick="sendFlower()" style="margin-top:20px; background:#ff7ac4; color:white;
-            padding:12px 18px; border:none; border-radius:12px; cursor:pointer; width: 100%; font-weight: 600;">
-            Send Flower
-        </button>
-
-        <button onclick="closeFlowerModal()" style="margin-top:10px; background:#999; color:white;
-            padding:10px 16px; border:none; border-radius:12px; cursor:pointer; width: 100%; font-weight: 600;">
-            Cancel
-        </button>
+        <button onclick="sendFlower()" style="background: #ff7ac4;">Send Flower</button>
+        <button onclick="closeFlowerModal()" style="background: #9ca3af; margin-top: 10px;">Cancel</button>
     </div>
 </div>
 
@@ -647,34 +842,21 @@ function closeMobileMenu() {
     document.body.style.overflow = '';
 }
 
-/* ============================================================
-   MATCHES YOUR SERVER SUBSCRIPTION LOGIC EXACTLY
-============================================================ */
 function hasActiveAccess(data) {
     if (!data) return false;
-
     const now = new Date();
-
     if (data.has_subscription === true && data.subscription_end === null) return true;
-
     if (data.subscription_end && new Date(data.subscription_end) > now) return true;
-
     return false;
 }
 
-/* ============================================================
-   CALCULATE TIME REMAINING
-============================================================ */
 function getTimeRemaining(endDate) {
     const now = new Date();
     const end = new Date(endDate);
     const diff = end - now;
-
     if (diff <= 0) return null;
-
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
     if (days > 0) {
         return `${days} day${days !== 1 ? 's' : ''} and ${hours} hour${hours !== 1 ? 's' : ''}`;
     } else {
@@ -682,18 +864,14 @@ function getTimeRemaining(endDate) {
     }
 }
 
-/* ============================================================
-   UPDATE SUBSCRIPTION BANNER WITH CANCELLATION INFO
-============================================================ */
 function updateSubscriptionBanner(data) {
     const banner = document.getElementById("subscriptionBanner");
     banner.style.display = "block";
-    banner.className = ""; // Reset classes
+    banner.className = "";
 
     const active = hasActiveAccess(data);
     const now = new Date();
 
-    // CASE 1: Active subscription WITH cancellation scheduled
     if (active && data.subscription_end && new Date(data.subscription_end) > now) {
         banner.className = "canceling";
         
@@ -729,7 +907,6 @@ function updateSubscriptionBanner(data) {
         return;
     }
 
-    // CASE 2: Active subscription (normal)
     if (active) {
         banner.className = "active";
         
@@ -745,16 +922,12 @@ function updateSubscriptionBanner(data) {
         return;
     }
 
-    // CASE 3: No subscription
     banner.innerHTML = `
         You do not have a subscription.<br><br>
         <a href="/products.html">Choose a Plan</a>
     `;
 }
 
-/* ============================================================
-   LOAD SUB STATUS (CONTROLS EVERYTHING)
-============================================================ */
 let HAS_ACCESS = false;
 
 async function loadSubscriptionStatus() {
@@ -769,17 +942,13 @@ async function loadSubscriptionStatus() {
 
         updateSubscriptionBanner(data);
 
-        document.getElementById("manageSubBtn").style.display =
-            HAS_ACCESS ? "block" : "none";
+        document.getElementById("manageSubBtn").style.display = HAS_ACCESS ? "block" : "none";
 
     } catch (err) {
         console.error("SUB LOAD ERROR", err);
     }
 }
 
-/* ============================================================
-   LOAD RECIPIENTS
-============================================================ */
 async function loadRecipients() {
     try {
         const res = await fetch("/api/customer/recipients", {
@@ -801,15 +970,17 @@ async function loadRecipients() {
             
             box.innerHTML += `
                 <div class="recipient-box">
-                    <div>
+                    <div class="recipient-header">
                         <strong>${r.name}</strong>
                         <span class="recipient-badge">${r.relationship}</span>
                     </div>
-                    <p><strong>Contact:</strong> ${deliveryBadge}</p>
-                    ${r.email ? `<p><strong>Email:</strong> ${r.email}</p>` : ''}
-                    ${r.phone_number ? `<p><strong>Phone:</strong> ${r.phone_number}</p>` : ''}
-                    <p><strong>Frequency:</strong> ${r.frequency.replace(/-/g, ' ')}</p>
-                    <p><strong>Time:</strong> ${r.timings.charAt(0).toUpperCase() + r.timings.slice(1)}</p>
+                    <div class="recipient-details">
+                        <p><strong>Contact:</strong> ${deliveryBadge}</p>
+                        ${r.email ? `<p><strong>Email:</strong> ${r.email}</p>` : ''}
+                        ${r.phone_number ? `<p><strong>Phone:</strong> ${r.phone_number}</p>` : ''}
+                        <p><strong>Frequency:</strong> ${r.frequency.replace(/-/g, ' ')}</p>
+                        <p><strong>Time:</strong> ${r.timings.charAt(0).toUpperCase() + r.timings.slice(1)}</p>
+                    </div>
 
                     <div class="button-group">
                         <button class="log-btn" onclick="openMessageLog(${r.id})">📋 History</button>
@@ -825,14 +996,12 @@ async function loadRecipients() {
     }
 }
 
-/* ============================================================
-   ADD RECIPIENT — BLOCKS IF NO ACTIVE ACCESS
-============================================================ */
 async function addRecipient() {
     const msgEl = document.getElementById("msg");
     
     if (!HAS_ACCESS) {
         msgEl.innerText = "You need an active subscription to add recipients.";
+        msgEl.style.color = "var(--danger)";
         return;
     }
 
@@ -844,19 +1013,21 @@ async function addRecipient() {
         ? r_customRel.value.trim() 
         : r_relationship.value;
 
-    // Validation
     if (!name) {
         msgEl.innerText = "Name is required.";
+        msgEl.style.color = "var(--danger)";
         return;
     }
 
     if (!email && delivery !== "sms") {
         msgEl.innerText = "Email is required for email delivery.";
+        msgEl.style.color = "var(--danger)";
         return;
     }
 
     if ((delivery === "sms" || delivery === "both") && !phone) {
         msgEl.innerText = "Phone number is required for SMS delivery.";
+        msgEl.style.color = "var(--danger)";
         return;
     }
 
@@ -884,14 +1055,13 @@ async function addRecipient() {
         msgEl.innerText = "Recipient added successfully! ✅";
         msgEl.style.color = "#28a745";
         
-        // Clear form
         r_name.value = "";
         r_email.value = "";
         phone_number.value = "";
         delivery_method.value = "email";
         r_relationship.value = "spouse";
         r_customRel.value = "";
-        r_customRel.style.display = "none";
+        document.getElementById("customRelGroup").style.display = "none";
         r_frequency.value = "daily";
         r_timings.value = "morning";
         r_timezone.value = "America/Chicago";
@@ -908,9 +1078,6 @@ async function addRecipient() {
     }
 }
 
-/* ============================================================
-   DELETE RECIPIENT
-============================================================ */
 async function deleteRecipient(id) {
     if (!confirm("Delete this recipient?")) return;
 
@@ -922,14 +1089,12 @@ async function deleteRecipient(id) {
     loadRecipients();
 }
 
-/* ============================================================
-   MESSAGE LOG
-============================================================ */
 async function openMessageLog(id) {
     const modal = document.getElementById("messageLogModal");
     const content = document.getElementById("logContent");
 
     content.innerHTML = "Loading…";
+    modal.style.display = "flex";
 
     const res = await fetch(`/api/message-log/${id}`, {
         credentials: "include"
@@ -944,31 +1109,26 @@ async function openMessageLog(id) {
     } else {
         content.innerHTML = data.messages
             .map(m => `
-                <div style="padding:12px; margin-bottom:10px; background:#fafafa; border-radius:12px;">
+                <div class="log-item">
                     <strong>${m.message_text}</strong>
-                    <div style="font-size:12px; color:#777;">
+                    <div class="log-date">
                         ${new Date(m.sent_at).toLocaleString()}
                     </div>
                 </div>
             `)
             .join("");
     }
-
-    modal.style.display = "flex";
 }
 
 function closeMessageLog() {
     document.getElementById("messageLogModal").style.display = "none";
 }
 
-/* ============================================================
-   FLOWER SENDING
-============================================================ */
 let CURRENT_FLOWER_RECIPIENT = null;
 
 function openFlowerModal(id) {
     CURRENT_FLOWER_RECIPIENT = id;
-    flowerNote.value = "";
+    document.getElementById("flowerNote").value = "";
     document.getElementById("flowerModal").style.display = "flex";
 }
 
@@ -977,8 +1137,8 @@ function closeFlowerModal() {
 }
 
 async function sendFlower() {
-    const flower = flowerType.value;
-    const note = flowerNote.value.trim();
+    const flower = document.getElementById("flowerType").value;
+    const note = document.getElementById("flowerNote").value.trim();
     const message = `${flower}${note ? " — " + note : ""}`;
 
     const res = await fetch(`/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, {
@@ -998,9 +1158,6 @@ async function sendFlower() {
     }
 }
 
-/* ============================================================
-   STRIPE BILLING PORTAL (Manage Subscription)
-============================================================ */
 document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const res = await fetch("/api/customer/subscription/portal", {
         credentials: "include"
@@ -1011,17 +1168,11 @@ document.getElementById("manageSubBtn").addEventListener("click", async () => {
     if (data.url) window.location.href = data.url;
 });
 
-/* ============================================================
-   CUSTOM RELATIONSHIP TOGGLE
-============================================================ */
 document.getElementById("r_relationship").addEventListener("change", (e) => {
-    const customField = document.getElementById("r_customRel");
+    const customField = document.getElementById("customRelGroup");
     customField.style.display = e.target.value === "custom" ? "block" : "none";
 });
 
-/* ============================================================
-   LOGOUT FUNCTION
-============================================================ */
 async function handleLogout(event) {
     if (event) event.preventDefault();
     
@@ -1039,13 +1190,11 @@ async function handleLogout(event) {
     }
 }
 
-/* ============================================================
-   INIT
-============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
     loadSubscriptionStatus();
     loadRecipients();
 });
+
 </script>
 
 </body>
