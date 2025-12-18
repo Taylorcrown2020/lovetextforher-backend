@@ -62,43 +62,45 @@ app.post(
             /***********************************************************
              * CHECKOUT COMPLETED
              ***********************************************************/
-            if (type === "checkout.session.completed") {
-                const customerId = obj.customer;
-                const subId = obj.subscription;
-                if (!subId) return res.json({ received: true });
+if (type === "checkout.session.completed") {
+    const customerId = obj.customer;
+    const subId = obj.subscription;
+    if (!subId) return res.json({ received: true });
 
-                const sub = await stripe.subscriptions.retrieve(subId);
-                const priceId = sub.items.data[0].price.id;
+    const sub = await stripe.subscriptions.retrieve(subId);
+    const priceId = sub.items.data[0].price.id;
 
-                let plan = "none";
-                if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
-                if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
-                if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+    let plan = "none";
+    if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
+    if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
+    if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
 
-                // ✅ FIXED: Calculate trial end as exactly 3 days from now
-                let trialEnd = null;
-                if (plan === "trial") {
-                    trialEnd = new Date();
-                    trialEnd.setDate(trialEnd.getDate() + 3);
-                    trialEnd.setHours(23, 59, 59, 999); // End of 3rd day
-                }
+    // ✅ Calculate trial end as exactly 3 days from now
+    let trialEnd = null;
+    if (plan === "trial") {
+        trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 3);
+        trialEnd.setHours(23, 59, 59, 999);
+    }
 
-                await db.query(`
-                    UPDATE customers
-                    SET 
-                        has_subscription = true,
-                        current_plan = $1,
-                        stripe_subscription_id = $2,
-                        stripe_customer_id = $3,
-                        trial_active = ($1 = 'trial'),
-                        trial_end = $4,
-                        trial_used = ($1 = 'trial'),
-                        subscription_end = NULL
-                    WHERE stripe_customer_id = $3
-                `, [plan, subId, customerId, trialEnd]);
+    // ✅ FIX: Only mark trial_used when trial checkout completes
+    await db.query(`
+        UPDATE customers
+        SET 
+            has_subscription = true,
+            current_plan = $1,
+            stripe_subscription_id = $2,
+            stripe_customer_id = $3,
+            trial_active = ($1 = 'trial'),
+            trial_end = $4,
+            trial_used = ($1 = 'trial'),
+            subscription_end = NULL
+        WHERE stripe_customer_id = $3
+    `, [plan, subId, customerId, trialEnd]);
 
-                console.log(`🎉 Subscription started: ${plan}${plan === 'trial' ? ' (ends ' + trialEnd.toISOString() + ')' : ''}`);
-            }
+    console.log(`🎉 Subscription started: ${plan}${plan === 'trial' ? ' (ends ' + trialEnd.toISOString() + ')' : ''}`);
+}
+
 
             /***********************************************************
              * SUBSCRIPTION UPDATED
@@ -491,16 +493,17 @@ app.post("/api/customer/register", async (req, res) => {
 
         const hash = await bcrypt.hash(password, 10);
 
-await global.__LT_pool.query(
-    `INSERT INTO customers
-        (email, password_hash, name,
-         has_subscription, current_plan,
-         trial_active, trial_end, trial_used,
-         stripe_customer_id, stripe_subscription_id,
-         subscription_end)
-     VALUES ($1,$2,$3,false,'none',false,NULL,false,NULL,NULL,NULL)`,
-    [email, hash, name]
-);
+        // ✅ FIX: Don't set trial_used to true on registration
+        await global.__LT_pool.query(
+            `INSERT INTO customers
+                (email, password_hash, name,
+                 has_subscription, current_plan,
+                 trial_active, trial_end, trial_used,
+                 stripe_customer_id, stripe_subscription_id,
+                 subscription_end)
+             VALUES ($1,$2,$3,false,'none',false,NULL,false,NULL,NULL,NULL)`,
+            [email, hash, name]
+        );
 
         return res.json({ success: true });
 
@@ -854,10 +857,8 @@ app.post("/api/stripe/checkout",
 
         const newPlan = global.__LT_normalizePlan(productId);
 
-        // Ensure Stripe customer
         const stripeCustomerId = await ensureStripeCustomer(customer);
 
-        // Load Stripe subscription (if exists)
         let stripeSub = null;
         if (customer.stripe_subscription_id) {
             try {
@@ -873,7 +874,6 @@ app.post("/api/stripe/checkout",
          * TRIAL GUARD — Only one trial ever
          ***********************************************************/
         if (newPlan === "trial") {
-            // Check if trial was ever used (even if it ended)
             const trialCheck = await global.__LT_pool.query(
                 `SELECT trial_used FROM customers WHERE id=$1`,
                 [customer.id]
@@ -890,10 +890,8 @@ app.post("/api/stripe/checkout",
          * CASE 1 — ACTIVE SUB → UPGRADE / DOWNGRADE
          ***********************************************************/
         if (stripeSub && stripeSub.status !== "canceled") {
-
             const itemId = stripeSub.items.data[0].id;
 
-            // Update subscription
             await global.__LT_stripe.subscriptions.update(
                 stripeSub.id,
                 {
@@ -903,7 +901,6 @@ app.post("/api/stripe/checkout",
                 }
             );
 
-            // Update DB
             await global.__LT_pool.query(
                 `UPDATE customers SET
                     current_plan=$1,
@@ -922,7 +919,6 @@ app.post("/api/stripe/checkout",
          * CASE 2 — CREATE NEW SUBSCRIPTION
          ***********************************************************/
         
-        // ✅ FIXED: Proper trial configuration
         const sessionConfig = {
             mode: "subscription",
             customer: stripeCustomerId,
@@ -937,20 +933,17 @@ app.post("/api/stripe/checkout",
             }
         };
 
-        // ✅ If it's a trial, set trial period and cancel behavior
+        // ✅ If it's a trial, set trial period
         if (newPlan === "trial") {
             sessionConfig.subscription_data.trial_period_days = 3;
             sessionConfig.subscription_data.trial_settings = {
                 end_behavior: {
-                    missing_payment_method: 'cancel'  // Auto-cancel if no payment method
+                    missing_payment_method: 'cancel'
                 }
             };
             
-            // Mark trial as used immediately
-            await global.__LT_pool.query(
-                `UPDATE customers SET trial_used = true WHERE id=$1`,
-                [customer.id]
-            );
+            // ✅ FIX: Don't mark trial_used here - let webhook handle it
+            // REMOVED: await global.__LT_pool.query(...)
         }
 
         const session = await global.__LT_stripe.checkout.sessions.create(sessionConfig);
