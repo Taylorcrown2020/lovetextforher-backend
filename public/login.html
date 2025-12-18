@@ -27,30 +27,47 @@
         }
 
         /* ================= MOBILE MENU ================= */
-                .mobile-menu-btn {
+        .mobile-menu-btn {
             display: none;
             position: fixed;
             top: 20px;
-            right: -10px;
+            right: 20px;
             z-index: 1000;
-            background: none;
-            border: none;
+            background: white;
+            border: 2px solid rgba(214,51,108,0.2);
             cursor: pointer;
-            padding: 10px;
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-btn:hover {
+            background: #fff;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
         }
 
         .mobile-menu-btn span {
             display: block;
-            width: 28px;
-            height: 3px;
-            background: var(--text-dark);
-            margin: 5px 0;
-            transition: 0.3s;
+            width: 24px;
+            height: 2.5px;
+            background: var(--primary);
+            margin: 4px 0;
+            transition: all 0.3s ease;
             border-radius: 2px;
         }
 
+        .mobile-menu-btn.active {
+            background: var(--primary);
+        }
+
+        .mobile-menu-btn.active span {
+            background: white;
+        }
+
         .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(-45deg) translate(-6px, 6px);
+            transform: rotate(-45deg) translate(-5px, 6px);
         }
 
         .mobile-menu-btn.active span:nth-child(2) {
@@ -58,13 +75,13 @@
         }
 
         .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(45deg) translate(-6px, -6px);
+            transform: rotate(45deg) translate(-5px, -6px);
         }
 
         .mobile-nav-overlay {
             display: none;
             position: fixed;
-            top: 10px;
+            top: 0;
             right: -100%;
             width: 100%;
             height: 100vh;
@@ -320,19 +337,13 @@
 <div class="mobile-nav-overlay" id="mobileNav">
     <div class="mobile-nav-content">
         <ul class="mobile-nav-links">
-            <li><a href="/index.html" onclick="closeMobileMenu()">Home</a></li>
-            <li><a href="/login.html" onclick="closeMobileMenu()">Login</a></li>
-            <li><a href="/register.html" onclick="closeMobileMenu()">Register</a></li>
-            <li><a href="/admin.html" onclick="closeMobileMenu()">Admin</a></li>
+            <li><a href="#" onclick="closeMobileMenu()">Home</a></li>
+            <li><a href="#" onclick="closeMobileMenu()">Login</a></li>
+            <li><a href="#" onclick="closeMobileMenu()">Register</a></li>
+            <li><a href="#" onclick="closeMobileMenu()">Admin</a></li>
         </ul>
     </div>
 </div>
-
-<!-- Login must always show PUBLIC navbar -->
-<script> window.FORCE_PUBLIC_NAV = true; </script>
-<script src="/js/nav.js" defer></script>
-
-<div id="navbar"></div>
 
 <div class="login-wrapper">
     <div class="login-card">
@@ -344,8 +355,8 @@
         <button id="login-btn">Login</button>
 
         <div class="links">
-            <a href="/register.html">Create an account</a><br>
-            <a href="/forgot.html">Forgot your password?</a>
+            <a href="#">Create an account</a><br>
+            <a href="#">Forgot your password?</a>
         </div>
 
         <p id="msg"></p>
@@ -379,9 +390,6 @@ function closeMobileMenu() {
     body.style.overflow = '';
 }
 
-/* ------------------------------------------------------
-   LOGIN FUNCTION — MATCHES NEW SERVER.JS EXACTLY
------------------------------------------------------- */
 async function login() {
     const msg = document.getElementById("msg");
     msg.innerText = "";
@@ -394,37 +402,19 @@ async function login() {
         return;
     }
 
-    try {
-        const res = await fetch("/api/customer/login", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: emailVal, password: passVal })
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-            window.location.href = "/dashboard.html";
-        } else {
-            msg.innerText = data.error || "Invalid login.";
-        }
-
-    } catch (err) {
-        msg.innerText = "Network error. Try again.";
-    }
+    // Simulate login for demo
+    msg.innerText = "Logging in...";
+    setTimeout(() => {
+        msg.innerText = "Login successful! (Demo)";
+    }, 1000);
 }
 
-/* Click button */
 document.getElementById("login-btn").addEventListener("click", login);
 
-/* Enter key triggers login */
 document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") login();
 });
 
-// REMOVED: Auto-redirect check that was causing issues
-// The login page should always be accessible
 </script>
 
 </body>
