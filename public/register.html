@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account ❤️</title>
 
-    <!-- Use public navbar rules -->
-    <script> window.FORCE_PUBLIC_NAV = true; </script>
-    <script src="/js/nav.js" defer></script>
-
     <style>
         :root {
             --primary: #d6336c;
@@ -36,26 +32,43 @@
             display: none;
             position: fixed;
             top: 20px;
-            right: -10px;
+            right: 20px;
             z-index: 1000;
-            background: none;
-            border: none;
+            background: white;
+            border: 2px solid rgba(214,51,108,0.2);
             cursor: pointer;
-            padding: 10px;
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-btn:hover {
+            background: #fff;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
         }
 
         .mobile-menu-btn span {
             display: block;
-            width: 28px;
-            height: 3px;
-            background: var(--text-dark);
-            margin: 5px 0;
-            transition: 0.3s;
+            width: 24px;
+            height: 2.5px;
+            background: var(--primary);
+            margin: 4px 0;
+            transition: all 0.3s ease;
             border-radius: 2px;
         }
 
+        .mobile-menu-btn.active {
+            background: var(--primary);
+        }
+
+        .mobile-menu-btn.active span {
+            background: white;
+        }
+
         .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(-45deg) translate(-6px, 6px);
+            transform: rotate(-45deg) translate(-5px, 6px);
         }
 
         .mobile-menu-btn.active span:nth-child(2) {
@@ -63,7 +76,7 @@
         }
 
         .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(45deg) translate(-6px, -6px);
+            transform: rotate(45deg) translate(-5px, -6px);
         }
 
         .mobile-nav-overlay {
@@ -108,11 +121,6 @@
 
         .mobile-nav-links a:hover {
             color: var(--primary);
-        }
-
-        #navbar {
-            width: 100%;
-            height: 90px;
         }
 
         .box {
@@ -195,10 +203,6 @@
                 display: block;
             }
 
-            #navbar {
-                display: none !important;
-            }
-
             body {
                 padding-top: 60px;
             }
@@ -278,15 +282,13 @@
 <div class="mobile-nav-overlay" id="mobileNav">
     <div class="mobile-nav-content">
         <ul class="mobile-nav-links">
-            <li><a href="/index.html" onclick="closeMobileMenu()">Home</a></li>
-            <li><a href="/login.html" onclick="closeMobileMenu()">Login</a></li>
-            <li><a href="/register.html" onclick="closeMobileMenu()">Register</a></li>
-            <li><a href="/admin.html" onclick="closeMobileMenu()">Admin</a></li>
+            <li><a href="#" onclick="closeMobileMenu()">Home</a></li>
+            <li><a href="#" onclick="closeMobileMenu()">Login</a></li>
+            <li><a href="#" onclick="closeMobileMenu()">Register</a></li>
+            <li><a href="#" onclick="closeMobileMenu()">Admin</a></li>
         </ul>
     </div>
 </div>
-
-<div id="navbar"></div>
 
 <div class="box">
     <h2>Create Account</h2>
@@ -327,9 +329,6 @@ function closeMobileMenu() {
     body.style.overflow = '';
 }
 
-// -------------------------------------------------
-// REGISTER USER — Fully compatible with server.js
-// -------------------------------------------------
 async function registerUser() {
     const nameInput = document.getElementById("name");
     const emailInput = document.getElementById("email");
@@ -347,31 +346,13 @@ async function registerUser() {
         return;
     }
 
-    try {
-        const res = await fetch("/api/customer/register", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, password: pass })
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-            // Redirect to products to pick a subscription plan
-            window.location.href = "/products.html";
-        } else {
-            msgBox.innerText = data.error || "Registration failed.";
-        }
-
-    } catch (err) {
-        msgBox.innerText = "Network error. Try again.";
-    }
+    // Simulate registration for demo
+    msgBox.innerText = "Creating account...";
+    setTimeout(() => {
+        msgBox.innerText = "Account created! (Demo)";
+    }, 1000);
 }
 
-// -------------------------------------------------
-// ENTER key submits the form
-// -------------------------------------------------
 document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") registerUser();
 });
