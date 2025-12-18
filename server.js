@@ -2473,52 +2473,60 @@ app.post("/api/reset/confirm", async (req, res) => {
     }
 });
 
-// Add this to Part 6 or 7
+/***************************************************************
+ *  TWILIO SMS WEBHOOK - HANDLE INCOMING STOP MESSAGES
+ *  Place this BEFORE app.listen() at the end of your server.js
+ ***************************************************************/
 app.post("/api/twilio/sms-webhook", express.urlencoded({ extended: false }), async (req, res) => {
     try {
         const { From, Body } = req.body;
         const message = Body?.trim().toUpperCase();
         
-        // Check if it's a STOP/UNSUBSCRIBE command
-        if (["STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"].includes(message)) {
-            // Find recipient by phone number and deactivate
-            await global.__LT_pool.query(
-                `UPDATE users SET is_active = false WHERE phone_number = $1`,
+        console.log(`📱 Incoming SMS from ${From}: "${Body}"`);
+        
+        // Twilio STOP keywords (required by law)
+        const stopKeywords = ["STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"];
+        
+        if (stopKeywords.includes(message)) {
+            // Deactivate recipient by phone number
+            const result = await global.__LT_pool.query(
+                `UPDATE users SET is_active = false WHERE phone_number = $1 RETURNING id, name`,
                 [From]
             );
             
-            console.log(`📱 SMS STOP received from ${From}`);
-            
-            // Twilio expects TwiML response
-            res.type('text/xml');
-            return res.send('<Response></Response>');
+            if (result.rows.length > 0) {
+                console.log(`✅ Unsubscribed ${result.rows[0].name} (${From})`);
+            } else {
+                console.log(`⚠️  No recipient found for ${From}`);
+            }
         }
         
-        // For any other message, just acknowledge
+        // Twilio requires TwiML response
         res.type('text/xml');
         return res.send('<Response></Response>');
         
     } catch (err) {
-        console.error("SMS WEBHOOK ERROR:", err);
+        console.error("❌ SMS WEBHOOK ERROR:", err);
         res.type('text/xml');
         return res.send('<Response></Response>');
     }
 });
-```
-
-2. **Configure Twilio Webhook** - In your Twilio console:
-   - Go to Phone Numbers → Your Number
-   - Under "Messaging", set the webhook URL to:
-```
-     https://lovetextforher-backend.onrender.com/api/twilio/sms-webhook
 
 /***************************************************************
  *  SERVER START
  ***************************************************************/
 app.listen(PORT, () => {
     console.log(`🚀 LoveTextForHer Backend Running on Port ${PORT}`);
+    console.log(`📱 SMS webhook ready at: https://lovetextforher-backend.onrender.com/api/twilio/sms-webhook`);
 });
 
 /***************************************************************
- *  🎉 END OF PART 7 — BACKEND COMPLETE
+ *  BACKEND COMPLETE
+ *  
+ *  NEXT STEPS:
+ *  1. Deploy this updated server
+ *  2. Configure Twilio webhook:
+ *     - URL: https://yourdomain.com/api/twilio/sms-webhook
+ *     - Method: POST
+ *  3. Test by texting STOP to your Twilio number
  ***************************************************************/
