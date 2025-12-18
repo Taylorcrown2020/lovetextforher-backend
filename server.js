@@ -1200,9 +1200,12 @@ app.get("/api/message-log/:recipientId", global.__LT_authCustomer, async (req, r
 });
 
 /***************************************************************
- *  RECOMMENDED VERSION — SEND FLOWER
+ *  REPLACE YOUR EXISTING "SEND FLOWER" ENDPOINT (Part 5)
+ *  This version properly handles both EMAIL and SMS
  ***************************************************************/
-app.post("/api/customer/send-flowers/:id", global.__LT_authCustomer, async (req, res) => {
+app.post("/api/customer/send-flowers/:id", 
+    global.__LT_authCustomer, 
+    async (req, res) => {
     try {
         const rid = req.params.id;
         const { note } = req.body;
@@ -1217,26 +1220,35 @@ app.post("/api/customer/send-flowers/:id", global.__LT_authCustomer, async (req,
 
         const r = q.rows[0];
 
-        const unsubscribeURL =
-            `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
-
-        // recommended formatting
-        const message =
-            `🌸 A flower for you!` +
+        // Build the message
+        const message = `🌸 A flower for you!` +
             (note?.trim() ? ` — ${global.__LT_sanitize(note.trim())}` : "");
 
-        const html =
-            global.__LT_buildLoveEmailHTML(r.name, message, unsubscribeURL);
+        // SEND EMAIL (if delivery method includes email)
+        if (!r.delivery_method || r.delivery_method === "email" || r.delivery_method === "both") {
+            const unsubscribeURL = 
+                `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
+            
+            const html = global.__LT_buildLoveEmailHTML(r.name, message, unsubscribeURL);
 
-        // Send email
-        await global.__LT_sendEmail(
-            r.email,
-            "You received a flower 🌸",
-            html,
-            message + "\n\nUnsubscribe: " + unsubscribeURL
-        );
+            await global.__LT_sendEmail(
+                r.email,
+                "You received a flower 🌸",
+                html,
+                message + "\n\nUnsubscribe: " + unsubscribeURL
+            );
+            
+            console.log(`💌 Flower email sent to ${r.email}`);
+        }
 
-        // Log message
+        // SEND SMS (if delivery method includes SMS and phone exists)
+        if ((r.delivery_method === "sms" || r.delivery_method === "both") && r.phone_number) {
+            const smsMessage = `${message}\n\nReply STOP to unsubscribe`;
+            await global.__LT_sendSMS(r.phone_number, smsMessage);
+            console.log(`📱 Flower SMS sent to ${r.phone_number}`);
+        }
+
+        // Log the flower message
         await global.__LT_pool.query(
             `INSERT INTO message_logs (customer_id, recipient_id, email, message)
              VALUES ($1, $2, $3, $4)`,
@@ -1246,7 +1258,7 @@ app.post("/api/customer/send-flowers/:id", global.__LT_authCustomer, async (req,
         return res.json({ success: true });
 
     } catch (err) {
-        console.error("FLOWER SEND ERROR:", err);
+        console.error("❌ FLOWER SEND ERROR:", err);
         return res.status(500).json({ error: "Error sending flower." });
     }
 });
@@ -1322,9 +1334,12 @@ app.delete("/api/admin/recipients/:id", global.__LT_authAdmin, async (req, res) 
 });
 
 /***************************************************************
- *  ADMIN — SEND NOW (manual)
+ *  ADMIN "SEND NOW" - ALSO FIXED FOR SMS (Part 5)
+ *  Replace your existing /api/admin/send-now/:id endpoint
  ***************************************************************/
-app.post("/api/admin/send-now/:id", global.__LT_authAdmin, async (req, res) => {
+app.post("/api/admin/send-now/:id", 
+    global.__LT_authAdmin, 
+    async (req, res) => {
     try {
         const rid = req.params.id;
 
@@ -1338,31 +1353,42 @@ app.post("/api/admin/send-now/:id", global.__LT_authAdmin, async (req, res) => {
 
         const r = q.rows[0];
 
-        const unsubscribeURL =
-            `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
+        const message = global.__LT_buildMessage(r.name, r.relationship);
 
-        const message =
-            global.__LT_buildMessage(r.name, r.relationship);
+        // SEND EMAIL
+        if (!r.delivery_method || r.delivery_method === "email" || r.delivery_method === "both") {
+            const unsubscribeURL =
+                `${process.env.BASE_URL}/unsubscribe.html?token=${r.unsubscribe_token}`;
 
-        const html =
-            global.__LT_buildLoveEmailHTML(r.name, message, unsubscribeURL);
+            const html = global.__LT_buildLoveEmailHTML(r.name, message, unsubscribeURL);
 
-        await global.__LT_sendEmail(
-            r.email,
-            "Your Love Message ❤️",
-            html,
-            message + "\n\nUnsubscribe: " + unsubscribeURL
-        );
+            await global.__LT_sendEmail(
+                r.email,
+                "Your Love Message ❤️",
+                html,
+                message + "\n\nUnsubscribe: " + unsubscribeURL
+            );
+            
+            console.log(`💌 Admin email sent to ${r.email}`);
+        }
 
-        await logMessage(r.customer_id, r.id, r.email, message);
+        // SEND SMS
+        if ((r.delivery_method === "sms" || r.delivery_method === "both") && r.phone_number) {
+            const smsMessage = `${message}\n\nReply STOP to unsubscribe`;
+            await global.__LT_sendSMS(r.phone_number, smsMessage);
+            console.log(`📱 Admin SMS sent to ${r.phone_number}`);
+        }
+
+        await global.__LT_logMessage(r.customer_id, r.id, r.email, message);
 
         return res.json({ success: true });
 
     } catch (err) {
-        console.error("ADMIN SEND-NOW ERROR:", err);
+        console.error("❌ ADMIN SEND-NOW ERROR:", err);
         return res.status(500).json({ error: "Failed to send now" });
     }
 });
+
 /***************************************************************
  *  LoveTextForHer — BACKEND (PART 6 OF 7)
  *  ----------------------------------------------------------
@@ -2446,6 +2472,45 @@ app.post("/api/reset/confirm", async (req, res) => {
         return res.status(500).json({ error: "Server error resetting password" });
     }
 });
+
+// Add this to Part 6 or 7
+app.post("/api/twilio/sms-webhook", express.urlencoded({ extended: false }), async (req, res) => {
+    try {
+        const { From, Body } = req.body;
+        const message = Body?.trim().toUpperCase();
+        
+        // Check if it's a STOP/UNSUBSCRIBE command
+        if (["STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"].includes(message)) {
+            // Find recipient by phone number and deactivate
+            await global.__LT_pool.query(
+                `UPDATE users SET is_active = false WHERE phone_number = $1`,
+                [From]
+            );
+            
+            console.log(`📱 SMS STOP received from ${From}`);
+            
+            // Twilio expects TwiML response
+            res.type('text/xml');
+            return res.send('<Response></Response>');
+        }
+        
+        // For any other message, just acknowledge
+        res.type('text/xml');
+        return res.send('<Response></Response>');
+        
+    } catch (err) {
+        console.error("SMS WEBHOOK ERROR:", err);
+        res.type('text/xml');
+        return res.send('<Response></Response>');
+    }
+});
+```
+
+2. **Configure Twilio Webhook** - In your Twilio console:
+   - Go to Phone Numbers → Your Number
+   - Under "Messaging", set the webhook URL to:
+```
+     https://lovetextforher-backend.onrender.com/api/twilio/sms-webhook
 
 /***************************************************************
  *  SERVER START
