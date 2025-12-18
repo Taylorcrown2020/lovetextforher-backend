@@ -468,7 +468,8 @@ global.__LT_enforceRecipientLimit = enforceRecipientLimit;
  ***************************************************************/
 
 /***************************************************************
- *  CUSTOMER REGISTRATION
+ * FIX 1: UPDATED REGISTRATION ENDPOINT
+ * Replace the existing /api/customer/register endpoint
  ***************************************************************/
 app.post("/api/customer/register", async (req, res) => {
     try {
@@ -493,7 +494,7 @@ app.post("/api/customer/register", async (req, res) => {
 
         const hash = await bcrypt.hash(password, 10);
 
-        // ✅ FIX: Don't set trial_used to true on registration
+        // ✅ FIX: Explicitly set trial_used to FALSE on registration
         await global.__LT_pool.query(
             `INSERT INTO customers
                 (email, password_hash, name,
@@ -512,7 +513,6 @@ app.post("/api/customer/register", async (req, res) => {
         return res.status(500).json({ error: "Server error" });
     }
 });
-
 
 /***************************************************************
  *  CUSTOMER LOGIN
@@ -771,10 +771,9 @@ async function ensureStripeCustomer(customer) {
 }
 
 /***************************************************************
- *  FIXED: GET SUBSCRIPTION STATUS ENDPOINT
- *  Replace this in your backend (Part 4)
+ * FIX 2: UPDATED SUBSCRIPTION STATUS ENDPOINT
+ * Replace the existing /api/customer/subscription endpoint
  ***************************************************************/
-
 app.get("/api/customer/subscription",
     global.__LT_authCustomer,
     async (req, res) => {
@@ -802,6 +801,10 @@ app.get("/api/customer/subscription",
 
         let subscribed = false;
         let status = "inactive";
+        let trialEligible = false;
+
+        // ✅ FIX: Check trial eligibility - trial is available if NOT used
+        trialEligible = (c.trial_used === false || c.trial_used === null);
 
         // ✅ Check for active trial
         if (c.trial_active && c.trial_end && new Date(c.trial_end) > now) {
@@ -827,6 +830,7 @@ app.get("/api/customer/subscription",
             trial_active: c.trial_active,
             trial_end: c.trial_end,
             trial_used: c.trial_used,
+            trial_eligible: trialEligible,  // ✅ NEW: Explicitly return eligibility
             stripe_subscription_id: c.stripe_subscription_id,
             subscription_end: c.subscription_end
         });
@@ -838,7 +842,8 @@ app.get("/api/customer/subscription",
 });
 
 /***************************************************************
- *  STRIPE CHECKOUT — NEW SUB OR CREATE NEW AFTER CANCEL
+ * FIX 3: UPDATED STRIPE CHECKOUT WITH BETTER TRIAL GUARD
+ * Replace the trial guard section in /api/stripe/checkout
  ***************************************************************/
 app.post("/api/stripe/checkout",
     global.__LT_authCustomer,
@@ -870,21 +875,20 @@ app.post("/api/stripe/checkout",
             }
         }
 
-        /***********************************************************
-         * TRIAL GUARD — Only one trial ever
-         ***********************************************************/
-        if (newPlan === "trial") {
-            const trialCheck = await global.__LT_pool.query(
-                `SELECT trial_used FROM customers WHERE id=$1`,
-                [customer.id]
-            );
-            
-            if (trialCheck.rows[0]?.trial_used === true) {
-                return res.status(400).json({
-                    error: "You have already used your free trial."
-                });
-            }
-        }
+/***********************************************************
+ * TRIAL GUARD — Only one trial ever (FIXED)
+ ***********************************************************/
+if (newPlan === "trial") {
+    // ✅ FIX: Check if trial_used is TRUE (meaning they've used it)
+    // If trial_used is false or null, they CAN use the trial
+    if (customer.trial_used === true) {
+        return res.status(400).json({
+            error: "You have already used your free trial."
+        });
+    }
+    
+    console.log(`✅ Trial eligible for customer ${customer.id}`);
+}
 
         /***********************************************************
          * CASE 1 — ACTIVE SUB → UPGRADE / DOWNGRADE
@@ -942,8 +946,8 @@ app.post("/api/stripe/checkout",
                 }
             };
             
-            // ✅ FIX: Don't mark trial_used here - let webhook handle it
-            // REMOVED: await global.__LT_pool.query(...)
+            // Note: trial_used is set by the webhook when checkout completes
+            console.log(`🎟️  Creating trial checkout for customer ${customer.id}`);
         }
 
         const session = await global.__LT_stripe.checkout.sessions.create(sessionConfig);
