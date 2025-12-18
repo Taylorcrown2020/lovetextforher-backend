@@ -26,115 +26,31 @@
             overflow-x: hidden;
         }
 
-        /* ================= DESKTOP NAV ================= */
-        .desktop-nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-bottom: 1px solid rgba(214, 51, 108, 0.1);
-            z-index: 997;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .desktop-nav-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 28px;
-            height: 70px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-logo {
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--primary);
-            text-decoration: none;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 35px;
-            list-style: none;
-            align-items: center;
-        }
-
-        .nav-links a {
-            color: var(--text-dark);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 15px;
-            transition: color 0.2s;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-
-        .nav-cta-btn {
-            background: var(--primary);
-            color: white;
-            padding: 10px 22px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            border: none;
-            cursor: pointer;
-            transition: 0.2s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .nav-cta-btn:hover {
-            background: #b8285b;
-            transform: translateY(-1px);
-        }
-
         /* ================= MOBILE MENU ================= */
-        .mobile-menu-btn {
+                .mobile-menu-btn {
             display: none;
             position: fixed;
             top: 20px;
-            right: 20px;
+            right: -10px;
             z-index: 1000;
-            background: white;
-            border: 2px solid rgba(214,51,108,0.2);
+            background: none;
+            border: none;
             cursor: pointer;
-            padding: 12px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .mobile-menu-btn:hover {
-            background: #fff;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-            transform: translateY(-1px);
+            padding: 10px;
         }
 
         .mobile-menu-btn span {
             display: block;
-            width: 24px;
-            height: 2.5px;
-            background: var(--primary);
-            margin: 4px 0;
-            transition: all 0.3s ease;
+            width: 28px;
+            height: 3px;
+            background: var(--text-dark);
+            margin: 5px 0;
+            transition: 0.3s;
             border-radius: 2px;
         }
 
-        .mobile-menu-btn.active {
-            background: var(--primary);
-        }
-
-        .mobile-menu-btn.active span {
-            background: white;
-        }
-
         .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(-45deg) translate(-5px, 6px);
+            transform: rotate(-45deg) translate(-6px, 6px);
         }
 
         .mobile-menu-btn.active span:nth-child(2) {
@@ -142,13 +58,13 @@
         }
 
         .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(45deg) translate(-5px, -6px);
+            transform: rotate(45deg) translate(-6px, -6px);
         }
 
         .mobile-nav-overlay {
             display: none;
             position: fixed;
-            top: 0;
+            top: 10px;
             right: -100%;
             width: 100%;
             height: 100vh;
@@ -196,6 +112,11 @@
         .mobile-nav-cta .cta-btn {
             width: 100%;
             text-align: center;
+        }
+
+        #navbar {
+            width: 100%;
+            height: 95px;
         }
 
         .login-wrapper {
@@ -292,16 +213,16 @@
 
         /* ============== MOBILE ============== */
         @media (max-width: 768px) {
-            .desktop-nav {
-                display: none;
-            }
-
             .mobile-menu-btn {
                 display: block;
             }
 
             .mobile-nav-overlay {
                 display: block;
+            }
+
+            #navbar {
+                display: none !important;
             }
 
             body {
@@ -390,20 +311,6 @@
 
 <body>
 
-<!-- Desktop Navigation -->
-<nav class="desktop-nav">
-    <div class="desktop-nav-content">
-        <a href="index.html" class="nav-logo">LOVETEXTFORHER</a>
-        <ul class="nav-links">
-            <li><a href="index.html">Home</a></li>
-            <li><a href="login.html">Login</a></li>
-            <li><a href="register.html">Register</a></li>
-            <li><a href="admin_login.html">Admin</a></li>
-            <li><a href="register.html" class="nav-cta-btn">Get Started</a></li>
-        </ul>
-    </div>
-</nav>
-
 <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
     <span></span>
     <span></span>
@@ -413,13 +320,19 @@
 <div class="mobile-nav-overlay" id="mobileNav">
     <div class="mobile-nav-content">
         <ul class="mobile-nav-links">
-            <li><a href="index.html" onclick="closeMobileMenu()">Home</a></li>
-            <li><a href="login.html" onclick="closeMobileMenu()">Login</a></li>
-            <li><a href="register.html" onclick="closeMobileMenu()">Register</a></li>
-            <li><a href="admin_login.html" onclick="closeMobileMenu()">Admin</a></li>
+            <li><a href="/index.html" onclick="closeMobileMenu()">Home</a></li>
+            <li><a href="/login.html" onclick="closeMobileMenu()">Login</a></li>
+            <li><a href="/register.html" onclick="closeMobileMenu()">Register</a></li>
+            <li><a href="/admin.html" onclick="closeMobileMenu()">Admin</a></li>
         </ul>
     </div>
 </div>
+
+<!-- Login must always show PUBLIC navbar -->
+<script> window.FORCE_PUBLIC_NAV = true; </script>
+<script src="/js/nav.js" defer></script>
+
+<div id="navbar"></div>
 
 <div class="login-wrapper">
     <div class="login-card">
@@ -431,8 +344,8 @@
         <button id="login-btn">Login</button>
 
         <div class="links">
-            <a href="register.html">Create an account</a><br>
-            <a href="#">Forgot your password?</a>
+            <a href="/register.html">Create an account</a><br>
+            <a href="/forgot.html">Forgot your password?</a>
         </div>
 
         <p id="msg"></p>
@@ -466,6 +379,9 @@ function closeMobileMenu() {
     body.style.overflow = '';
 }
 
+/* ------------------------------------------------------
+   LOGIN FUNCTION — MATCHES NEW SERVER.JS EXACTLY
+------------------------------------------------------ */
 async function login() {
     const msg = document.getElementById("msg");
     msg.innerText = "";
@@ -478,19 +394,37 @@ async function login() {
         return;
     }
 
-    // Simulate login for demo
-    msg.innerText = "Logging in...";
-    setTimeout(() => {
-        msg.innerText = "Login successful! (Demo)";
-    }, 1000);
+    try {
+        const res = await fetch("/api/customer/login", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: emailVal, password: passVal })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            window.location.href = "/dashboard.html";
+        } else {
+            msg.innerText = data.error || "Invalid login.";
+        }
+
+    } catch (err) {
+        msg.innerText = "Network error. Try again.";
+    }
 }
 
+/* Click button */
 document.getElementById("login-btn").addEventListener("click", login);
 
+/* Enter key triggers login */
 document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") login();
 });
 
+// REMOVED: Auto-redirect check that was causing issues
+// The login page should always be accessible
 </script>
 
 </body>

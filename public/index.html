@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LoveTextForHer — Automated Messages for the People You Care About</title>
 
+    <!-- This page must always show the public navbar -->
+    <script> window.FORCE_PUBLIC_NAV = true; </script>
+    <script src="/js/nav.js" defer></script>
+
 <style>
         :root {
             --primary: #d6336c;
@@ -27,72 +31,6 @@
             background: #fff;
             color: var(--text-dark);
             overflow-x: hidden;
-            padding-top: 35px;
-        }
-
-        /* ================= DESKTOP NAV ================= */
-        .desktop-nav {
-            position: fixed;
-            top: 35px;
-            left: 0;
-            right: 0;
-            background: white;
-            border-bottom: 1px solid rgba(214, 51, 108, 0.1);
-            z-index: 997;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .desktop-nav-content {
-            max-width: var(--max-width);
-            margin: 0 auto;
-            padding: 0 28px;
-            height: 70px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-logo {
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--primary);
-            text-decoration: none;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 35px;
-            list-style: none;
-            align-items: center;
-        }
-
-        .nav-links a {
-            color: var(--text-dark);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 15px;
-            transition: color 0.2s;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-
-        .nav-cta-btn {
-            background: var(--primary);
-            color: white;
-            padding: 10px 22px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            border: none;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .nav-cta-btn:hover {
-            background: #b8285b;
-            transform: translateY(-1px);
         }
 
         /* ================= PROMO BANNER ================= */
@@ -161,40 +99,25 @@
             right: 20px;
             z-index: 1000;
             background: white;
-            border: 2px solid rgba(214,51,108,0.2);
+            border: 1px solid rgba(214, 51, 108, 0.2);
             cursor: pointer;
-            padding: 12px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .mobile-menu-btn:hover {
-            background: #fff;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-            transform: translateY(-1px);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .mobile-menu-btn span {
             display: block;
-            width: 24px;
-            height: 2.5px;
-            background: var(--primary);
-            margin: 4px 0;
-            transition: all 0.3s ease;
+            width: 28px;
+            height: 3px;
+            background: var(--text-dark);
+            margin: 5px 0;
+            transition: 0.3s;
             border-radius: 2px;
         }
 
-        .mobile-menu-btn.active {
-            background: var(--primary);
-        }
-
-        .mobile-menu-btn.active span {
-            background: white;
-        }
-
         .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(-45deg) translate(-5px, 6px);
+            transform: rotate(-45deg) translate(-6px, 6px);
         }
 
         .mobile-menu-btn.active span:nth-child(2) {
@@ -202,7 +125,7 @@
         }
 
         .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(45deg) translate(-5px, -6px);
+            transform: rotate(45deg) translate(-6px, -6px);
         }
 
         .mobile-nav-overlay {
@@ -261,12 +184,16 @@
         /* ================= HERO ================= */
         .hero {
             max-width: var(--max-width);
-            margin: 180px auto 0;
+            margin: 140px auto 0;
             padding: 0 28px;
             min-height: 520px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+        
+        body {
+            padding-top: 35px;
         }
 
         .hero-text { max-width: 520px; }
@@ -426,17 +353,18 @@
         /* ============== MOBILE ============== */
         @media (max-width: 768px) {
             
-            /* Hide desktop nav, show mobile menu */
-            .desktop-nav {
-                display: none;
-            }
-
+            /* Show mobile menu button */
             .mobile-menu-btn {
                 display: block;
             }
 
             .mobile-nav-overlay {
                 display: block;
+            }
+
+            /* Hide desktop nav */
+            #navbar {
+                display: none !important;
             }
 
             body {
@@ -609,23 +537,9 @@
     <div class="promo-banner-content">
         <span class="promo-badge">Free Trial</span>
         <span class="promo-text">Limited Time Only — Try LoveTextForHer Free for 3 Days</span>
-        <a href="register.html" class="promo-cta">Get Started →</a>
+        <a href="/register.html" class="promo-cta">Get Started →</a>
     </div>
 </div>
-
-<!-- Desktop Navigation -->
-<nav class="desktop-nav">
-    <div class="desktop-nav-content">
-        <a href="#" class="nav-logo">LOVETEXTFORHER</a>
-        <ul class="nav-links">
-            <li><a href="index.html">Home</a></li>
-            <li><a href="login.html">Login</a></li>
-            <li><a href="register.html">Register</a></li>
-            <li><a href="admin_login.html">Admin</a></li>
-            <button class="nav-cta-btn" onclick="location.href='register.html'">Get Started</button>
-        </ul>
-    </div>
-</nav>
 
 <!-- Mobile Menu Button -->
 <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
@@ -638,21 +552,23 @@
 <div class="mobile-nav-overlay" id="mobileNav">
     <div class="mobile-nav-content">
         <ul class="mobile-nav-links">
-            <li><a href="index.html" onclick="closeMobileMenu()">Home</a></li>
-            <li><a href="login.html" onclick="closeMobileMenu()">Login</a></li>
-            <li><a href="register.html" onclick="closeMobileMenu()">Register</a></li>
-            <li><a href="admin_login.html" onclick="closeMobileMenu()">Admin</a></li>
+            <li><a href="/index.html" onclick="closeMobileMenu()">Home</a></li>
+            <li><a href="/login.html" onclick="closeMobileMenu()">Login</a></li>
+            <li><a href="/register.html" onclick="closeMobileMenu()">Register</a></li>
+            <li><a href="/admin.html" onclick="closeMobileMenu()">Admin</a></li>
         </ul>
         <div class="mobile-nav-cta">
-            <button class="cta-btn" onclick="closeMobileMenu()">
+            <button class="cta-btn" onclick="location.href='/register.html'">
                 Start Sending Love
             </button>
         </div>
     </div>
 </div>
 
+<div id="navbar"></div>
+
 <!-- ========================= HERO ========================= -->
-<section class="hero" id="home">
+<section class="hero">
     <div class="hero-text">
         <h1 class="hero-title">
             Thoughtful Messages<br>
@@ -665,7 +581,7 @@
             your unique relationship.
         </p>
 
-        <button class="cta-btn">
+        <button class="cta-btn" onclick="location.href='/register.html'">
             Start Sending Love
         </button>
     </div>
@@ -689,7 +605,7 @@
 </section>
 
 <!-- ========================= FEATURES ========================= -->
-<section class="features-strip" id="features">
+<section class="features-strip">
     <div class="features">
 
         <div class="feature">
@@ -724,7 +640,7 @@
 </section>
 
 <!-- ========================= PRODUCTS ========================= -->
-<section class="products-section" id="pricing">
+<section class="products-section">
     <h2 class="products-title">Choose Your Plan</h2>
 
     <div class="products">
@@ -735,7 +651,7 @@
                 Daily uplifting messages for up to 3 recipients.
             </div>
             <div class="product-price">$4.99 / month</div>
-            <button class="product-btn" onclick="location.href='register.html'">Sign Up</button>
+            <button class="product-btn" onclick="location.href='/register.html'">Sign Up</button>
         </div>
 
         <div class="product-card">
@@ -744,14 +660,14 @@
                 Unlimited recipients. Great for families and large circles.
             </div>
             <div class="product-price">$9.99 / month</div>
-            <button class="product-btn" onclick="location.href='register.html'">Sign Up</button>
+            <button class="product-btn" onclick="location.href='/register.html'">Sign Up</button>
         </div>
 
         <div class="product-card">
             <div class="product-title">LoveText Free Trial</div>
             <div class="product-desc">Get full access for 3 days, completely free.</div>
             <div class="product-price">$0.00</div>
-            <button class="product-btn" onclick="location.href='register.html'">Try Free</button>
+            <button class="product-btn" onclick="location.href='/register.html'">Try Free</button>
         </div>
 
     </div>
