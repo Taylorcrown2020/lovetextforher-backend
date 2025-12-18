@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Dashboard — LoveTextForHer</title>
 
-        <style>
+    <style>
         :root {
             --primary: #d6336c;
             --secondary: #8b5cf6;
@@ -25,9 +25,10 @@
         }
 
         body {
-            font-family: "Inter", sans-serif;
-            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #fafafa;
             overflow-x: hidden;
+            line-height: 1.6;
         }
 
         /* ================= MOBILE MENU ================= */
@@ -112,54 +113,80 @@
         #navbar { width: 100%; height: 95px; }
 
         .dashboard-container {
-            max-width: 950px;
-            margin: 150px auto;
-            padding: 45px 40px;
-            background: rgba(255,255,255,0.55);
-            backdrop-filter: blur(20px);
-            border-radius: 22px;
-            border: 1px solid rgba(255,255,255,0.8);
-            box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+            max-width: 1200px;
+            margin: 100px auto 60px;
+            padding: 0 40px;
         }
 
         h1.header-title {
             text-align: center;
-            font-size: 32px;
-            font-weight: 800;
-            margin-bottom: 35px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 60px;
+            font-weight: 400;
         }
 
         h2.form-title {
-            text-align: center;
-            font-size: 24px;
-            font-weight: 700;
-            margin: 40px 0 20px;
+            font-size: 32px;
+            font-weight: 800;
+            margin: 60px 0 30px;
             color: var(--text-dark);
+            letter-spacing: -0.01em;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .section-header h2 {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin: 0;
+        }
+
+        .recipients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
         }
 
         #subscriptionBanner {
             display: none;
-            background: #ffe3ed;
-            padding: 18px;
-            border-radius: 12px;
+            background: white;
+            padding: 24px 32px;
+            border-radius: 16px;
             text-align: center;
-            color: #b1184a;
-            font-weight: 600;
-            margin-bottom: 25px;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 40px;
+            border: 2px solid #e0e0e0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
         #subscriptionBanner.active {
             background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
             color: #2e7d32;
+            border-color: #81c784;
         }
 
         #subscriptionBanner.canceling {
             background: linear-gradient(135deg, #fff3e0, #ffe0b2);
             color: #e65100;
-            border: 2px solid #ff9800;
+            border-color: #ff9800;
         }
 
         #subscriptionBanner a {
@@ -187,59 +214,151 @@
         }
 
         .recipient-box {
-            background: rgba(255,255,255,0.75);
-            border: 1px solid #ffe0ec;
-            border-radius: 18px;
-            padding: 22px;
-            margin-bottom: 18px;
-            box-shadow: 0 8px 26px rgba(214,51,108,0.12);
+            background: white;
+            border: 2px solid #e8e8e8;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .recipient-box:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 24px rgba(214,51,108,0.15);
+            transform: translateY(-2px);
         }
 
         .recipient-box strong { 
-            color: var(--primary); 
-            font-size: 18px;
+            color: var(--text-dark); 
+            font-size: 20px;
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .recipient-badge {
+            display: inline-block;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-left: 8px;
         }
 
         .recipient-box p {
-            margin: 8px 0;
+            margin: 10px 0;
             font-size: 15px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .recipient-box p strong {
+            font-size: 14px;
+            color: #888;
+            font-weight: 600;
+            display: inline;
+            margin: 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+            flex-wrap: wrap;
         }
 
         .delete-btn, .log-btn, .flower-btn {
             padding: 10px 18px;
-            border-radius: 12px;
+            border-radius: 10px;
             border: none;
             cursor: pointer;
             color: white;
             font-weight: 600;
-            margin-top: 14px;
             font-size: 14px;
+            transition: all 0.2s ease;
+            flex: 1;
+            min-width: 100px;
         }
 
-        .delete-btn { background: var(--danger); }
-        .log-btn { background: var(--secondary-btn); margin-left: 10px; }
-        .flower-btn { background: #ff7ac4; margin-left: 10px; }
+        .delete-btn { 
+            background: var(--danger);
+        }
+        
+        .delete-btn:hover {
+            background: #a01f1f;
+            transform: translateY(-1px);
+        }
+        
+        .log-btn { 
+            background: var(--secondary-btn);
+        }
+        
+        .log-btn:hover {
+            background: #5a3a9a;
+            transform: translateY(-1px);
+        }
+        
+        .flower-btn { 
+            background: #ff7ac4;
+        }
+        
+        .flower-btn:hover {
+            background: #ff5ab0;
+            transform: translateY(-1px);
+        }
+
+        #addForm {
+            background: white;
+            border: 2px solid #e8e8e8;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            max-width: 600px;
+            margin: 0 auto;
+        }
 
         #addForm input, #addForm select {
             width: 100%;
-            padding: 14px;
-            margin-top: 15px;
-            border-radius: 12px;
-            border: 2px solid rgba(214,51,108,0.25);
+            padding: 14px 16px;
+            margin-top: 12px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
             font-size: 15px;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        #addForm input:focus, #addForm select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(214,51,108,0.1);
         }
 
         #addForm button {
             width: 100%;
             padding: 16px;
-            margin-top: 22px;
+            margin-top: 28px;
             border-radius: 12px;
             border: none;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            background: var(--primary);
             color: white;
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(214,51,108,0.3);
+        }
+
+        #addForm button:hover {
+            background: #b8285a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(214,51,108,0.4);
         }
 
         #msg {
@@ -252,8 +371,8 @@
 
         #manageSubBtn {
             display: none;
-            margin: 40px auto 70px;
-            padding: 14px 22px;
+            margin: 60px auto;
+            padding: 16px 32px;
             border-radius: 12px;
             background: var(--primary);
             color: white;
@@ -262,6 +381,14 @@
             cursor: pointer;
             text-align: center;
             font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(214,51,108,0.3);
+        }
+
+        #manageSubBtn:hover {
+            background: #b8285a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(214,51,108,0.4);
         }
 
         #messageLogModal, #flowerModal {
@@ -304,188 +431,65 @@
 
             .dashboard-container {
                 margin: 20px 16px 40px;
-                padding: 24px 20px;
-                border-radius: 18px;
+                padding: 0 16px;
                 max-width: 100%;
             }
 
             h1.header-title {
-                font-size: 28px;
-                margin-bottom: 24px;
-                font-weight: 800;
+                font-size: 36px;
+                margin-bottom: 12px;
             }
 
-            h2.form-title {
-                font-size: 22px;
-                margin: 32px 0 18px;
-                font-weight: 700;
-            }
-
-            #subscriptionBanner {
-                padding: 16px 14px;
-                font-size: 14px;
-                border-radius: 12px;
-                margin-bottom: 20px;
-            }
-
-            #subscriptionBanner a {
-                padding: 12px 20px;
-                font-size: 15px;
-                margin-top: 12px;
-                display: inline-block;
-            }
-
-            .countdown-box {
-                padding: 14px;
-                font-size: 13px;
-                margin-top: 12px;
-            }
-
-            .countdown-box strong {
+            .subtitle {
                 font-size: 16px;
+                margin-bottom: 40px;
             }
 
-            .recipient-box {
-                padding: 20px 16px;
-                margin-bottom: 16px;
-                border-radius: 14px;
+            .section-header h2,
+            h2.form-title {
+                font-size: 28px;
+                margin: 40px 0 24px;
             }
 
-            .recipient-box strong { 
-                font-size: 17px;
-                display: block;
-                margin-bottom: 8px;
+            .recipients-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
             }
 
-            .recipient-box p { 
-                font-size: 14px;
-                margin: 6px 0;
-                line-height: 1.4;
+            #addForm {
+                padding: 28px 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
             }
 
             .delete-btn, .log-btn, .flower-btn {
-                padding: 12px 16px;
-                font-size: 14px;
-                margin-top: 10px;
-                margin-left: 0;
-                margin-right: 8px;
-                display: inline-block;
-                border-radius: 10px;
-            }
-
-            .delete-btn {
                 width: 100%;
-                margin-right: 0;
-            }
-
-            .log-btn, .flower-btn {
-                width: calc(50% - 4px);
-                margin-top: 8px;
-            }
-
-            #addForm input, #addForm select {
-                padding: 14px 12px;
-                font-size: 16px;
-                margin-top: 12px;
-                border-radius: 10px;
-            }
-
-            #addForm button {
-                padding: 16px;
-                font-size: 16px;
-                margin-top: 18px;
-                border-radius: 10px;
-                font-weight: 700;
-            }
-
-            #msg {
-                font-size: 14px;
-                margin-top: 14px;
-            }
-
-            #manageSubBtn {
-                padding: 16px 24px;
-                font-size: 16px;
-                margin: 30px auto 50px;
-                border-radius: 10px;
-                font-weight: 700;
-                display: block;
-                width: calc(100% - 32px);
-                max-width: 400px;
-            }
-
-            .modal-content {
-                width: 90%;
-                max-width: 380px;
-                padding: 20px 18px;
-                border-radius: 18px;
-            }
-
-            .modal-content h2 {
-                font-size: 20px;
-                margin-bottom: 16px;
-            }
-
-            .modal-content label {
-                font-size: 15px;
-            }
-
-            .modal-content select,
-            .modal-content textarea {
-                font-size: 16px;
-                padding: 12px;
-            }
-
-            .modal-content button {
-                padding: 14px 18px;
-                font-size: 15px;
+                min-width: auto;
             }
         }
 
         @media (max-width: 380px) {
-            .dashboard-container {
-                margin: 16px 12px 32px;
-                padding: 20px 16px;
-            }
-
             h1.header-title {
-                font-size: 26px;
+                font-size: 32px;
             }
 
+            .subtitle {
+                font-size: 15px;
+            }
+
+            .section-header h2,
             h2.form-title {
-                font-size: 20px;
+                font-size: 24px;
             }
 
             .recipient-box {
-                padding: 18px 14px;
+                padding: 20px 16px;
             }
 
-            .recipient-box strong { 
-                font-size: 16px;
-            }
-
-            .recipient-box p { 
-                font-size: 13px;
-            }
-
-            .delete-btn, .log-btn, .flower-btn {
-                padding: 11px 14px;
-                font-size: 13px;
-            }
-
-            #addForm input, #addForm select {
-                padding: 13px 10px;
-                font-size: 15px;
-            }
-
-            #addForm button {
-                padding: 15px;
-                font-size: 15px;
-            }
-
-            .modal-content {
-                width: 92%;
-                padding: 18px 16px;
+            #addForm {
+                padding: 24px 16px;
             }
         }
     </style>
@@ -516,9 +520,14 @@
 
     <div id="subscriptionBanner"></div>
 
-    <h1 class="header-title">Your Recipients</h1>
+    <h1 class="header-title">Your Dashboard</h1>
+    <p class="subtitle">Manage your recipients and spread love with personalized messages</p>
 
-    <div id="recipients"></div>
+    <div class="section-header">
+        <h2>Your Recipients</h2>
+    </div>
+
+    <div class="recipients-grid" id="recipients"></div>
 
     <h2 class="form-title">Add New Recipient</h2>
 
@@ -782,25 +791,31 @@ async function loadRecipients() {
         box.innerHTML = "";
 
         if (!list.length) {
-            box.innerHTML = `<p style="text-align:center; color:var(--text-soft); font-size: 17px;">You have no recipients yet.</p>`;
+            box.innerHTML = `<p style="text-align:center; color:#999; font-size: 16px; grid-column: 1/-1; padding: 40px 0;">No recipients yet. Add your first recipient below! 💝</p>`;
             return;
         }
 
         list.forEach(r => {
-            const deliveryBadge = r.delivery_method === "both" ? "📧📱" : 
-                                 r.delivery_method === "sms" ? "📱" : "📧";
+            const deliveryBadge = r.delivery_method === "both" ? "📧 📱" : 
+                                 r.delivery_method === "sms" ? "📱 SMS" : "📧 Email";
             
             box.innerHTML += `
                 <div class="recipient-box">
-                    <strong>${r.name}</strong> (${r.relationship}) ${deliveryBadge}
-                    <p>Email: ${r.email || 'N/A'}</p>
-                    ${r.phone_number ? `<p>Phone: ${r.phone_number}</p>` : ''}
-                    <p>Frequency: ${r.frequency}</p>
-                    <p>Time: ${r.timings}</p>
+                    <div>
+                        <strong>${r.name}</strong>
+                        <span class="recipient-badge">${r.relationship}</span>
+                    </div>
+                    <p><strong>Contact:</strong> ${deliveryBadge}</p>
+                    ${r.email ? `<p><strong>Email:</strong> ${r.email}</p>` : ''}
+                    ${r.phone_number ? `<p><strong>Phone:</strong> ${r.phone_number}</p>` : ''}
+                    <p><strong>Frequency:</strong> ${r.frequency.replace(/-/g, ' ')}</p>
+                    <p><strong>Time:</strong> ${r.timings.charAt(0).toUpperCase() + r.timings.slice(1)}</p>
 
-                    <button class="delete-btn" onclick="deleteRecipient(${r.id})">Delete</button>
-                    <button class="log-btn" onclick="openMessageLog(${r.id})">Message Log</button>
-                    <button class="flower-btn" onclick="openFlowerModal(${r.id})">Send Flower 🌸</button>
+                    <div class="button-group">
+                        <button class="log-btn" onclick="openMessageLog(${r.id})">📋 History</button>
+                        <button class="flower-btn" onclick="openFlowerModal(${r.id})">🌸 Send</button>
+                        <button class="delete-btn" onclick="deleteRecipient(${r.id})">🗑️ Delete</button>
+                    </div>
                 </div>
             `;
         });
@@ -1005,37 +1020,32 @@ document.getElementById("r_relationship").addEventListener("change", (e) => {
 });
 
 /* ============================================================
+   LOGOUT FUNCTION
+============================================================ */
+async function handleLogout(event) {
+    if (event) event.preventDefault();
+    
+    try {
+        await fetch("/api/customer/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+        
+        sessionStorage.clear();
+        window.location.href = "/login.html";
+    } catch (err) {
+        console.error("Logout error:", err);
+        window.location.href = "/login.html";
+    }
+}
+
+/* ============================================================
    INIT
 ============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
     loadSubscriptionStatus();
     loadRecipients();
 });
-</script>
-
-<script>
-// LOGOUT FUNCTION - Add this to your existing <script> section
-async function handleLogout(event) {
-    if (event) event.preventDefault();
-    
-    try {
-        // Call logout endpoint
-        await fetch("/api/customer/logout", {
-            method: "POST",
-            credentials: "include"
-        });
-        
-        // Clear any local state
-        sessionStorage.clear();
-        
-        // Redirect to login
-        window.location.href = "/login.html";
-    } catch (err) {
-        console.error("Logout error:", err);
-        // Still redirect even if error
-        window.location.href = "/login.html";
-    }
-}
 </script>
 
 </body>
