@@ -1793,7 +1793,8 @@ cron.schedule("* * * * *", async () => {
                 
                 // SEND SMS (if delivery method includes SMS and phone exists)
                 if ((r.delivery_method === "sms" || r.delivery_method === "both") && r.phone_number) {
-                    await global.__LT_sendSMS(r.phone_number, message);
+                    const smsMessage = `${message}\n\nReply STOP to unsubscribe`;
+                    await global.__LT_sendSMS(r.phone_number, smsMessage);
                     console.log(`📱 SMS sent → ${r.phone_number}`);
                 }
 
