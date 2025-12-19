@@ -1200,9 +1200,12 @@ app.get("/api/message-log/:recipientId", global.__LT_authCustomer, async (req, r
 });
 
 /***************************************************************
- *  REPLACE YOUR EXISTING "SEND FLOWER" ENDPOINT (Part 5)
- *  This version properly handles both EMAIL and SMS
+ *  UPDATED SEND FLOWERS ENDPOINT
+ *  - Plus plan only
+ *  - Maximum 2 flowers per recipient per day
+ *  Replace your existing /api/customer/send-flowers/:id endpoint
  ***************************************************************/
+
 app.post("/api/customer/send-flowers/:id", 
     global.__LT_authCustomer, 
     async (req, res) => {
@@ -1210,17 +1213,73 @@ app.post("/api/customer/send-flowers/:id",
         const rid = req.params.id;
         const { note } = req.body;
 
+        // ✅ CHECK 1: Get customer plan
+        const customerQ = await global.__LT_pool.query(
+            "SELECT current_plan, has_subscription, subscription_end FROM customers WHERE id=$1",
+            [req.user.id]
+        );
+
+        if (!customerQ.rows.length) {
+            return res.status(404).json({ error: "Customer not found" });
+        }
+
+        const customer = customerQ.rows[0];
+
+        // ✅ CHECK 2: Verify Plus plan
+        if (customer.current_plan !== "plus") {
+            return res.status(403).json({ 
+                error: "Send Flowers is a Plus plan feature. Upgrade to access this feature.",
+                requiresPlan: "plus"
+            });
+        }
+
+        // ✅ CHECK 3: Verify active subscription
+        const now = new Date();
+        const isActive = customer.has_subscription || 
+                        (customer.subscription_end && new Date(customer.subscription_end) > now);
+        
+        if (!isActive) {
+            return res.status(403).json({ 
+                error: "Your subscription is not active. Please renew to send flowers." 
+            });
+        }
+
+        // ✅ CHECK 4: Get recipient
         const q = await global.__LT_pool.query(
             "SELECT * FROM users WHERE id=$1 AND customer_id=$2",
             [rid, req.user.id]
         );
 
-        if (!q.rows.length)
+        if (!q.rows.length) {
             return res.status(404).json({ error: "Recipient not found" });
+        }
 
         const r = q.rows[0];
 
-        // Build the message
+        // ✅ CHECK 5: Count flowers sent today to this recipient
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        const flowerCountQ = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM message_logs
+             WHERE customer_id = $1 
+             AND recipient_id = $2
+             AND message LIKE '🌸 A flower for you!%'
+             AND sent_at >= $3`,
+            [req.user.id, rid, todayStart]
+        );
+
+        const flowersSentToday = Number(flowerCountQ.rows[0].count);
+
+        if (flowersSentToday >= 2) {
+            return res.status(429).json({ 
+                error: "You've reached the daily limit of 2 flowers per recipient. Try again tomorrow!",
+                limit: 2,
+                sent: flowersSentToday
+            });
+        }
+
+        // ✅ ALL CHECKS PASSED - SEND FLOWER
         const message = `🌸 A flower for you!` +
             (note?.trim() ? ` — ${global.__LT_sanitize(note.trim())}` : "");
 
@@ -1255,11 +1314,66 @@ app.post("/api/customer/send-flowers/:id",
             [req.user.id, rid, r.email, message]
         );
 
-        return res.json({ success: true });
+        return res.json({ 
+            success: true,
+            flowersSentToday: flowersSentToday + 1,
+            remainingToday: 2 - (flowersSentToday + 1)
+        });
 
     } catch (err) {
         console.error("❌ FLOWER SEND ERROR:", err);
         return res.status(500).json({ error: "Error sending flower." });
+    }
+});
+
+/***************************************************************
+ *  OPTIONAL: GET FLOWER STATUS FOR A RECIPIENT
+ *  Shows how many flowers have been sent today
+ ***************************************************************/
+app.get("/api/customer/flower-status/:id",
+    global.__LT_authCustomer,
+    async (req, res) => {
+    try {
+        const rid = req.params.id;
+
+        // Check customer plan
+        const customerQ = await global.__LT_pool.query(
+            "SELECT current_plan FROM customers WHERE id=$1",
+            [req.user.id]
+        );
+
+        if (!customerQ.rows.length) {
+            return res.status(404).json({ error: "Customer not found" });
+        }
+
+        const isPlusUser = customerQ.rows[0].current_plan === "plus";
+
+        // Count flowers sent today
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        const flowerCountQ = await global.__LT_pool.query(
+            `SELECT COUNT(*) FROM message_logs
+             WHERE customer_id = $1 
+             AND recipient_id = $2
+             AND message LIKE '🌸 A flower for you!%'
+             AND sent_at >= $3`,
+            [req.user.id, rid, todayStart]
+        );
+
+        const flowersSentToday = Number(flowerCountQ.rows[0].count);
+
+        return res.json({
+            isPlusUser,
+            flowersSentToday,
+            remainingToday: Math.max(0, 2 - flowersSentToday),
+            dailyLimit: 2,
+            canSendFlower: isPlusUser && flowersSentToday < 2
+        });
+
+    } catch (err) {
+        console.error("❌ FLOWER STATUS ERROR:", err);
+        return res.status(500).json({ error: "Error checking flower status" });
     }
 });
 

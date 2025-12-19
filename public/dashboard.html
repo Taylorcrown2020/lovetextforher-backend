@@ -214,6 +214,46 @@
             font-weight: 700;
         }
 
+        .plus-feature-highlight {
+            background: linear-gradient(135deg, #f3e9ff, #ffe3ed);
+            border: 2px solid #8b5cf6;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: center;
+            display: none;
+        }
+
+        .plus-feature-highlight h3 {
+            color: #8b5cf6;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .plus-feature-highlight p {
+            color: #5f3a4d;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .plus-feature-highlight .upgrade-btn {
+            background: linear-gradient(90deg, #8b5cf6, #6b4bb8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .plus-feature-highlight .upgrade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
+        }
+
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -308,7 +348,7 @@
             flex-wrap: wrap;
         }
 
-        .delete-btn, .log-btn, .flower-btn {
+        .delete-btn, .log-btn, .flower-btn, .flower-btn-locked {
             padding: 12px 18px;
             border-radius: 10px;
             border: none;
@@ -351,6 +391,30 @@
             background: #ff5ab0;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(255,122,196,0.3);
+        }
+
+        .flower-btn-locked {
+            border: 2px dashed #ccc;
+            cursor: not-allowed;
+            background: #f5f5f5 !important;
+            color: #999 !important;
+            position: relative;
+        }
+
+        .flower-btn-locked:hover {
+            background: #e8e8e8 !important;
+            border-color: var(--primary);
+            color: var(--primary) !important;
+            cursor: pointer;
+            transform: translateY(-2px);
+        }
+
+        .flower-btn-locked::after {
+            content: "🔒";
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-size: 16px;
         }
 
         .form-section {
@@ -636,7 +700,7 @@
                 flex-direction: column;
             }
 
-            .delete-btn, .log-btn, .flower-btn {
+            .delete-btn, .log-btn, .flower-btn, .flower-btn-locked {
                 width: 100%;
                 min-width: auto;
             }
@@ -691,6 +755,12 @@
 <div class="dashboard-container">
 
     <div id="subscriptionBanner"></div>
+
+    <div id="plusCallout" class="plus-feature-highlight">
+        <h3>🌸 Unlock Send Flowers Feature</h3>
+        <p>Upgrade to LoveText Plus to send personalized flowers to your loved ones anytime!</p>
+        <a href="/products.html" class="upgrade-btn">Upgrade to Plus →</a>
+    </div>
 
     <div class="header-section">
         <div class="header-subtitle">Your Personal Dashboard</div>
@@ -823,6 +893,10 @@
 <script src="/js/nav.js" defer></script>
 
 <script>
+let HAS_ACCESS = false;
+let USER_PLAN = "none";
+let CURRENT_FLOWER_RECIPIENT = null;
+let CURRENT_FLOWER_REMAINING = 0;
 
 function toggleMobileMenu() {
     const btn = document.querySelector('.mobile-menu-btn');
@@ -849,6 +923,10 @@ function hasActiveAccess(data) {
     return false;
 }
 
+function isPlusUser() {
+    return USER_PLAN === "plus";
+}
+
 function getTimeRemaining(endDate) {
     const now = new Date();
     const end = new Date(endDate);
@@ -856,7 +934,7 @@ function getTimeRemaining(endDate) {
     if (diff <= 0) return null;
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    if (days > 0) {
+    if (days >0) {
         return `${days} day${days !== 1 ? 's' : ''} and ${hours} hour${hours !== 1 ? 's' : ''}`;
     } else {
         return `${hours} hour${hours !== 1 ? 's' : ''}`;
@@ -867,7 +945,6 @@ function updateSubscriptionBanner(data) {
     const banner = document.getElementById("subscriptionBanner");
     banner.style.display = "block";
     banner.className = "";
-
     const active = hasActiveAccess(data);
     const now = new Date();
 
@@ -927,8 +1004,6 @@ function updateSubscriptionBanner(data) {
     `;
 }
 
-let HAS_ACCESS = false;
-
 async function loadSubscriptionStatus() {
     try {
         const res = await fetch("/api/customer/subscription", {
@@ -936,8 +1011,8 @@ async function loadSubscriptionStatus() {
             cache: "no-store"
         });
         const data = await res.json();
-
         HAS_ACCESS = hasActiveAccess(data);
+        USER_PLAN = data.current_plan || "none";
 
         updateSubscriptionBanner(data);
 
@@ -953,7 +1028,6 @@ async function loadRecipients() {
         const res = await fetch("/api/customer/recipients", {
             credentials: "include"
         });
-
         const list = await res.json();
         const box = document.getElementById("recipients");
         box.innerHTML = "";
@@ -963,9 +1037,17 @@ async function loadRecipients() {
             return;
         }
 
+        const isPlus = isPlusUser();
+
         list.forEach(r => {
             const deliveryBadge = r.delivery_method === "both" ? "📧 📱" : 
                                  r.delivery_method === "sms" ? "📱 SMS" : "📧 Email";
+            
+            const flowerBtnClass = isPlus ? 'flower-btn' : 'flower-btn-locked';
+            const flowerBtnText = isPlus ? '🌸 Send' : '🌸 Plus Only';
+            const flowerOnClick = isPlus 
+                ? `onclick="openFlowerModal(${r.id})"` 
+                : `onclick="showPlusUpgradePrompt()"`;
             
             box.innerHTML += `
                 <div class="recipient-box">
@@ -983,7 +1065,7 @@ async function loadRecipients() {
 
                     <div class="button-group">
                         <button class="log-btn" onclick="openMessageLog(${r.id})">📋 History</button>
-                        <button class="flower-btn" onclick="openFlowerModal(${r.id})">🌸 Send</button>
+                        <button class="${flowerBtnClass}" ${flowerOnClick}>${flowerBtnText}</button>
                         <button class="delete-btn" onclick="deleteRecipient(${r.id})">🗑️ Delete</button>
                     </div>
                 </div>
@@ -995,9 +1077,14 @@ async function loadRecipients() {
     }
 }
 
+function showPlusUpgradePrompt() {
+    if (confirm("🌸 Send Flowers is a Plus Plan Feature!\n\nUpgrade to LoveText Plus to:\n✓ Send flowers anytime\n✓ Unlimited recipients\n✓ Priority support\n\nWould you like to upgrade now?")) {
+        window.location.href = "/products.html";
+    }
+}
+
 async function addRecipient() {
     const msgEl = document.getElementById("msg");
-    
     if (!HAS_ACCESS) {
         msgEl.innerText = "You need an active subscription to add recipients.";
         msgEl.style.color = "var(--danger)";
@@ -1079,7 +1166,6 @@ async function addRecipient() {
 
 async function deleteRecipient(id) {
     if (!confirm("Delete this recipient?")) return;
-
     await fetch(`/api/customer/recipients/${id}`, {
         method: "DELETE",
         credentials: "include"
@@ -1091,7 +1177,6 @@ async function deleteRecipient(id) {
 async function openMessageLog(id) {
     const modal = document.getElementById("messageLogModal");
     const content = document.getElementById("logContent");
-
     content.innerHTML = "Loading…";
     modal.style.display = "flex";
 
@@ -1123,12 +1208,45 @@ function closeMessageLog() {
     document.getElementById("messageLogModal").style.display = "none";
 }
 
-let CURRENT_FLOWER_RECIPIENT = null;
+async function openFlowerModal(id) {
+    if (!isPlusUser()) {
+        showPlusUpgradePrompt();
+        return;
+    }
+    try {
+        const statusRes = await fetch(`/api/customer/flower-status/${id}`, {
+            credentials: "include"
+        });
+        const status = await statusRes.json();
 
-function openFlowerModal(id) {
-    CURRENT_FLOWER_RECIPIENT = id;
-    document.getElementById("flowerNote").value = "";
-    document.getElementById("flowerModal").style.display = "flex";
+        if (!status.canSendFlower) {
+            if (status.flowersSentToday >= 2) {
+                alert(`🌸 Daily Limit Reached\n\nYou've sent ${status.flowersSentToday} flowers to this recipient today.\n\nYou can send more tomorrow!`);
+                return;
+            }
+        }
+
+        CURRENT_FLOWER_RECIPIENT = id;
+        CURRENT_FLOWER_REMAINING = status.remainingToday;
+        
+        document.getElementById("flowerNote").value = "";
+        
+        const modalHeader = document.querySelector("#flowerModal h2");
+        if (status.remainingToday === 2) {
+            modalHeader.textContent = "Send a Flower 🌸 (2 available today)";
+        } else if (status.remainingToday === 1) {
+            modalHeader.textContent = "Send a Flower 🌸 (Last one for today!)";
+        } else {
+            modalHeader.textContent = "Send a Flower 🌸";
+        }
+        
+        document.getElementById("flowerModal").style.display = "flex";
+    } catch (err) {
+        console.error("Error checking flower status:", err);
+        CURRENT_FLOWER_RECIPIENT = id;
+        document.getElementById("flowerNote").value = "";
+        document.getElementById("flowerModal").style.display = "flex";
+    }
 }
 
 function closeFlowerModal() {
@@ -1150,10 +1268,23 @@ async function sendFlower() {
     const data = await res.json();
 
     if (data.success) {
-        alert("Flower sent 🌸");
+        const remaining = data.remainingToday;
+        const pluralFlowers = remaining === 1 ? 'flower' : 'flowers';
+        alert(`Flower sent 🌸\n\nYou can send ${remaining} more ${pluralFlowers} to this recipient today.`);
         closeFlowerModal();
     } else {
-        alert("Error sending flower.");
+        if (res.status === 403) {
+            if (data.requiresPlan === "plus") {
+                alert("🌸 Send Flowers is a Plus Plan Feature\n\nUpgrade to LoveText Plus to send flowers to your loved ones!\n\nClick OK to view upgrade options.");
+                window.location.href = "/products.html";
+            } else {
+                alert(data.error || "Your subscription is not active.");
+            }
+        } else if (res.status === 429) {
+            alert(`🌸 Daily Limit Reached\n\nYou've sent ${data.sent} flowers today (limit: ${data.limit}).\n\nYou can send more flowers tomorrow!`);
+        } else {
+            alert(data.error || "Error sending flower.");
+        }
     }
 }
 
@@ -1161,7 +1292,6 @@ document.getElementById("manageSubBtn").addEventListener("click", async () => {
     const res = await fetch("/api/customer/subscription/portal", {
         credentials: "include"
     });
-
     const data = await res.json();
 
     if (data.url) window.location.href = data.url;
@@ -1174,7 +1304,6 @@ document.getElementById("r_relationship").addEventListener("change", (e) => {
 
 async function handleLogout(event) {
     if (event) event.preventDefault();
-    
     try {
         await fetch("/api/customer/logout", {
             method: "POST",
@@ -1189,12 +1318,13 @@ async function handleLogout(event) {
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadSubscriptionStatus();
-    loadRecipients();
+document.addEventListener("DOMContentLoaded", async () => {
+    await loadSubscriptionStatus();
+    await loadRecipients();
+    if (HAS_ACCESS && !isPlusUser()) {
+        document.getElementById("plusCallout").style.display = "block";
+    }
 });
-
 </script>
-
 </body>
 </html>
