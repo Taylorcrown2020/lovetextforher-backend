@@ -30,7 +30,7 @@
             display: none;
             position: fixed;
             top:20px;
-            right: -10px;
+            right: 10px;
             z-index: 1000;
             background: none;
             border: none;
@@ -779,7 +779,7 @@ async function loadProducts() {
                             <span class="amount">${p.price === 0 ? 'Free' : p.price.toFixed(2).replace('.00', '')}</span>
                             ${p.price > 0 ? '<span class="period">/mo</span>' : ''}
                         </div>
-                        ${p.featured ? '<div class="bonus-text">+2 months free</div>' : ''}
+                        ${p.featured ? '<div class="bonus-text"></div>' : ''}
                         ${p.price > 0 ? `<div class="price-details">Renews at US$ ${p.price.toFixed(2)}/mo.</div>` : ''}
                     </div>
                     ${featuresList}
