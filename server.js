@@ -2429,6 +2429,177 @@ app.delete("/api/admin/customer/:id", global.__LT_authAdmin, async (req, res) =>
 });
 
 /***************************************************************
+ *  ADMIN — SEND MARKETING EMAIL
+ *  Sends to customers, recipients, or both
+ ***************************************************************/
+app.post("/api/admin/marketing/send", global.__LT_authAdmin, async (req, res) => {
+    try {
+        let { audience, subject, message } = req.body;
+
+        // Validate inputs
+        if (!audience || !subject || !message) {
+            return res.status(400).json({ 
+                error: "Audience, subject, and message are required" 
+            });
+        }
+
+        subject = global.__LT_sanitize(subject);
+        message = global.__LT_sanitize(message);
+
+        if (!["customers", "recipients", "both"].includes(audience)) {
+            return res.status(400).json({ 
+                error: "Invalid audience. Must be 'customers', 'recipients', or 'both'" 
+            });
+        }
+
+        let emailsSent = 0;
+        let errors = 0;
+        const emailList = [];
+
+        // Get customer emails
+        if (audience === "customers" || audience === "both") {
+            const customersQ = await global.__LT_pool.query(
+                `SELECT DISTINCT email, name FROM customers ORDER BY email`
+            );
+            
+            for (const customer of customersQ.rows) {
+                emailList.push({
+                    email: customer.email,
+                    name: customer.name,
+                    type: 'customer'
+                });
+            }
+        }
+
+        // Get recipient emails
+        if (audience === "recipients" || audience === "both") {
+            const recipientsQ = await global.__LT_pool.query(
+                `SELECT DISTINCT email, name FROM users WHERE is_active = true ORDER BY email`
+            );
+            
+            for (const recipient of recipientsQ.rows) {
+                // Avoid duplicates if sending to both
+                if (!emailList.find(e => e.email === recipient.email)) {
+                    emailList.push({
+                        email: recipient.email,
+                        name: recipient.name,
+                        type: 'recipient'
+                    });
+                }
+            }
+        }
+
+        // Send emails
+        for (const contact of emailList) {
+            try {
+                const html = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="utf-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    </head>
+                    <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;">
+                        <div style="max-width:600px;margin:40px auto;background-color:white;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="background-color:#d6336c;padding:30px;border-radius:8px 8px 0 0;text-align:center;">
+                                <h1 style="color:white;margin:0;font-size:28px;">LoveTextForHer</h1>
+                            </div>
+                            <div style="padding:40px 30px;">
+                                <h2 style="color:#333;margin-top:0;">Hello ${contact.name}!</h2>
+                                <div style="font-size:16px;line-height:1.8;color:#333;white-space:pre-wrap;">
+                                    ${message}
+                                </div>
+                                <hr style="border:none;border-top:1px solid #eee;margin:30px 0;">
+                                <p style="color:#999;font-size:12px;text-align:center;margin:0;">
+                                    This message was sent by LoveTextForHer<br>
+                                    <a href="${process.env.BASE_URL}" 
+                                       style="color:#d6336c;text-decoration:none;">
+                                        Visit our website
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                `;
+
+                const sent = await global.__LT_sendEmail(
+                    contact.email,
+                    subject,
+                    html,
+                    message
+                );
+
+                if (sent) {
+                    emailsSent++;
+                    console.log(`📧 Marketing email sent to ${contact.email}`);
+                } else {
+                    errors++;
+                    console.error(`❌ Failed to send to ${contact.email}`);
+                }
+
+                // Small delay to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+            } catch (err) {
+                errors++;
+                console.error(`❌ Error sending to ${contact.email}:`, err);
+            }
+        }
+
+        return res.json({
+            success: true,
+            sent: emailsSent,
+            errors: errors,
+            total: emailList.length,
+            audience: audience
+        });
+
+    } catch (err) {
+        console.error("❌ MARKETING EMAIL ERROR:", err);
+        return res.status(500).json({ 
+            error: "Server error sending marketing emails" 
+        });
+    }
+});
+
+/***************************************************************
+ *  ADMIN — GET EMAIL COUNTS (for preview)
+ ***************************************************************/
+app.get("/api/admin/marketing/counts", global.__LT_authAdmin, async (req, res) => {
+    try {
+        const customersQ = await global.__LT_pool.query(
+            `SELECT COUNT(DISTINCT email) FROM customers`
+        );
+
+        const recipientsQ = await global.__LT_pool.query(
+            `SELECT COUNT(DISTINCT email) FROM users WHERE is_active = true`
+        );
+
+        // Count unique emails if sending to both
+        const bothQ = await global.__LT_pool.query(`
+            SELECT COUNT(*) FROM (
+                SELECT email FROM customers
+                UNION
+                SELECT email FROM users WHERE is_active = true
+            ) AS combined
+        `);
+
+        return res.json({
+            customers: Number(customersQ.rows[0].count),
+            recipients: Number(recipientsQ.rows[0].count),
+            both: Number(bothQ.rows[0].count)
+        });
+
+    } catch (err) {
+        console.error("❌ MARKETING COUNTS ERROR:", err);
+        return res.status(500).json({ 
+            error: "Server error getting email counts" 
+        });
+    }
+});
+
+/***************************************************************
  *  ADMIN — SEARCH MESSAGE LOGS BY CUSTOMER
  ***************************************************************/
 app.get("/api/admin/message-logs/search", global.__LT_authAdmin, async (req, res) => {
