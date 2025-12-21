@@ -69,7 +69,36 @@
             color: var(--text-soft);
             font-size: clamp(16px, 3.5vw, 18px);
             line-height: 1.6;
-            margin: 0;
+            margin: 0 0 20px 0;
+        }
+
+        .btn-home {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 14px 32px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 12px rgba(214, 51, 108, 0.3);
+        }
+
+        .btn-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(214, 51, 108, 0.4);
+        }
+
+        .btn-home:active {
+            transform: translateY(0);
+        }
+
+        #home-button {
+            display: none;
         }
 
         @keyframes fadeIn {
@@ -91,6 +120,11 @@
             h2 {
                 margin-bottom: 12px;
             }
+
+            .btn-home {
+                padding: 12px 28px;
+                font-size: 15px;
+            }
         }
 
         /* Small phones */
@@ -101,6 +135,11 @@
 
             .status-box {
                 padding: 24px 16px;
+            }
+
+            .btn-home {
+                padding: 10px 24px;
+                font-size: 14px;
             }
         }
     </style>
@@ -113,6 +152,7 @@
 <div class="status-box">
     <h2 id="title">Processing…</h2>
     <p id="text">Please wait while we unsubscribe you.</p>
+    <a href="/index.html" class="btn-home" id="home-button">Return to Home</a>
 </div>
 
 <script src="/js/nav.js" defer></script>
@@ -123,11 +163,13 @@ const token = params.get("token");
 
 const title = document.getElementById("title");
 const text = document.getElementById("text");
+const homeButton = document.getElementById("home-button");
 
 async function unsubscribe() {
     if (!token) {
         title.innerText = "Invalid Link";
         text.innerText = "No unsubscribe token provided.";
+        homeButton.style.display = "inline-block";
         return;
     }
 
@@ -137,16 +179,19 @@ async function unsubscribe() {
 
         if (res.ok) {
             title.innerText = "You've been unsubscribed 💔";
-            text.innerText = "You will no longer receive love messages.";
+            text.innerText = "You will no longer receive love messages. Your information has been removed from our system.";
+            homeButton.style.display = "inline-block";
         } else {
             title.innerText = "Invalid Link";
             text.innerText = "Your unsubscribe link is invalid or expired.";
+            homeButton.style.display = "inline-block";
         }
 
     } catch (err) {
         console.error("Unsubscribe error:", err);
         title.innerText = "Error";
         text.innerText = "Something went wrong. Please try again later.";
+        homeButton.style.display = "inline-block";
     }
 }
 
