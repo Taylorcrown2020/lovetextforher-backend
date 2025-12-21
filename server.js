@@ -2609,7 +2609,7 @@ app.post("/api/reset/request", async (req, res) => {
         );
 
         const resetURL =
-            `${process.env.BASE_URL}/reset_password.html?token=${token}`;
+            `${process.env.BASE_URL}/reset.html?token=${token}`;
 
         const html = `
     <!DOCTYPE html>
