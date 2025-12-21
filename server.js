@@ -2627,6 +2627,35 @@ app.post("/api/twilio/sms-webhook", express.urlencoded({ extended: false }), asy
 });
 
 /***************************************************************
+ *  UNIVERSAL EMAIL SENDER
+ ***************************************************************/
+global.__LT_sendEmail = async function (to, subject, html, textVersion) {
+    try {
+        console.log(`📧 Attempting to send email to ${to}`);
+        console.log(`📧 From: ${process.env.FROM_EMAIL}`);
+        
+        const result = await resend.emails.send({
+            from: process.env.FROM_EMAIL,
+            to,
+            subject,
+            html,
+            text: textVersion || ""
+        });
+        
+        console.log(`✅ Email sent successfully:`, result);
+        return true;
+    } catch (err) {
+        console.error("❌ EMAIL SEND ERROR:", err);
+        console.error("❌ Error details:", {
+            message: err.message,
+            statusCode: err.statusCode,
+            name: err.name
+        });
+        return false;
+    }
+};
+
+/***************************************************************
  *  SERVER START
  ***************************************************************/
 app.listen(PORT, () => {
