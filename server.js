@@ -1515,28 +1515,73 @@ app.post("/api/admin/send-now/:id",
  ***************************************************************/
 
 /***************************************************************
- *  RESEND EMAIL CLIENT
+ *  TWILIO SENDGRID EMAIL CLIENT
  ***************************************************************/
+/***************************************************************
+ *  BREVO EMAIL CLIENT
+ ***************************************************************/
+const brevo = require('@getbrevo/brevo');
 
-const { Resend } = require("resend");
-const resend = new Resend(process.env.RESEND_API_KEY);
+let brevoClient = null;
 
+if (process.env.BREVO_API_KEY) {
+    const apiInstance = new brevo.TransactionalEmailsApi();
+    const apiKey = apiInstance.authentications['apiKey'];
+    apiKey.apiKey = process.env.BREVO_API_KEY;
+    brevoClient = apiInstance;
+    console.log("📧 Brevo email service loaded");
+} else {
+    console.warn("⚠️  BREVO_API_KEY not found - email disabled");
+}
+
+// Initialize SendGrid with API key
+if (process.env.SENDGRID_API_KEY) {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    console.log("📧 SendGrid email service loaded");
+} else {
+    console.warn("⚠️  SENDGRID_API_KEY not found - email disabled");
+}
 
 /***************************************************************
- *  UNIVERSAL EMAIL SENDER
+ *  UNIVERSAL EMAIL SENDER (BREVO VERSION)
  ***************************************************************/
 global.__LT_sendEmail = async function (to, subject, html, textVersion) {
+    if (!brevoClient) {
+        console.error("❌ Brevo not configured");
+        return false;
+    }
+
     try {
-        await resend.emails.send({
-            from: process.env.FROM_EMAIL,
-            to,
-            subject,
-            html,
-            text: textVersion || ""
-        });
+        console.log(`📧 Attempting to send email to ${to}`);
+        console.log(`📧 From: ${process.env.FROM_EMAIL}`);
+        
+        const sendSmtpEmail = new brevo.SendSmtpEmail();
+        
+        sendSmtpEmail.sender = { 
+            email: process.env.FROM_EMAIL,
+            name: process.env.FROM_NAME || "LoveTextForHer"
+        };
+        
+        sendSmtpEmail.to = [{ email: to }];
+        sendSmtpEmail.subject = subject;
+        sendSmtpEmail.htmlContent = html;
+        sendSmtpEmail.textContent = textVersion || "";
+
+        const result = await brevoClient.sendTransacEmail(sendSmtpEmail);
+        
+        console.log(`✅ Email sent successfully:`, result.messageId);
         return true;
+        
     } catch (err) {
         console.error("❌ EMAIL SEND ERROR:", err);
+        
+        if (err.response) {
+            console.error("❌ Brevo Error Response:", {
+                statusCode: err.response.status,
+                body: err.response.body
+            });
+        }
+        
         return false;
     }
 };
@@ -2625,35 +2670,6 @@ app.post("/api/twilio/sms-webhook", express.urlencoded({ extended: false }), asy
         return res.send('<Response></Response>');
     }
 });
-
-/***************************************************************
- *  UNIVERSAL EMAIL SENDER
- ***************************************************************/
-global.__LT_sendEmail = async function (to, subject, html, textVersion) {
-    try {
-        console.log(`📧 Attempting to send email to ${to}`);
-        console.log(`📧 From: ${process.env.FROM_EMAIL}`);
-        
-        const result = await resend.emails.send({
-            from: process.env.FROM_EMAIL,
-            to,
-            subject,
-            html,
-            text: textVersion || ""
-        });
-        
-        console.log(`✅ Email sent successfully:`, result);
-        return true;
-    } catch (err) {
-        console.error("❌ EMAIL SEND ERROR:", err);
-        console.error("❌ Error details:", {
-            message: err.message,
-            statusCode: err.statusCode,
-            name: err.name
-        });
-        return false;
-    }
-};
 
 /***************************************************************
  *  SERVER START
