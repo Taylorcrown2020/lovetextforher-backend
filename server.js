@@ -360,17 +360,34 @@ function buildLoveEmailHTML(name, message, unsubscribeURL) {
     const cleanMsg = global.__LT_sanitize(message);
 
     return `
-        <div style="font-family:Arial;padding:20px;">
-            <h2 style="color:#d6336c;">Hello ${cleanName} ❤️</h2>
-            <p style="font-size:16px; line-height:1.6;">
-                ${cleanMsg}
-            </p>
-            <br>
-            <a href="${unsubscribeURL}"
-               style="color:#999; font-size:12px;">
-                Unsubscribe
-            </a>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;">
+            <div style="max-width:600px;margin:40px auto;background-color:white;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                <div style="background-color:#d6336c;padding:30px;border-radius:8px 8px 0 0;text-align:center;">
+                    <h1 style="color:white;margin:0;font-size:28px;">💌</h1>
+                </div>
+                <div style="padding:40px 30px;">
+                    <h2 style="color:#d6336c;margin-top:0;">Hello ${cleanName} ❤️</h2>
+                    <p style="font-size:18px;line-height:1.8;color:#333;margin:20px 0;">
+                        ${cleanMsg}
+                    </p>
+                    <hr style="border:none;border-top:1px solid #eee;margin:30px 0;">
+                    <p style="color:#999;font-size:12px;text-align:center;margin:0;">
+                        Don't want to receive these messages?<br>
+                        <a href="${unsubscribeURL}" 
+                           style="color:#d6336c;text-decoration:none;font-weight:bold;">
+                            Click here to unsubscribe
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
     `;
 }
 
@@ -1719,15 +1736,44 @@ app.post("/api/password/request", async (req, res) => {
         );
 
         const resetURL =
-            `${process.env.BASE_URL}/reset_password.html?token=${token}`;
+            `${process.env.BASE_URL}/reset.html?token=${token}`;
 
         const html = `
-            <div style="font-family:Arial;padding:20px;">
-                <h2>Password Reset Request</h2>
-                <p>Click below to reset your password (15 min expiration).</p>
-                <a href="${resetURL}" style="color:#d6336c;">Reset Password</a>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;">
+        <div style="max-width:600px;margin:40px auto;background-color:white;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+            <div style="background-color:#d6336c;padding:30px;border-radius:8px 8px 0 0;text-align:center;">
+                <h1 style="color:white;margin:0;font-size:28px;">LoveTextForHer</h1>
             </div>
-        `;
+            <div style="padding:40px 30px;">
+                <h2 style="color:#333;margin-top:0;">Reset Your Password</h2>
+                <p style="color:#666;font-size:16px;line-height:1.6;">
+                    We received a request to reset your password. Click the button below to create a new password.
+                </p>
+                <div style="text-align:center;margin:30px 0;">
+                    <a href="${resetURL}" 
+                       style="display:inline-block;background-color:#d6336c;color:white;padding:15px 40px;text-decoration:none;border-radius:5px;font-size:16px;font-weight:bold;">
+                        Reset My Password
+                    </a>
+                </div>
+                <p style="color:#999;font-size:14px;line-height:1.6;">
+                    This link will expire in 15 minutes. If you didn't request a password reset, you can safely ignore this email.
+                </p>
+                <hr style="border:none;border-top:1px solid #eee;margin:30px 0;">
+                <p style="color:#999;font-size:12px;margin:0;">
+                    Or copy and paste this link into your browser:<br>
+                    <a href="${resetURL}" style="color:#d6336c;word-break:break-all;">${resetURL}</a>
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+`;
 
         await global.__LT_sendEmail(
             email,
@@ -2566,12 +2612,41 @@ app.post("/api/reset/request", async (req, res) => {
             `${process.env.BASE_URL}/reset_password.html?token=${token}`;
 
         const html = `
-            <div style="font-family:Arial;padding:20px;">
-                <h2>Password Reset Request</h2>
-                <p>Click below to reset your password (15 min expiration).</p>
-                <a href="${resetURL}" style="color:#d6336c;">Reset Password</a>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;">
+        <div style="max-width:600px;margin:40px auto;background-color:white;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+            <div style="background-color:#d6336c;padding:30px;border-radius:8px 8px 0 0;text-align:center;">
+                <h1 style="color:white;margin:0;font-size:28px;">LoveTextForHer</h1>
             </div>
-        `;
+            <div style="padding:40px 30px;">
+                <h2 style="color:#333;margin-top:0;">Reset Your Password</h2>
+                <p style="color:#666;font-size:16px;line-height:1.6;">
+                    We received a request to reset your password. Click the button below to create a new password.
+                </p>
+                <div style="text-align:center;margin:30px 0;">
+                    <a href="${resetURL}" 
+                       style="display:inline-block;background-color:#d6336c;color:white;padding:15px 40px;text-decoration:none;border-radius:5px;font-size:16px;font-weight:bold;">
+                        Reset My Password
+                    </a>
+                </div>
+                <p style="color:#999;font-size:14px;line-height:1.6;">
+                    This link will expire in 15 minutes. If you didn't request a password reset, you can safely ignore this email.
+                </p>
+                <hr style="border:none;border-top:1px solid #eee;margin:30px 0;">
+                <p style="color:#999;font-size:12px;margin:0;">
+                    Or copy and paste this link into your browser:<br>
+                    <a href="${resetURL}" style="color:#d6336c;word-break:break-all;">${resetURL}</a>
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+`;
 
         await global.__LT_sendEmail(
             email,
