@@ -1402,21 +1402,27 @@ app.get("/api/unsubscribe/:token", async (req, res) => {
         const token = req.params.token;
 
         const q = await global.__LT_pool.query(
-            "SELECT id FROM users WHERE unsubscribe_token=$1",
+            "SELECT id, name FROM users WHERE unsubscribe_token=$1",
             [token]
         );
 
         if (!q.rows.length)
             return res.status(404).send("Invalid unsubscribe token.");
 
+        const recipientName = q.rows[0].name;
+
+        // DELETE the recipient instead of just deactivating
         await global.__LT_pool.query(
-            "UPDATE users SET is_active=false WHERE id=$1",
+            "DELETE FROM users WHERE id=$1",
             [q.rows[0].id]
         );
+
+        console.log(`🗑️  Recipient unsubscribed and deleted: ${recipientName}`);
 
         return res.send(`
             <h2 style="font-family:Arial">You've been unsubscribed ❤️</h2>
             <p style="font-family:Arial">You will no longer receive love messages.</p>
+            <p style="font-family:Arial;color:#999;font-size:14px;">Your information has been removed from our system.</p>
         `);
 
     } catch (err) {
@@ -2718,24 +2724,22 @@ app.post("/api/twilio/sms-webhook", express.urlencoded({ extended: false }), asy
         
         console.log(`📱 Incoming SMS from ${From}: "${Body}"`);
         
-        // Twilio STOP keywords (required by law)
         const stopKeywords = ["STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"];
         
         if (stopKeywords.includes(message)) {
-            // Deactivate recipient by phone number
+            // DELETE recipient by phone number instead of just deactivating
             const result = await global.__LT_pool.query(
-                `UPDATE users SET is_active = false WHERE phone_number = $1 RETURNING id, name`,
+                `DELETE FROM users WHERE phone_number = $1 RETURNING id, name`,
                 [From]
             );
             
             if (result.rows.length > 0) {
-                console.log(`✅ Unsubscribed ${result.rows[0].name} (${From})`);
+                console.log(`🗑️  Recipient unsubscribed via SMS and deleted: ${result.rows[0].name} (${From})`);
             } else {
                 console.log(`⚠️  No recipient found for ${From}`);
             }
         }
         
-        // Twilio requires TwiML response
         res.type('text/xml');
         return res.send('<Response></Response>');
         
