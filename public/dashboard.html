@@ -1122,7 +1122,7 @@ function updateSubscriptionBanner(data) {
 
 async function loadSubscriptionStatus() {
     try {
-        const res = await fetch("/api/customer/subscription", {
+        const res = await fetch(`${API_BASE_URL}/api/customer/subscription`, { // ✅ ADD API_BASE_URL
             credentials: "include",
             cache: "no-store"
         });
@@ -1141,7 +1141,7 @@ async function loadSubscriptionStatus() {
 
 async function loadRecipients() {
     try {
-        const res = await fetch("/api/customer/recipients", {
+        const res = await fetch(`${API_BASE_URL}/api/customer/recipients`, { // ✅ ADD API_BASE_URL
             credentials: "include"
         });
         const list = await res.json();
@@ -1275,7 +1275,7 @@ async function acceptTermsAndAddRecipient() {
 
     try {
         // Step 1: Record terms agreement
-        const termsRes = await fetch("/api/customer/terms/agree", {
+        const termsRes = await fetch(`${API_BASE_URL}/api/customer/terms/agree`, { // ✅ ADD API_BASE_URL
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -1301,7 +1301,7 @@ async function acceptTermsAndAddRecipient() {
             timezone: r_timezone.value
         };
 
-        const res = await fetch("/api/customer/recipients", {
+        const res = await fetch(`${API_BASE_URL}/api/customer/recipients`, { // ✅ ADD API_BASE_URL
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -1352,7 +1352,7 @@ async function acceptTermsAndAddRecipient() {
 
 async function deleteRecipient(id) {
     if (!confirm("Delete this recipient?")) return;
-    await fetch(`/api/customer/recipients/${id}`, {
+    await fetch(`${API_BASE_URL}/api/customer/recipients/${id}`, { // ✅ ADD API_BASE_URL
         method: "DELETE",
         credentials: "include"
     });
@@ -1366,7 +1366,7 @@ async function openMessageLog(id) {
     content.innerHTML = "Loading…";
     modal.style.display = "flex";
 
-    const res = await fetch(`/api/message-log/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/api/message-log/${id}`, { // ✅ ADD API_BASE_URL
         credentials: "include"
     });
 
@@ -1400,7 +1400,7 @@ async function openFlowerModal(id) {
         return;
     }
     try {
-        const statusRes = await fetch(`/api/customer/flower-status/${id}`, {
+        const statusRes = await fetch(`${API_BASE_URL}/api/customer/flower-status/${id}`, { // ✅ ADD API_BASE_URL
             credentials: "include"
         });
         const status = await statusRes.json();
@@ -1444,7 +1444,7 @@ async function sendFlower() {
     const note = document.getElementById("flowerNote").value.trim();
     const message = `${flower}${note ? " — " + note : ""}`;
 
-    const res = await fetch(`/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, {
+    const res = await fetch(`${API_BASE_URL}/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, { // ✅ ADD API_BASE_URL
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -1477,7 +1477,7 @@ async function sendFlower() {
 async function handleLogout(event) {
     if (event) event.preventDefault();
     try {
-        await fetch("/api/customer/logout", {
+        await fetch(`${API_BASE_URL}/api/customer/logout`, { // ✅ ADD API_BASE_URL
             method: "POST",
             credentials: "include"
         });
@@ -1495,7 +1495,7 @@ async function handleLogout(event) {
 // ============================================================
 
 document.getElementById("manageSubBtn").addEventListener("click", async () => {
-    const res = await fetch("/api/customer/subscription/portal", {
+    const res = await fetch(`${API_BASE_URL}/api/customer/subscription/portal`, { // ✅ ADD API_BASE_URL
         credentials: "include"
     });
     const data = await res.json();
