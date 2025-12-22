@@ -219,16 +219,17 @@ if (type === "checkout.session.completed") {
 /***************************************************************
  * EXPRESS MIDDLEWARE (after webhook)
 ***************************************************************/
+/***************************************************************
+ * EXPRESS MIDDLEWARE (after webhook)
+***************************************************************/
 const allowedOrigins = [
     process.env.FRONTEND_URL,
     'https://www.lovetextforher.com',
     'https://lovetextforher.com',
     'https://lovetextforher.netlify.app',
-    'https://lovetextforher-backend.onrender.com', // ✅ ADD THIS - allows backend to call itself
+    'https://lovetextforher-backend.onrender.com',
     'http://localhost:3000',
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'http://localhost:5173' // if using Vite
+    'http://localhost:5500'
 ];
 
 app.use(cors({ 
@@ -245,6 +246,11 @@ app.use(cors({
     },
     credentials: true 
 }));
+
+// ✅ CRITICAL: Add body parsers AFTER CORS
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 /***************************************************************
  * POSTGRES
