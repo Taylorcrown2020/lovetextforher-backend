@@ -218,26 +218,30 @@ if (type === "checkout.session.completed") {
 
 /***************************************************************
  * EXPRESS MIDDLEWARE (after webhook)
- ***************************************************************/
-app.use(express.json({ limit: "5mb" }));
-app.use(cookieParser());
+***************************************************************/
 const allowedOrigins = [
     process.env.FRONTEND_URL,
     'https://www.lovetextforher.com',
-    'https://lovetextforher.com'
+    'https://lovetextforher.com',
+    'https://lovetextforher.netlify.app',  // Add this - replace with YOUR actual Netlify domain
+    'http://localhost:3000',  // For local development
+    'http://localhost:5500'   // For local development
 ];
 
 app.use(cors({ 
     origin: function(origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow requests with no origin (like mobile apps or Postman)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
+            console.log('❌ CORS blocked origin:', origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true 
 }));
-app.use(express.static(path.join(__dirname, "public")));
 
 /***************************************************************
  * POSTGRES
