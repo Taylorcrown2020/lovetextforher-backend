@@ -223,9 +223,12 @@ const allowedOrigins = [
     process.env.FRONTEND_URL,
     'https://www.lovetextforher.com',
     'https://lovetextforher.com',
-    'https://lovetextforher.netlify.app',  // Add this - replace with YOUR actual Netlify domain
-    'http://localhost:3000',  // For local development
-    'http://localhost:5500'   // For local development
+    'https://lovetextforher.netlify.app',
+    'https://lovetextforher-backend.onrender.com', // ✅ ADD THIS - allows backend to call itself
+    'http://localhost:3000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+    'http://localhost:5173' // if using Vite
 ];
 
 app.use(cors({ 
