@@ -2922,6 +2922,70 @@ app.post("/api/twilio/sms-webhook", express.urlencoded({ extended: false }), asy
 });
 
 /***************************************************************
+ *  RECORD TERMS AGREEMENT
+ ***************************************************************/
+app.post("/api/customer/terms/agree", global.__LT_authCustomer, async (req, res) => {
+    try {
+        const { recipientEmail, recipientName } = req.body;
+        
+        if (!recipientEmail || !recipientName) {
+            return res.status(400).json({ error: "Recipient information required" });
+        }
+
+        const ipAddress = req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+                         req.connection.remoteAddress || 
+                         req.socket.remoteAddress ||
+                         'unknown';
+        
+        const userAgent = req.headers['user-agent'] || 'unknown';
+
+        await global.__LT_pool.query(
+            `INSERT INTO recipient_terms_agreements 
+             (customer_id, recipient_email, recipient_name, ip_address, user_agent)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (customer_id, recipient_email) 
+             DO UPDATE SET 
+                agreed_at = CURRENT_TIMESTAMP,
+                ip_address = $4,
+                user_agent = $5,
+                recipient_name = $3`,
+            [req.user.id, recipientEmail, recipientName, ipAddress, userAgent]
+        );
+
+        console.log(`✅ Terms agreement recorded for ${recipientEmail}`);
+        return res.json({ success: true });
+
+    } catch (err) {
+        console.error("❌ TERMS AGREEMENT ERROR:", err);
+        return res.status(500).json({ error: "Error recording agreement" });
+    }
+});
+
+/***************************************************************
+ *  CHECK IF TERMS AGREED FOR RECIPIENT
+ ***************************************************************/
+app.get("/api/customer/terms/check/:email", global.__LT_authCustomer, async (req, res) => {
+    try {
+        const email = req.params.email;
+        
+        const q = await global.__LT_pool.query(
+            `SELECT agreed_at FROM recipient_terms_agreements
+             WHERE customer_id = $1 AND recipient_email = $2`,
+            [req.user.id, email]
+        );
+
+        return res.json({ 
+            agreed: q.rows.length > 0,
+            agreedAt: q.rows[0]?.agreed_at || null
+        });
+
+    } catch (err) {
+        console.error("❌ TERMS CHECK ERROR:", err);
+        return res.status(500).json({ error: "Error checking agreement" });
+    }
+});
+
+/***************************************************************
  *  SERVER START
  ***************************************************************/
 app.listen(PORT, () => {

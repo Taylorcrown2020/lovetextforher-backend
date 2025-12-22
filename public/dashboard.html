@@ -372,6 +372,69 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(198,40,40,0.3);
         }
+
+        #termsModal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.terms-header {
+    background: linear-gradient(135deg, #ffe3ed, #f3e9ff);
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.terms-content {
+    background: #f9fafb;
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 2px solid #e5e7eb;
+}
+
+.terms-checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.terms-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.terms-agree-btn {
+    background: linear-gradient(90deg, #d6336c, #e91e8c);
+    color: white;
+    flex: 1;
+}
+
+.terms-agree-btn:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+}
+
+.terms-cancel-btn {
+    background: #6b7280;
+    color: white;
+    flex: 1;
+}
         
         .log-btn { 
             background: var(--secondary-btn);
@@ -853,7 +916,7 @@
                 </select>
             </div>
 
-            <button onclick="addRecipient()">Add Recipient</button>
+            <button onclick="showTermsModal()">Add Recipient</button>
         </div>
 
         <p id="msg"></p>
@@ -861,6 +924,57 @@
 </div>
 
 <button id="manageSubBtn">Manage Subscription</button>
+
+<!-- Terms Agreement Modal -->
+<div id="termsModal">
+    <div class="modal-content">
+        <div class="terms-header">
+            <h2>📋 Recipient Consent Agreement</h2>
+            <p>Please review and accept before adding a recipient</p>
+        </div>
+
+        <div class="terms-content">
+            <h3>Terms of Service</h3>
+            <p>By adding a recipient to LoveTextForHer, you confirm and agree to the following:</p>
+
+            <h3>1. Consent & Authorization</h3>
+            <ul>
+                <li>You have obtained explicit consent from the recipient to receive automated messages</li>
+                <li>The recipient is aware they will receive periodic love messages</li>
+                <li>You are authorized to provide the recipient's contact information</li>
+            </ul>
+
+            <h3>2. Recipient Rights</h3>
+            <ul>
+                <li>Recipients can unsubscribe at any time</li>
+                <li>For SMS, recipients can reply "STOP" to opt out</li>
+            </ul>
+
+            <h3>3. Your Responsibilities</h3>
+            <ul>
+                <li>Provide accurate contact information</li>
+                <li>Respect the recipient's privacy</li>
+                <li>Do not use this service for spam or harassment</li>
+            </ul>
+        </div>
+
+        <div class="terms-checkbox-container" onclick="toggleTermsCheckbox()">
+            <input type="checkbox" id="termsAgreeCheckbox" onclick="event.stopPropagation()">
+            <label for="termsAgreeCheckbox">
+                I confirm that I have obtained explicit consent from this recipient and agree to the Terms of Service.
+            </label>
+        </div>
+
+        <div class="terms-buttons">
+            <button class="terms-agree-btn" id="termsAgreeBtn" onclick="acceptTermsAndAddRecipient()" disabled>
+                I Agree - Add Recipient
+            </button>
+            <button class="terms-cancel-btn" onclick="closeTermsModal()">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
 
 <div id="messageLogModal">
     <div class="modal-content">
@@ -893,6 +1007,7 @@
 <script src="/js/nav.js" defer></script>
 
 <script>
+
 let HAS_ACCESS = false;
 let USER_PLAN = "none";
 let CURRENT_FLOWER_RECIPIENT = null;
@@ -1083,8 +1198,13 @@ function showPlusUpgradePrompt() {
     }
 }
 
-async function addRecipient() {
+// ============================================================
+// TERMS MODAL FUNCTIONS (UPDATED)
+// ============================================================
+
+function showTermsModal() {
     const msgEl = document.getElementById("msg");
+    
     if (!HAS_ACCESS) {
         msgEl.innerText = "You need an active subscription to add recipients.";
         msgEl.style.color = "var(--danger)";
@@ -1095,9 +1215,6 @@ async function addRecipient() {
     const email = r_email.value.trim();
     const phone = phone_number.value.trim();
     const delivery = delivery_method.value;
-    const relationship = r_relationship.value === "custom" 
-        ? r_customRel.value.trim() 
-        : r_relationship.value;
 
     if (!name) {
         msgEl.innerText = "Name is required.";
@@ -1117,52 +1234,120 @@ async function addRecipient() {
         return;
     }
 
-    const payload = {
-        name,
-        email,
-        phone_number: phone || null,
-        delivery_method: delivery,
-        relationship,
-        frequency: r_frequency.value,
-        timings: r_timings.value,
-        timezone: r_timezone.value
-    };
+    // Clear any previous errors
+    msgEl.innerText = "";
+    
+    // Reset checkbox
+    document.getElementById("termsAgreeCheckbox").checked = false;
+    document.getElementById("termsAgreeBtn").disabled = true;
+    
+    // Show modal
+    document.getElementById("termsModal").style.display = "flex";
+}
 
-    const res = await fetch("/api/customer/recipients", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
+function closeTermsModal() {
+    document.getElementById("termsModal").style.display = "none";
+}
 
-    const data = await res.json();
+function toggleTermsCheckbox() {
+    const checkbox = document.getElementById("termsAgreeCheckbox");
+    checkbox.checked = !checkbox.checked;
+    updateTermsAgreeButton();
+}
 
-    if (data.success) {
-        msgEl.innerText = "Recipient added successfully! ✅";
-        msgEl.style.color = "#28a745";
-        
-        r_name.value = "";
-        r_email.value = "";
-        phone_number.value = "";
-        delivery_method.value = "email";
-        r_relationship.value = "spouse";
-        r_customRel.value = "";
-        document.getElementById("customRelGroup").style.display = "none";
-        r_frequency.value = "daily";
-        r_timings.value = "morning";
-        r_timezone.value = "America/Chicago";
-        
-        loadRecipients();
-        
-        setTimeout(() => {
-            msgEl.innerText = "";
-            msgEl.style.color = "var(--primary)";
-        }, 3000);
-    } else {
-        msgEl.innerText = data.error || "Error adding recipient.";
+function updateTermsAgreeButton() {
+    const checkbox = document.getElementById("termsAgreeCheckbox");
+    const agreeBtn = document.getElementById("termsAgreeBtn");
+    agreeBtn.disabled = !checkbox.checked;
+}
+
+async function acceptTermsAndAddRecipient() {
+    const name = r_name.value.trim();
+    const email = r_email.value.trim();
+    const phone = phone_number.value.trim();
+    const delivery = delivery_method.value;
+    const relationship = r_relationship.value === "custom" 
+        ? r_customRel.value.trim() 
+        : r_relationship.value;
+
+    const msgEl = document.getElementById("msg");
+
+    try {
+        // Step 1: Record terms agreement
+        const termsRes = await fetch("/api/customer/terms/agree", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                recipientEmail: email,
+                recipientName: name
+            })
+        });
+
+        if (!termsRes.ok) {
+            throw new Error("Failed to record terms agreement");
+        }
+
+        // Step 2: Add recipient
+        const payload = {
+            name,
+            email,
+            phone_number: phone || null,
+            delivery_method: delivery,
+            relationship,
+            frequency: r_frequency.value,
+            timings: r_timings.value,
+            timezone: r_timezone.value
+        };
+
+        const res = await fetch("/api/customer/recipients", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        closeTermsModal();
+
+        if (data.success) {
+            msgEl.innerText = "Recipient added successfully! ✅";
+            msgEl.style.color = "#28a745";
+            
+            // Clear form
+            r_name.value = "";
+            r_email.value = "";
+            phone_number.value = "";
+            delivery_method.value = "email";
+            r_relationship.value = "spouse";
+            r_customRel.value = "";
+            document.getElementById("customRelGroup").style.display = "none";
+            r_frequency.value = "daily";
+            r_timings.value = "morning";
+            r_timezone.value = "America/Chicago";
+            
+            loadRecipients();
+            
+            setTimeout(() => {
+                msgEl.innerText = "";
+                msgEl.style.color = "var(--primary)";
+            }, 3000);
+        } else {
+            msgEl.innerText = data.error || "Error adding recipient.";
+            msgEl.style.color = "var(--danger)";
+        }
+    } catch (err) {
+        closeTermsModal();
+        msgEl.innerText = "Error: " + err.message;
         msgEl.style.color = "var(--danger)";
+        console.error("ADD RECIPIENT ERROR:", err);
     }
 }
+
+// ============================================================
+// OTHER FUNCTIONS
+// ============================================================
 
 async function deleteRecipient(id) {
     if (!confirm("Delete this recipient?")) return;
@@ -1288,20 +1473,6 @@ async function sendFlower() {
     }
 }
 
-document.getElementById("manageSubBtn").addEventListener("click", async () => {
-    const res = await fetch("/api/customer/subscription/portal", {
-        credentials: "include"
-    });
-    const data = await res.json();
-
-    if (data.url) window.location.href = data.url;
-});
-
-document.getElementById("r_relationship").addEventListener("change", (e) => {
-    const customField = document.getElementById("customRelGroup");
-    customField.style.display = e.target.value === "custom" ? "block" : "none";
-});
-
 async function handleLogout(event) {
     if (event) event.preventDefault();
     try {
@@ -1317,6 +1488,27 @@ async function handleLogout(event) {
         window.location.href = "/login.html";
     }
 }
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+
+document.getElementById("manageSubBtn").addEventListener("click", async () => {
+    const res = await fetch("/api/customer/subscription/portal", {
+        credentials: "include"
+    });
+    const data = await res.json();
+
+    if (data.url) window.location.href = data.url;
+});
+
+document.getElementById("r_relationship").addEventListener("change", (e) => {
+    const customField = document.getElementById("customRelGroup");
+    customField.style.display = e.target.value === "custom" ? "block" : "none";
+});
+
+// Terms checkbox event listener
+document.getElementById("termsAgreeCheckbox").addEventListener("change", updateTermsAgreeButton);
 
 document.addEventListener("DOMContentLoaded", async () => {
     await loadSubscriptionStatus();
