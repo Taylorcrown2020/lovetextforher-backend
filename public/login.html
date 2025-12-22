@@ -329,6 +329,7 @@
 </div>
 
 <!-- Login must always show PUBLIC navbar -->
+<script src="/config.js"></script>
 <script> window.FORCE_PUBLIC_NAV = true; </script>
 <script src="/js/nav.js" defer></script>
 
@@ -395,7 +396,7 @@ async function login() {
     }
 
     try {
-        const res = await fetch("/api/customer/login", {
+        const res = await fetch(`${API_BASE_URL}/api/customer/login`, {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
