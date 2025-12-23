@@ -2530,7 +2530,7 @@ app.post("/api/admin/marketing/send", global.__LT_authAdmin, async (req, res) =>
                     <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;">
                         <div style="max-width:600px;margin:40px auto;background-color:white;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
                             <div style="background-color:#d6336c;padding:30px;border-radius:8px 8px 0 0;text-align:center;">
-                                <h1 style="color:white;margin:0;font-size:28px;">LoveTextForHer</h1>
+                                <h1 style="color:white;margin:0;font-size:28px;">LOVETEXTFORHER</h1>
                             </div>
                             <div style="padding:40px 30px;">
                                 <h2 style="color:#333;margin-top:0;">Hello ${contact.name}!</h2>
@@ -2539,7 +2539,7 @@ app.post("/api/admin/marketing/send", global.__LT_authAdmin, async (req, res) =>
                                 </div>
                                 <hr style="border:none;border-top:1px solid #eee;margin:30px 0;">
                                 <p style="color:#999;font-size:12px;text-align:center;margin:0;">
-                                    This message was sent by LoveTextForHer<br>
+                                    This message was sent by LOVETEXTFORHER<br>
                                     <a href="${process.env.BASE_URL}" 
                                        style="color:#d6336c;text-decoration:none;">
                                         Visit our website
@@ -2826,7 +2826,7 @@ app.post("/api/reset/request", async (req, res) => {
     <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;">
         <div style="max-width:600px;margin:40px auto;background-color:white;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
             <div style="background-color:#d6336c;padding:30px;border-radius:8px 8px 0 0;text-align:center;">
-                <h1 style="color:white;margin:0;font-size:28px;">LoveTextForHer</h1>
+                <h1 style="color:white;margin:0;font-size:28px;">LOVETEXTFORHER</h1>
             </div>
             <div style="padding:40px 30px;">
                 <h2 style="color:#333;margin-top:0;">Reset Your Password</h2>

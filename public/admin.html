@@ -68,6 +68,93 @@
             color: var(--primary);
         }
 
+        .nav-links {
+            display: flex;
+            align-items: center;
+        }
+
+        /* MOBILE MENU BUTTON */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 15px;
+            right: 20px;
+            z-index: 10001;
+            background: white;
+            border: 1px solid rgba(214, 51, 108, 0.2);
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 28px;
+            height: 3px;
+            background: var(--primary);
+            margin: 5px 0;
+            transition: 0.3s;
+            border-radius: 2px;
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(-45deg) translate(-6px, 6px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(45deg) translate(-6px, -6px);
+        }
+
+        /* MOBILE NAV OVERLAY */
+        .mobile-nav-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100vh;
+            background: #fff;
+            z-index: 9999;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+
+        .mobile-nav-overlay.active {
+            right: 0;
+        }
+
+        .mobile-nav-content {
+            padding: 80px 30px 40px;
+        }
+
+        .mobile-nav-links {
+            list-style: none;
+            margin-bottom: 40px;
+        }
+
+        .mobile-nav-links li {
+            margin-bottom: 30px;
+        }
+
+        .mobile-nav-links a {
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 20px;
+            font-weight: 600;
+            display: block;
+            padding: 10px 0;
+            transition: color 0.2s;
+        }
+
+        .mobile-nav-links a:hover {
+            color: var(--primary);
+        }
+
         /* PAGE TITLE */
         h2 {
             font-size: 42px;
@@ -123,6 +210,37 @@
             font-size: 15px;
             margin-top: 16px;
         }
+
+        /* MOBILE RESPONSIVE */
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .mobile-nav-overlay {
+                display: block;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            body {
+                padding-top: 80px;
+            }
+
+            h2 {
+                font-size: 32px;
+                margin-top: 20px;
+            }
+
+            .admin-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+                padding: 0 20px;
+                margin: 30px auto;
+            }
+        }
     </style>
 </head>
 
@@ -153,12 +271,34 @@ async function verifyAdmin() {
 document.addEventListener("DOMContentLoaded", verifyAdmin);
 </script>
 
+<!-- MOBILE MENU BUTTON -->
+<button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+    <span></span>
+    <span></span>
+    <span></span>
+</button>
+
+<!-- MOBILE NAVIGATION OVERLAY -->
+<div class="mobile-nav-overlay" id="mobileNav">
+    <div class="mobile-nav-content">
+        <ul class="mobile-nav-links">
+            <li><a href="/admin.html" onclick="closeMobileMenu()">Dashboard</a></li>
+            <li><a href="/admin_users.html" onclick="closeMobileMenu()">Users</a></li>
+            <li><a href="/admin_customers.html" onclick="closeMobileMenu()">Customers</a></li>
+            <li><a href="/admin_message_logs.html" onclick="closeMobileMenu()">Message Logs</a></li>
+            <li><a href="/admin_kpis.html" onclick="closeMobileMenu()">KPIs</a></li>
+            <li><a href="/admin_marketing.html" onclick="closeMobileMenu()">Marketing</a></li>
+            <li><a href="#" id="mobile-logout-admin" onclick="handleMobileLogout(event)">Logout</a></li>
+        </ul>
+    </div>
+</div>
+
 <!-- ADMIN NAVBAR -->
 <div id="navbar">
     <div id="navbar-inner">
         <div class="logo">ADMIN PANEL</div>
 
-        <div>
+        <div class="nav-links">
             <a href="/admin.html">Dashboard</a>
             <a href="/admin_users.html">Users</a>
             <a href="/admin_customers.html">Customers</a>
@@ -201,9 +341,51 @@ document.addEventListener("DOMContentLoaded", verifyAdmin);
 
 </div>
 
+<!-- MOBILE MENU SCRIPTS -->
+<script>
+function toggleMobileMenu() {
+    const btn = document.querySelector('.mobile-menu-btn');
+    const nav = document.getElementById('mobileNav');
+    const body = document.body;
+    
+    btn.classList.toggle('active');
+    nav.classList.toggle('active');
+    
+    if (nav.classList.contains('active')) {
+        body.style.overflow = 'hidden';
+    } else {
+        body.style.overflow = '';
+    }
+}
+
+function closeMobileMenu() {
+    const btn = document.querySelector('.mobile-menu-btn');
+    const nav = document.getElementById('mobileNav');
+    const body = document.body;
+    
+    btn.classList.remove('active');
+    nav.classList.remove('active');
+    body.style.overflow = '';
+}
+
+async function handleMobileLogout(event) {
+    event.preventDefault();
+    closeMobileMenu();
+    
+    try {
+        await fetch("/api/admin/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+    } catch {}
+    window.location.href = "/admin_login.html";
+}
+</script>
+
 <!-- ADMIN LOGOUT -->
 <script>
-document.getElementById("logout-admin").addEventListener("click", async () => {
+document.getElementById("logout-admin").addEventListener("click", async (e) => {
+    e.preventDefault();
     try {
         await fetch("/api/admin/logout", {
             method: "POST",
