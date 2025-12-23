@@ -706,8 +706,14 @@ async function getSubscription() {
         });
 
         if (!res.ok) return null;
-        return await res.json();
-    } catch {
+        const data = await res.json();
+        
+        // ✅ DEBUG: Log the response to see what we're getting
+        console.log('🔍 Subscription API Response:', data);
+        
+        return data;
+    } catch (err) {
+        console.error('❌ Subscription fetch error:', err);
         return null;
     }
 }
@@ -715,16 +721,32 @@ async function getSubscription() {
 function getButton(p, sub) {
     const subscribed = sub?.subscribed === true;
     const current = sub?.current_plan || "none";
-    const trialUsed = sub?.trial_active === false && current !== "trial";
+    
+    // ✅ FIXED: Use trial_eligible directly from API
+    // If trial_eligible is false, they've already used it
+    const trialEligible = sub?.trial_eligible !== false;
+    
+    // ✅ DEBUG: Log button logic
+    console.log(`🔍 Button logic for ${p.id}:`, {
+        subscribed,
+        current,
+        trial_eligible: sub?.trial_eligible,
+        trial_used: sub?.trial_used,
+        trialEligible
+    });
 
+    // If not subscribed
     if (!subscribed) {
         if (p.id === "free-trial") {
-            if (trialUsed) return `<button class="btn btn-disabled">Trial Used</button>`;
+            if (!trialEligible) {
+                return `<button class="btn btn-disabled">Trial Used</button>`;
+            }
             return `<button class="btn btn-subscribe" onclick="subscribeNow('free-trial')">Start Free Trial</button>`;
         }
         return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Choose Plan</button>`;
     }
 
+    // If currently on this plan
     if (
         (current === "trial" && p.id === "free-trial") ||
         (current === "basic" && p.id === "love-basic") ||
@@ -733,18 +755,22 @@ function getButton(p, sub) {
         return `<button class="btn btn-disabled">Current Plan</button>`;
     }
 
+    // Upgrade from trial
     if (current === "trial" && p.id !== "free-trial") {
         return `<button class="btn btn-subscribe" onclick="subscribeNow('${p.id}')">Upgrade Now</button>`;
     }
 
+    // Upgrade from Basic to Plus
     if (current === "basic" && p.id === "love-plus") {
         return `<button class="btn btn-subscribe" onclick="subscribeNow('love-plus')">Upgrade Plan</button>`;
     }
 
+    // Downgrade from Plus to Basic
     if (current === "plus" && p.id === "love-basic") {
         return `<button class="btn btn-subscribe" onclick="subscribeNow('love-basic')">Downgrade</button>`;
     }
 
+    // Can't get trial again if already have a paid plan
     if (p.id === "free-trial") {
         return `<button class="btn btn-disabled">Unavailable</button>`;
     }
