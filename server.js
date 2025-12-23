@@ -846,12 +846,20 @@ app.get("/api/customer/subscription",
 
         let subscribed = false;
         let status = "inactive";
-        let trialEligible = false;
 
-        // ✅ FIX: Check trial eligibility - trial is available if NOT used
-        trialEligible = (c.trial_used === false || c.trial_used === null);
+        // ✅ FIX: Convert to boolean explicitly and check properly
+        // trial_used will be true ONLY if they've actually used the trial
+        const hasUsedTrial = c.trial_used === true;
+        const trialEligible = !hasUsedTrial;
 
-        // ✅ Check for active trial
+        console.log(`🔍 Trial Status Debug for customer ${req.user.id}:`, {
+            trial_used_raw: c.trial_used,
+            trial_used_type: typeof c.trial_used,
+            hasUsedTrial: hasUsedTrial,
+            trialEligible: trialEligible
+        });
+
+        // Check for active trial
         if (c.trial_active && c.trial_end && new Date(c.trial_end) > now) {
             subscribed = true;
             status = "trial";
@@ -874,8 +882,8 @@ app.get("/api/customer/subscription",
             current_plan: c.current_plan,
             trial_active: c.trial_active,
             trial_end: c.trial_end,
-            trial_used: c.trial_used,
-            trial_eligible: trialEligible,  // ✅ NEW: Explicitly return eligibility
+            trial_used: hasUsedTrial,  // ✅ Return clean boolean
+            trial_eligible: trialEligible,  // ✅ Return clean boolean
             stripe_subscription_id: c.stripe_subscription_id,
             subscription_end: c.subscription_end
         });
@@ -921,11 +929,17 @@ app.post("/api/stripe/checkout",
         }
 
 /***********************************************************
- * TRIAL GUARD — Only one trial ever (FIXED)
+ * TRIAL GUARD — Only one trial ever (ENHANCED WITH DEBUG)
  ***********************************************************/
 if (newPlan === "trial") {
-    // ✅ FIX: Check if trial_used is TRUE (meaning they've used it)
-    // If trial_used is false or null, they CAN use the trial
+    console.log(`🔍 Trial Check Debug for customer ${customer.id}:`, {
+        trial_used_raw: customer.trial_used,
+        trial_used_type: typeof customer.trial_used,
+        trial_used_boolean: customer.trial_used === true,
+        will_block: customer.trial_used === true
+    });
+    
+    // ✅ FIX: Strict boolean check
     if (customer.trial_used === true) {
         return res.status(400).json({
             error: "You have already used your free trial."
