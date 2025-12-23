@@ -2913,6 +2913,30 @@ app.post("/api/reset/confirm", async (req, res) => {
 });
 
 /***************************************************************
+ *  FRONTEND STATIC FILES (REQUIRED FOR RENDER)
+ ***************************************************************/
+const publicDir = path.join(__dirname, "public");
+
+// Serve static assets
+app.use(express.static(publicDir));
+
+// Serve homepage
+app.get("/", (req, res) => {
+    res.sendFile(path.join(publicDir, "index.html"));
+});
+
+// Serve all other frontend pages (SPA-style fallback)
+app.get("*", (req, res) => {
+    // If it's an API route, let Express handle 404
+    if (req.path.startsWith("/api")) {
+        return res.status(404).json({ error: "API route not found" });
+    }
+
+    res.sendFile(path.join(publicDir, "index.html"));
+});
+
+
+/***************************************************************
  *  TWILIO SMS WEBHOOK - HANDLE INCOMING STOP MESSAGES
  *  Place this BEFORE app.listen() at the end of your server.js
  ***************************************************************/
