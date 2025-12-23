@@ -1,7 +1,6 @@
 /********************************************************************
- *  NAV.JS — FINAL VERSION (MATCHES NEW SERVER + NEW HTML FILES)
+ *  NAV.JS — FIXED VERSION WITH API_BASE_URL
  ********************************************************************/
-
 
 /* ================================================================
    DISABLED NAV PAGES
@@ -15,71 +14,83 @@ const DISABLED = [
     "/reset_request.html"
 ];
 
-
 if (DISABLED.includes(window.location.pathname)) {
     window.SKIP_NAV_JS = true;
 }
-
 
 if (window.SKIP_NAV_JS === true) {
     console.log("⛔ nav.js disabled on this page");
     throw new Error("NAV_DISABLED");
 }
 
-
 /* ================================================================
-   HELPER — API
+   HELPER — API (FIXED TO USE API_BASE_URL)
 ================================================================ */
 async function api(path, options = {}) {
     try {
-        const res = await fetch(path, {
+        // ✅ FIX: Use API_BASE_URL from config.js
+        const url = window.API_BASE_URL ? `${window.API_BASE_URL}${path}` : path;
+        
+        const res = await fetch(url, {
             credentials: "include",
             cache: "no-store",
             headers: { "Content-Type": "application/json" },
             ...options
         });
         return await res.json();
-    } catch {
+    } catch (err) {
+        console.error("API Error:", err);
         return null;
     }
 }
 
-
 /* ================================================================
-   AUTH HELPERS
+   AUTH HELPERS (FIXED TO USE API_BASE_URL)
 ================================================================ */
 async function getCustomer() {
     try {
-        const res = await fetch("/api/customer/me", {
+        // ✅ FIX: Use API_BASE_URL from config.js
+        const url = window.API_BASE_URL 
+            ? `${window.API_BASE_URL}/api/customer/me`
+            : "/api/customer/me";
+            
+        const res = await fetch(url, {
             credentials: "include",
             cache: "no-store"
         });
+        
         if (!res.ok) return null;
         const data = await res.json();
         return data.customer || null;
-    } catch {
+    } catch (err) {
+        console.error("Get Customer Error:", err);
         return null;
     }
 }
 
-
 async function getAdmin() {
     try {
-        const res = await fetch("/api/admin/me", {
+        // ✅ FIX: Use API_BASE_URL from config.js
+        const url = window.API_BASE_URL 
+            ? `${window.API_BASE_URL}/api/admin/me`
+            : "/api/admin/me";
+            
+        const res = await fetch(url, {
             credentials: "include",
             cache: "no-store"
         });
+        
         if (!res.ok) return false;
         const data = await res.json();
         return data.admin?.role === "admin";
-    } catch {
+    } catch (err) {
+        console.error("Get Admin Error:", err);
         return false;
     }
 }
 
-
 /* ================================================================
-   CART COUNT
+   CART COUNT (FIXED TO USE API_BASE_URL)
 ================================================================ */
 async function getCartCount() {
     try {
@@ -89,7 +100,6 @@ async function getCartCount() {
         return 0;
     }
 }
-
 
 /* ================================================================
    NAV ELEMENT
@@ -103,7 +113,6 @@ function ensureNavbarEl() {
     }
     return el;
 }
-
 
 /* ================================================================
    GLOBAL NAV STYLES
@@ -159,7 +168,6 @@ function ensureNavbarEl() {
     document.head.appendChild(s);
 })();
 
-
 /* ================================================================
    NAV LAYOUTS
 ================================================================ */
@@ -176,7 +184,6 @@ function publicNav() {
         </div>`;
 }
 
-
 function customerNav(cartBubble) {
     return `
         <div class="nav-inner">
@@ -189,7 +196,6 @@ function customerNav(cartBubble) {
             </div>
         </div>`;
 }
-
 
 function adminNav() {
     return `
@@ -205,21 +211,18 @@ function adminNav() {
         </div>`;
 }
 
-
 /* ================================================================
-   LOGOUT HANDLERS
+   LOGOUT HANDLERS (FIXED TO USE API_BASE_URL)
 ================================================================ */
 async function logoutCustomer() {
     await api("/api/customer/logout", { method: "POST" });
     window.location.href = "/login.html";
 }
 
-
 async function logoutAdmin() {
     await api("/api/admin/logout", { method: "POST" });
     window.location.href = "/admin_login.html";
 }
-
 
 /* ================================================================
    INJECT NAVBAR
@@ -228,13 +231,10 @@ async function injectNavbar() {
     const navbar = ensureNavbarEl();
     navbar.innerHTML = "";
 
-
     const path = window.location.pathname;
-
 
     const customer = await getCustomer();
     const admin = await getAdmin();
-
 
     // Admin pages
     if (admin && path.startsWith("/admin") && path !== "/admin_login.html") {
@@ -243,14 +243,12 @@ async function injectNavbar() {
         return;
     }
 
-
-    // Customer pages (NEW — matches your server)
+    // Customer pages
     const customerProtectedPages = [
         "/dashboard.html",
         "/products.html",
         "/cart.html"
     ];
-
 
     if (customer && customerProtectedPages.includes(path)) {
         const count = await getCartCount();
@@ -260,29 +258,24 @@ async function injectNavbar() {
         return;
     }
 
-
     // Default public nav
     navbar.innerHTML = publicNav();
 }
 
-
 /* ================================================================
-   ACCESS CONTROL MATCHING SERVER EXACTLY
+   ACCESS CONTROL
 ================================================================ */
 async function enforceAccess() {
     const path = window.location.pathname;
 
-
     const customer = await getCustomer();
     const admin = await getAdmin();
-
 
     const customerProtected = [
         "/dashboard.html",
         "/products.html",
         "/cart.html"
     ];
-
 
     const adminProtected = [
         "/admin.html",
@@ -291,24 +284,20 @@ async function enforceAccess() {
         "/admin_kpis.html"
     ];
 
-
     // CUSTOMER PAGE WITHOUT LOGIN → Redirect
     if (customerProtected.includes(path) && !customer) {
         return (window.location.href = "/login.html");
     }
-
 
     // ADMIN PAGE WITHOUT LOGIN → Redirect
     if (adminProtected.includes(path) && !admin) {
         return (window.location.href = "/admin_login.html");
     }
 
-
     // CUSTOMER TRYING TO VIEW LOGIN/REGISTER
     if (customer && (path === "/login.html" || path === "/register.html")) {
         return (window.location.href = "/dashboard.html");
     }
-
 
     // ADMIN TRYING TO VIEW admin_login
     if (admin && path === "/admin_login.html") {
@@ -316,11 +305,11 @@ async function enforceAccess() {
     }
 }
 
-
 /* ================================================================
    INIT
 ================================================================ */
 document.addEventListener("DOMContentLoaded", () => {
+    console.log("🔧 API Base URL:", window.API_BASE_URL || "NOT SET - using relative paths");
     injectNavbar();
     enforceAccess();
 });
