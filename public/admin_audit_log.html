@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Audit Log — Admin</title>
+
+    <script src="/config.js"></script>
+    <script> window.SKIP_NAV_JS = true; </script>
+
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --text-dark: #1a1a1a;
+            --text-light: #6a6a6a;
+            --card-bg: rgba(255,255,255,0.55);
+            --max-width: 1400px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+            padding-top: 120px;
+            min-height: 100vh;
+        }
+
+        /* NAVBAR */
+        #navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 18px 0;
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 2px 14px rgba(0,0,0,0.05);
+            z-index: 9998;
+        }
+
+        #navbar-inner {
+            max-width: var(--max-width);
+            margin: auto;
+            padding: 0 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+        }
+
+        #navbar a {
+            margin-left: 22px;
+            text-decoration: none;
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        #navbar a:hover {
+            color: var(--primary);
+        }
+
+        /* MOBILE MENU BUTTON */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10001;
+            background: white;
+            border: 1px solid rgba(214, 51, 108, 0.2);
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 28px;
+            height: 3px;
+            background: var(--primary);
+            margin: 5px 0;
+            transition: 0.3s;
+            border-radius: 2px;
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(-45deg) translate(-6px, 6px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(45deg) translate(-6px, -6px);
+        }
+
+        /* MOBILE NAV OVERLAY */
+        .mobile-nav-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100vh;
+            background: #fff;
+            z-index: 10000;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+
+        .mobile-nav-overlay.active {
+            right: 0;
+        }
+
+        .mobile-nav-content {
+            padding: 80px 30px 40px;
+        }
+
+        .mobile-nav-links {
+            list-style: none;
+            margin-bottom: 40px;
+        }
+
+        .mobile-nav-links li {
+            margin-bottom: 30px;
+        }
+
+        .mobile-nav-links a {
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 20px;
+            font-weight: 600;
+            display: block;
+            padding: 10px 0;
+            transition: color 0.2s;
+        }
+
+        .mobile-nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* PAGE HEADER */
+        .page-header {
+            max-width: var(--max-width);
+            margin: 40px auto 20px;
+            padding: 0 28px;
+        }
+
+        h2 {
+            font-size: 42px;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            font-size: 16px;
+        }
+
+        /* FILTERS */
+        .filters {
+            max-width: var(--max-width);
+            margin: 20px auto;
+            padding: 0 28px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 10px 18px;
+            border: 2px solid rgba(214, 51, 108, 0.2);
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-dark);
+            transition: 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: transparent;
+        }
+
+        /* AUDIT LOG CONTAINER */
+        .audit-container {
+            max-width: var(--max-width);
+            margin: 0 auto 60px;
+            padding: 0 28px;
+        }
+
+        /* LOG ENTRY */
+        .log-entry {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            border-left: 4px solid;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: 0.25s;
+        }
+
+        .log-entry:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .log-entry.billing { border-left-color: #10b981; }
+        .log-entry.subscription { border-left-color: #3b82f6; }
+        .log-entry.admin { border-left-color: #f59e0b; }
+        .log-entry.message { border-left-color: #8b5cf6; }
+        .log-entry.account { border-left-color: #ef4444; }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 16px;
+        }
+
+        .log-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-billing { background: #d1fae5; color: #065f46; }
+        .badge-subscription { background: #dbeafe; color: #1e40af; }
+        .badge-admin { background: #fef3c7; color: #92400e; }
+        .badge-message { background: #ede9fe; color: #5b21b6; }
+        .badge-account { background: #fee2e2; color: #991b1b; }
+
+        .log-time {
+            color: var(--text-light);
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .log-description {
+            color: var(--text-dark);
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .log-meta {
+            color: var(--text-light);
+            font-size: 13px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .log-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* LOADING & EMPTY STATES */
+        .loading, .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+            font-size: 18px;
+        }
+
+        .error {
+            text-align: center;
+            padding: 60px 20px;
+            color: #ef4444;
+            font-size: 18px;
+        }
+
+        /* MOBILE RESPONSIVE */
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .mobile-nav-overlay {
+                display: block;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            body {
+                padding-top: 80px;
+            }
+
+            h2 {
+                font-size: 32px;
+            }
+
+            .log-header {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .log-title {
+                font-size: 16px;
+            }
+
+            .log-time {
+                font-size: 12px;
+            }
+
+            .filters {
+                gap: 8px;
+            }
+
+            .filter-btn {
+                padding: 8px 14px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ADMIN AUTH CHECK -->
+<script>
+async function verifyAdmin() {
+    try {
+        const res = await fetch("/api/admin/me", {
+            credentials: "include",
+            cache: "no-store"
+        });
+
+        if (!res.ok) {
+            window.location.href = "/admin_login.html";
+            return false;
+        }
+
+        const data = await res.json();
+
+        if (!data?.admin || data.admin.role !== "admin") {
+            window.location.href = "/admin_login.html";
+            return false;
+        }
+
+        return true;
+
+    } catch {
+        window.location.href = "/admin_login.html";
+        return false;
+    }
+}
+</script>
+
+<!-- MOBILE MENU BUTTON -->
+<button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+    <span></span>
+    <span></span>
+    <span></span>
+</button>
+
+<!-- MOBILE NAVIGATION OVERLAY -->
+<div class="mobile-nav-overlay" id="mobileNav">
+    <div class="mobile-nav-content">
+        <ul class="mobile-nav-links">
+            <li><a href="/admin.html" onclick="closeMobileMenu()">Dashboard</a></li>
+            <li><a href="/admin_users.html" onclick="closeMobileMenu()">Users</a></li>
+            <li><a href="/admin_customers.html" onclick="closeMobileMenu()">Customers</a></li>
+            <li><a href="/admin_message_logs.html" onclick="closeMobileMenu()">Message Logs</a></li>
+            <li><a href="/admin_kpis.html" onclick="closeMobileMenu()">KPIs</a></li>
+            <li><a href="/admin_audit_log.html" onclick="closeMobileMenu()">Audit Log</a></li>
+            <li><a href="/admin_marketing.html" onclick="closeMobileMenu()">Marketing</a></li>
+            <li><a href="#" id="mobile-logout-admin" onclick="handleMobileLogout(event)">Logout</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ADMIN NAVBAR -->
+<div id="navbar">
+    <div id="navbar-inner">
+        <div class="logo">ADMIN PANEL</div>
+
+        <div class="nav-links">
+            <a href="/admin.html">Dashboard</a>
+            <a href="/admin_users.html">Users</a>
+            <a href="/admin_customers.html">Customers</a>
+            <a href="/admin_message_logs.html">Message Logs</a>
+            <a href="/admin_kpis.html">KPIs</a>
+            <a href="/admin_audit_logs.html">Audit Log</a>
+            <a href="/admin_marketing.html">Marketing</a>
+            <a href="#" id="logout-admin">Logout</a>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <h2>Audit Log</h2>
+    <p class="subtitle">Track all system activities and changes</p>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+    <button class="filter-btn active" onclick="filterLogs('all')">All Events</button>
+    <button class="filter-btn" onclick="filterLogs('billing')">💳 Billing</button>
+    <button class="filter-btn" onclick="filterLogs('subscription')">📊 Subscriptions</button>
+    <button class="filter-btn" onclick="filterLogs('admin')">⚡ Admin Actions</button>
+    <button class="filter-btn" onclick="filterLogs('message')">💌 Messages</button>
+    <button class="filter-btn" onclick="filterLogs('account')">🔒 Accounts</button>
+</div>
+
+<!-- AUDIT LOG -->
+<div class="audit-container">
+    <div id="loadingState" class="loading">
+        <p>📋 Loading audit log...</p>
+    </div>
+
+    <div id="errorState" class="error" style="display:none;">
+        <p>❌ Failed to load audit log. Please refresh the page.</p>
+    </div>
+
+    <div id="logList" style="display:none;"></div>
+
+    <div id="emptyState" class="empty" style="display:none;">
+        <p>No audit entries found.</p>
+    </div>
+</div>
+
+<!-- MOBILE MENU SCRIPTS -->
+<script>
+function toggleMobileMenu() {
+    const btn = document.querySelector('.mobile-menu-btn');
+    const nav = document.getElementById('mobileNav');
+    const body = document.body;
+    
+    btn.classList.toggle('active');
+    nav.classList.toggle('active');
+    
+    if (nav.classList.contains('active')) {
+        body.style.overflow = 'hidden';
+    } else {
+        body.style.overflow = '';
+    }
+}
+
+function closeMobileMenu() {
+    const btn = document.querySelector('.mobile-menu-btn');
+    const nav = document.getElementById('mobileNav');
+    const body = document.body;
+    
+    btn.classList.remove('active');
+    nav.classList.remove('active');
+    body.style.overflow = '';
+}
+
+async function handleMobileLogout(event) {
+    event.preventDefault();
+    closeMobileMenu();
+    
+    try {
+        await fetch("/api/admin/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+    } catch {}
+    window.location.href = "/admin_login.html";
+}
+</script>
+
+<!-- AUDIT LOG LOGIC -->
+<script>
+let allLogs = [];
+let currentFilter = 'all';
+
+async function loadAuditLog() {
+    try {
+        const res = await fetch("/api/admin/audit-log", {
+            credentials: "include",
+            cache: "no-store"
+        });
+
+        if (!res.ok) {
+            document.getElementById("loadingState").style.display = "none";
+            document.getElementById("errorState").style.display = "block";
+            return;
+        }
+
+        allLogs = await res.json();
+
+        document.getElementById("loadingState").style.display = "none";
+
+        if (allLogs.length === 0) {
+            document.getElementById("emptyState").style.display = "block";
+            return;
+        }
+
+        document.getElementById("logList").style.display = "block";
+        renderLogs(allLogs);
+
+    } catch (err) {
+        console.error("AUDIT LOG ERROR:", err);
+        document.getElementById("loadingState").style.display = "none";
+        document.getElementById("errorState").style.display = "block";
+    }
+}
+
+function renderLogs(logs) {
+    const container = document.getElementById("logList");
+    
+    if (logs.length === 0) {
+        document.getElementById("emptyState").style.display = "block";
+        container.style.display = "none";
+        return;
+    }
+
+    document.getElementById("emptyState").style.display = "none";
+    container.style.display = "block";
+    container.innerHTML = "";
+
+    logs.forEach(log => {
+        const time = new Date(log.created_at).toLocaleString();
+        
+        const entry = document.createElement("div");
+        entry.className = `log-entry ${log.action_type}`;
+        
+        entry.innerHTML = `
+            <div class="log-header">
+                <div class="log-title">
+                    <span class="log-badge badge-${log.action_type}">${log.action_type}</span>
+                    ${log.action}
+                </div>
+                <div class="log-time">${time}</div>
+            </div>
+            <div class="log-description">${log.description}</div>
+            <div class="log-meta">
+                ${log.customer_email ? `<span>👤 ${log.customer_email}</span>` : ''}
+                ${log.admin_email ? `<span>⚡ Admin: ${log.admin_email}</span>` : ''}
+                ${log.ip_address ? `<span>🌐 IP: ${log.ip_address}</span>` : ''}
+            </div>
+        `;
+        
+        container.appendChild(entry);
+    });
+}
+
+function filterLogs(type) {
+    currentFilter = type;
+    
+    // Update button states
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Filter logs
+    const filtered = type === 'all' 
+        ? allLogs 
+        : allLogs.filter(log => log.action_type === type);
+    
+    renderLogs(filtered);
+}
+
+// LOGOUT
+document.getElementById("logout-admin").addEventListener("click", async (e) => {
+    e.preventDefault();
+    await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "include"
+    });
+    window.location.href = "/admin_login.html";
+});
+
+// INIT
+(async () => {
+    const ok = await verifyAdmin();
+    if (ok) loadAuditLog();
+})();
+</script>
+
+</body>
+</html>

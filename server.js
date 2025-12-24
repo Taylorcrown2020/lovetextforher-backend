@@ -26,8 +26,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 /***************************************************************
- *  STRIPE WEBHOOK — MUST BE FIRST (RAW BODY)
- *  COMPLETE FIXED VERSION - Replace entire webhook route
+ *  STRIPE WEBHOOK — COMPLETE WITH AUDIT LOGGING
  ***************************************************************/
 app.post(
     "/api/stripe/webhook",
@@ -62,137 +61,208 @@ app.post(
             /***********************************************************
              * CHECKOUT COMPLETED
              ***********************************************************/
-if (type === "checkout.session.completed") {
-    const customerId = obj.customer;
-    const subId = obj.subscription;
-    if (!subId) return res.json({ received: true });
+            if (type === "checkout.session.completed") {
+                const customerId = obj.customer;
+                const subId = obj.subscription;
+                if (!subId) return res.json({ received: true });
 
-    const sub = await stripe.subscriptions.retrieve(subId);
-    const priceId = sub.items.data[0].price.id;
+                const sub = await stripe.subscriptions.retrieve(subId);
+                const priceId = sub.items.data[0].price.id;
 
-    let plan = "none";
-    if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
-    if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
-    if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+                let plan = "none";
+                if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
+                if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
+                if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
 
-    // ✅ Calculate trial end as exactly 3 days from now
-    let trialEnd = null;
-    if (plan === "trial") {
-        trialEnd = new Date();
-        trialEnd.setDate(trialEnd.getDate() + 3);
-        trialEnd.setHours(23, 59, 59, 999);
-    }
+                // Calculate trial end as exactly 3 days from now
+                let trialEnd = null;
+                if (plan === "trial") {
+                    trialEnd = new Date();
+                    trialEnd.setDate(trialEnd.getDate() + 3);
+                    trialEnd.setHours(23, 59, 59, 999);
+                }
 
-    // ✅ FIX: Only mark trial_used when trial checkout completes
-    await db.query(`
-        UPDATE customers
-        SET 
-            has_subscription = true,
-            current_plan = $1,
-            stripe_subscription_id = $2,
-            stripe_customer_id = $3,
-            trial_active = ($1 = 'trial'),
-            trial_end = $4,
-            trial_used = ($1 = 'trial'),
-            subscription_end = NULL
-        WHERE stripe_customer_id = $3
-    `, [plan, subId, customerId, trialEnd]);
+                // Get customer info for audit log
+                const customerQ = await db.query(
+                    "SELECT id, email FROM customers WHERE stripe_customer_id=$1",
+                    [customerId]
+                );
+                const customer = customerQ.rows[0];
 
-    console.log(`🎉 Subscription started: ${plan}${plan === 'trial' ? ' (ends ' + trialEnd.toISOString() + ')' : ''}`);
-}
+                // Update customer record
+                await db.query(`
+                    UPDATE customers
+                    SET 
+                        has_subscription = true,
+                        current_plan = $1,
+                        stripe_subscription_id = $2,
+                        stripe_customer_id = $3,
+                        trial_active = ($1 = 'trial'),
+                        trial_end = $4,
+                        trial_used = ($1 = 'trial'),
+                        subscription_end = NULL
+                    WHERE stripe_customer_id = $3
+                `, [plan, subId, customerId, trialEnd]);
 
+                console.log(`🎉 Subscription started: ${plan}${plan === 'trial' ? ' (ends ' + trialEnd.toISOString() + ')' : ''}`);
+
+                // AUDIT LOG
+                if (customer) {
+                    await global.__LT_logAuditEvent(
+                        'billing',
+                        'Subscription Started',
+                        `New ${plan} subscription created`,
+                        {
+                            customerEmail: customer.email,
+                            customerId: customer.id,
+                            extra: { plan, subscriptionId: subId }
+                        }
+                    );
+                }
+            }
 
             /***********************************************************
- * SUBSCRIPTION UPDATED (FIXED VERSION)
- ***********************************************************/
-if (type === "customer.subscription.updated") {
-    const customerId = obj.customer;
-    const subId = obj.id;
-    
-    const check = await db.query(
-        `SELECT stripe_subscription_id, id, trial_active FROM customers WHERE stripe_customer_id=$1`,
-        [customerId]
-    );
-    
-    if (check.rows.length === 0 || check.rows[0].stripe_subscription_id !== subId) {
-        console.log(`⚠️  Ignoring update for non-current subscription ${subId}`);
-        return res.json({ received: true });
-    }
-    
-    const customer_db_id = check.rows[0].id;
-    const wasTrialActive = check.rows[0].trial_active;
-    const priceId = obj.items.data[0].price.id;
+             * SUBSCRIPTION UPDATED
+             ***********************************************************/
+            if (type === "customer.subscription.updated") {
+                const customerId = obj.customer;
+                const subId = obj.id;
+                
+                const check = await db.query(
+                    `SELECT stripe_subscription_id, id, trial_active, email FROM customers WHERE stripe_customer_id=$1`,
+                    [customerId]
+                );
+                
+                if (check.rows.length === 0 || check.rows[0].stripe_subscription_id !== subId) {
+                    console.log(`⚠️  Ignoring update for non-current subscription ${subId}`);
+                    return res.json({ received: true });
+                }
+                
+                const customer = check.rows[0];
+                const customer_db_id = customer.id;
+                const wasTrialActive = customer.trial_active;
+                const priceId = obj.items.data[0].price.id;
 
-    let plan = "none";
-    if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
-    if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
-    if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+                let plan = "none";
+                if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
+                if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
+                if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
 
-    const isCanceled = obj.status === "canceled";
-    const isCanceling = obj.cancel_at_period_end === true;
-    
-    const subscriptionEnd = isCanceling 
-        ? new Date(obj.current_period_end * 1000)
-        : null;
+                const isCanceled = obj.status === "canceled";
+                const isCanceling = obj.cancel_at_period_end === true;
+                
+                const subscriptionEnd = isCanceling 
+                    ? new Date(obj.current_period_end * 1000)
+                    : null;
 
-    // ✅ CHECK: Did user upgrade from trial to paid plan?
-    if (wasTrialActive && plan !== "trial" && obj.status === "active") {
-        console.log(`🎉 TRIAL → PAID UPGRADE DETECTED: ${plan}`);
-        
-        // End the trial immediately
-        await db.query(`
-            UPDATE customers
-            SET
-                has_subscription = true,
-                current_plan = $1,
-                trial_active = false,
-                trial_end = NULL,
-                subscription_end = NULL
-            WHERE stripe_customer_id = $2
-        `, [plan, customerId]);
-        
-        console.log(`✅ Trial ended, upgraded to ${plan}`);
-        return res.json({ received: true });
-    }
+                // CHECK: Did user upgrade from trial to paid plan?
+                if (wasTrialActive && plan !== "trial" && obj.status === "active") {
+                    console.log(`🎉 TRIAL → PAID UPGRADE DETECTED: ${plan}`);
+                    
+                    // End the trial immediately
+                    await db.query(`
+                        UPDATE customers
+                        SET
+                            has_subscription = true,
+                            current_plan = $1,
+                            trial_active = false,
+                            trial_end = NULL,
+                            subscription_end = NULL
+                        WHERE stripe_customer_id = $2
+                    `, [plan, customerId]);
+                    
+                    console.log(`✅ Trial ended, upgraded to ${plan}`);
 
-    // Handle immediate cancellation
-    if (isCanceled) {
-        console.log(`❌ IMMEDIATE CANCELLATION DETECTED`);
-        
-        await db.query(`DELETE FROM users WHERE customer_id = $1`, [customer_db_id]);
-        
-        await db.query(`
-            UPDATE customers
-            SET 
-                has_subscription = false,
-                current_plan = 'none',
-                stripe_subscription_id = NULL,
-                trial_active = false,
-                subscription_end = NULL
-            WHERE stripe_customer_id=$1
-        `, [customerId]);
-        
-        console.log(`🗑️  Immediate cancel - Deleted all recipients`);
-        return res.json({ received: true });
-    }
+                    // AUDIT LOG - UPGRADE
+                    await global.__LT_logAuditEvent(
+                        'subscription',
+                        'Trial → Paid Upgrade',
+                        `Customer upgraded from trial to ${plan}`,
+                        {
+                            customerEmail: customer.email,
+                            customerId: customer_db_id,
+                            extra: { oldPlan: 'trial', newPlan: plan }
+                        }
+                    );
+                    
+                    return res.json({ received: true });
+                }
 
-    // Handle regular subscription updates
-    await db.query(`
-        UPDATE customers
-        SET
-            has_subscription = $1,
-            current_plan = $2,
-            subscription_end = $3,
-            trial_active = false
-        WHERE stripe_customer_id = $4
-    `, [!isCanceling, plan, subscriptionEnd, customerId]);
+                // Handle immediate cancellation
+                if (isCanceled) {
+                    console.log(`❌ IMMEDIATE CANCELLATION DETECTED`);
+                    
+                    await db.query(`DELETE FROM users WHERE customer_id = $1`, [customer_db_id]);
+                    
+                    await db.query(`
+                        UPDATE customers
+                        SET 
+                            has_subscription = false,
+                            current_plan = 'none',
+                            stripe_subscription_id = NULL,
+                            trial_active = false,
+                            subscription_end = NULL
+                        WHERE stripe_customer_id=$1
+                    `, [customerId]);
+                    
+                    console.log(`🗑️  Immediate cancel - Deleted all recipients`);
 
-    if (isCanceling) {
-        console.log(`🔄 Subscription scheduled to cancel at ${subscriptionEnd.toISOString()}`);
-    } else {
-        console.log(`🔄 Subscription updated: ${plan}`);
-    }
-}
+                    // AUDIT LOG - IMMEDIATE CANCELLATION
+                    await global.__LT_logAuditEvent(
+                        'subscription',
+                        'Subscription Canceled (Immediate)',
+                        `${plan} subscription canceled immediately`,
+                        {
+                            customerEmail: customer.email,
+                            customerId: customer_db_id,
+                            extra: { plan }
+                        }
+                    );
+                    
+                    return res.json({ received: true });
+                }
+
+                // Handle regular subscription updates
+                await db.query(`
+                    UPDATE customers
+                    SET
+                        has_subscription = $1,
+                        current_plan = $2,
+                        subscription_end = $3,
+                        trial_active = false
+                    WHERE stripe_customer_id = $4
+                `, [!isCanceling, plan, subscriptionEnd, customerId]);
+
+                if (isCanceling) {
+                    console.log(`🔄 Subscription scheduled to cancel at ${subscriptionEnd.toISOString()}`);
+
+                    // AUDIT LOG - SCHEDULED CANCELLATION
+                    await global.__LT_logAuditEvent(
+                        'subscription',
+                        'Subscription Canceled (Scheduled)',
+                        `${plan} subscription scheduled to cancel on ${subscriptionEnd.toISOString()}`,
+                        {
+                            customerEmail: customer.email,
+                            customerId: customer_db_id,
+                            extra: { plan, cancelDate: subscriptionEnd }
+                        }
+                    );
+                } else {
+                    console.log(`🔄 Subscription updated: ${plan}`);
+
+                    // AUDIT LOG - SUBSCRIPTION UPDATE
+                    await global.__LT_logAuditEvent(
+                        'subscription',
+                        'Subscription Updated',
+                        `Subscription changed to ${plan}`,
+                        {
+                            customerEmail: customer.email,
+                            customerId: customer_db_id,
+                            extra: { plan }
+                        }
+                    );
+                }
+            }
 
             /***********************************************************
              * SUBSCRIPTION DELETED (Trial ended or period ended)
@@ -201,18 +271,31 @@ if (type === "customer.subscription.updated") {
                 const customerId = obj.customer;
                 
                 const custQ = await db.query(
-                    `SELECT id, current_plan FROM customers WHERE stripe_customer_id=$1`,
+                    `SELECT id, current_plan, email FROM customers WHERE stripe_customer_id=$1`,
                     [customerId]
                 );
                 
                 if (custQ.rows.length > 0) {
-                    const customer_db_id = custQ.rows[0].id;
-                    const plan = custQ.rows[0].current_plan;
+                    const customer = custQ.rows[0];
+                    const customer_db_id = customer.id;
+                    const plan = customer.current_plan;
                     
                     // Delete all recipients
                     await db.query(`DELETE FROM users WHERE customer_id = $1`, [customer_db_id]);
                     
                     console.log(`🗑️  ${plan === 'trial' ? 'Trial' : 'Subscription'} ended - Deleted all recipients`);
+
+                    // AUDIT LOG - SUBSCRIPTION ENDED
+                    await global.__LT_logAuditEvent(
+                        'subscription',
+                        plan === 'trial' ? 'Trial Ended' : 'Subscription Ended',
+                        `${plan} subscription has ended`,
+                        {
+                            customerEmail: customer.email,
+                            customerId: customer_db_id,
+                            extra: { plan }
+                        }
+                    );
                 }
 
                 // Update customer record
@@ -238,6 +321,76 @@ if (type === "customer.subscription.updated") {
         return res.json({ received: true });
     }
 );
+
+/***************************************************************
+ *  Add audit logging to admin actions
+ ***************************************************************/
+
+// In admin delete customer endpoint:
+app.delete("/api/admin/customer/:id", global.__LT_authAdmin, async (req, res) => {
+    try {
+        const customerId = req.params.id;
+        
+        // Get customer info before deleting
+        const customerQ = await global.__LT_pool.query(
+            "SELECT email, name FROM customers WHERE id=$1",
+            [customerId]
+        );
+        
+        const customer = customerQ.rows[0];
+
+        // Delete recipients and customer
+        await global.__LT_pool.query("DELETE FROM users WHERE customer_id=$1", [customerId]);
+        await global.__LT_pool.query("DELETE FROM customers WHERE id=$1", [customerId]);
+
+        // Log the action
+        await global.__LT_logAuditEvent(
+            'admin',
+            'Customer Deleted',
+            `Admin deleted customer: ${customer.email}`,
+            {
+                adminId: req.admin.id,
+                adminEmail: req.admin.email,
+                customerEmail: customer.email,
+                customerId: customerId
+            }
+        );
+
+        return res.json({ success: true, deleted: customerId });
+
+    } catch (err) {
+        console.error("ADMIN DELETE CUSTOMER ERROR:", err);
+        return res.status(500).json({ 
+            success: false, 
+            error: "Server error deleting customer" 
+        });
+    }
+});
+
+// In admin send-now endpoint:
+app.post("/api/admin/send-now/:id", global.__LT_authAdmin, async (req, res) => {
+    try {
+        // ... existing send code ...
+
+        await global.__LT_logAuditEvent(
+            'message',
+            'Manual Message Sent',
+            `Admin sent message to ${r.name} (${r.email})`,
+            {
+                adminId: req.admin.id,
+                adminEmail: req.admin.email,
+                customerId: r.customer_id,
+                extra: { recipientId: r.id, recipientEmail: r.email }
+            }
+        );
+
+        return res.json({ success: true });
+
+    } catch (err) {
+        console.error("❌ ADMIN SEND-NOW ERROR:", err);
+        return res.status(500).json({ error: "Failed to send now" });
+    }
+});
 
 /***************************************************************
  * EXPRESS MIDDLEWARE (after webhook)
@@ -526,6 +679,75 @@ global.__LT_buildLoveEmailHTML = buildLoveEmailHTML;
 global.__LT_normalizePlan = normalizePlan;
 global.__LT_getRecipientLimit = getRecipientLimit;
 global.__LT_enforceRecipientLimit = enforceRecipientLimit;
+
+/***************************************************************
+ *  AUDIT LOG SYSTEM - Add to your server.js
+ *  Place this after your other helper functions in Part 2
+ ***************************************************************/
+
+/**
+ * Log an audit event
+ * @param {string} actionType - Type: 'billing', 'subscription', 'admin', 'message', 'account'
+ * @param {string} action - Short title of the action
+ * @param {string} description - Detailed description
+ * @param {object} metadata - Additional data (customerId, adminId, ipAddress, etc.)
+ */
+async function logAuditEvent(actionType, action, description, metadata = {}) {
+    try {
+        await global.__LT_pool.query(
+            `INSERT INTO audit_log 
+                (action_type, action, description, customer_id, admin_id, 
+                 customer_email, admin_email, ip_address, metadata)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [
+                actionType,
+                action,
+                description,
+                metadata.customerId || null,
+                metadata.adminId || null,
+                metadata.customerEmail || null,
+                metadata.adminEmail || null,
+                metadata.ipAddress || null,
+                JSON.stringify(metadata.extra || {})
+            ]
+        );
+        console.log(`📋 Audit log: ${action}`);
+    } catch (err) {
+        console.error("❌ AUDIT LOG ERROR:", err);
+    }
+}
+
+global.__LT_logAuditEvent = logAuditEvent;
+
+/***************************************************************
+ *  ADMIN ENDPOINT - GET AUDIT LOG
+ *  Add this with your other admin endpoints
+ ***************************************************************/
+
+app.get("/api/admin/audit-log", global.__LT_authAdmin, async (req, res) => {
+    try {
+        const limit = req.query.limit ? parseInt(req.query.limit) : 100;
+        const type = req.query.type; // Optional filter
+
+        let query = `
+            SELECT * FROM audit_log
+            ${type ? 'WHERE action_type = $1' : ''}
+            ORDER BY created_at DESC
+            LIMIT ${limit}
+        `;
+
+        const result = type 
+            ? await global.__LT_pool.query(query, [type])
+            : await global.__LT_pool.query(query);
+
+        return res.json(result.rows);
+
+    } catch (err) {
+        console.error("ADMIN AUDIT LOG ERROR:", err);
+        return res.status(500).json({ error: "Failed to load audit log" });
+    }
+});
+
 /***************************************************************
  *  LoveTextForHer — BACKEND (PART 3 OF 7)
  *  ----------------------------------------------------------
