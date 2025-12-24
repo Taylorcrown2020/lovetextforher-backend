@@ -1,26 +1,31 @@
 /***************************************************************
  *  LoveTextForHer — BACKEND (PART 1 OF 7)
- *  FINAL VERSION (2025)
- *  ------------------------------------------------------------
- *  ✔ Stripe Webhook (single unified)
- *  ✔ Fixed cancellation/update logic
- *  ✔ No more “cannot update canceled subscription” errors
- *  ✔ Trial = one-time forever
- *  ✔ DB-safe, Stripe-safe, dashboard-safe
+ *  FINAL VERSION (2025) - ES MODULE VERSION
  ***************************************************************/
 
 process.env.TZ = "UTC";
-require("dotenv").config();
 
-const express = require("express");
-const cors = require("cors");
-const { Pool } = require("pg");
-const cookieParser = require("cookie-parser");
-const path = require("path");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
-const cron = require("node-cron");
+import dotenv from 'dotenv';
+dotenv.config();
+
+import express from 'express';
+import cors from 'cors';
+import pg from 'pg';
+const { Pool } = pg;
+import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import cron from 'node-cron';
+import Stripe from 'stripe';
+import brevo from '@getbrevo/brevo';
+import twilio from 'twilio';
+
+// ES modules don't have __dirname, so we need to create it
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
