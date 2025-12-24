@@ -2203,8 +2203,8 @@ app.get("/api/admin/kpis", global.__LT_authAdmin, async (req, res) => {
         // Pricing (update these to match your actual prices)
         const PRICES = {
             trial: 0,      // Free trial
-            basic: 4.99,   // Update to your actual price
-            plus: 9.99    // Update to your actual price
+            basic: 2.99,   // Update to your actual price
+            plus: 7.99    // Update to your actual price
         };
 
         const currentMRR = 
