@@ -650,35 +650,6 @@ async function logAuditEvent(actionType, action, description, metadata = {}) {
 global.__LT_logAuditEvent = logAuditEvent;
 
 /***************************************************************
- *  ADMIN ENDPOINT - GET AUDIT LOG
- *  Add this with your other admin endpoints
- ***************************************************************/
-
-app.get("/api/admin/audit-log", global.__LT_authAdmin, async (req, res) => {
-    try {
-        const limit = req.query.limit ? parseInt(req.query.limit) : 100;
-        const type = req.query.type; // Optional filter
-
-        let query = `
-            SELECT * FROM audit_log
-            ${type ? 'WHERE action_type = $1' : ''}
-            ORDER BY created_at DESC
-            LIMIT ${limit}
-        `;
-
-        const result = type 
-            ? await global.__LT_pool.query(query, [type])
-            : await global.__LT_pool.query(query);
-
-        return res.json(result.rows);
-
-    } catch (err) {
-        console.error("ADMIN AUDIT LOG ERROR:", err);
-        return res.status(500).json({ error: "Failed to load audit log" });
-    }
-});
-
-/***************************************************************
  *  LoveTextForHer — BACKEND (PART 3 OF 7)
  *  ----------------------------------------------------------
  *  ✔ Customer Register/Login/Logout
@@ -912,6 +883,35 @@ global.__LT_authAdmin = function (req, res, next) {
         return res.status(401).json({ error: "Invalid session" });
     }
 };
+
+/***************************************************************
+ *  ADMIN ENDPOINT - GET AUDIT LOG
+ *  Add this with your other admin endpoints
+ ***************************************************************/
+
+app.get("/api/admin/audit-log", global.__LT_authAdmin, async (req, res) => {
+    try {
+        const limit = req.query.limit ? parseInt(req.query.limit) : 100;
+        const type = req.query.type; // Optional filter
+
+        let query = `
+            SELECT * FROM audit_log
+            ${type ? 'WHERE action_type = $1' : ''}
+            ORDER BY created_at DESC
+            LIMIT ${limit}
+        `;
+
+        const result = type 
+            ? await global.__LT_pool.query(query, [type])
+            : await global.__LT_pool.query(query);
+
+        return res.json(result.rows);
+
+    } catch (err) {
+        console.error("ADMIN AUDIT LOG ERROR:", err);
+        return res.status(500).json({ error: "Failed to load audit log" });
+    }
+});
 
 
 /***************************************************************
