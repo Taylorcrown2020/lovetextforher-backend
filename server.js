@@ -76,11 +76,14 @@ app.post(
 
                 // Calculate trial end as exactly 3 days from now
                 let trialEnd = null;
-                if (plan === "trial") {
-                    trialEnd = new Date();
-                    trialEnd.setDate(trialEnd.getDate() + 3);
-                    trialEnd.setHours(23, 59, 59, 999);
-                }
+    if (plan === "trial") {
+        trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 3);
+        trialEnd.setHours(23, 59, 59, 999);
+
+                // ✅ RECORD EMAIL AS HAVING USED TRIAL (PERMANENT RECORD)
+        await global.__LT_recordTrialUsage(customer.email, customer.id);
+    }
 
                 // Get customer info for audit log
                 const customerQ = await db.query(
@@ -722,6 +725,29 @@ app.post("/api/customer/register", async (req, res) => {
 });
 
 /***************************************************************
+ *  FIX: CHECK IF EMAIL HAS EVER USED TRIAL
+ ***************************************************************/
+async function hasEmailUsedTrial(email) {
+    const q = await global.__LT_pool.query(
+        `SELECT id FROM trial_usage_history WHERE email=$1`,
+        [email]
+    );
+    return q.rows.length > 0;
+}
+
+async function recordTrialUsage(email, customerId) {
+    await global.__LT_pool.query(
+        `INSERT INTO trial_usage_history (email, customer_id, used_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (email) DO NOTHING`,
+        [email, customerId]
+    );
+}
+
+global.__LT_hasEmailUsedTrial = hasEmailUsedTrial;
+global.__LT_recordTrialUsage = recordTrialUsage;
+
+/***************************************************************
  *  CUSTOMER LOGIN
  ***************************************************************/
 app.post("/api/customer/login", async (req, res) => {
@@ -1120,24 +1146,19 @@ app.post("/api/stripe/checkout",
         }
 
 /***********************************************************
- * TRIAL GUARD — Only one trial ever (ENHANCED WITH DEBUG)
+ * TRIAL GUARD — Check if EMAIL has EVER used trial
  ***********************************************************/
 if (newPlan === "trial") {
-    console.log(`🔍 Trial Check Debug for customer ${customer.id}:`, {
-        trial_used_raw: customer.trial_used,
-        trial_used_type: typeof customer.trial_used,
-        trial_used_boolean: customer.trial_used === true,
-        will_block: customer.trial_used === true
-    });
+    // ✅ CHECK BY EMAIL (survives account deletion)
+    const emailUsedTrial = await global.__LT_hasEmailUsedTrial(customer.email);
     
-    // ✅ FIX: Strict boolean check
-    if (customer.trial_used === true) {
+    if (emailUsedTrial) {
         return res.status(400).json({
-            error: "You have already used your free trial."
+            error: "This email address has already used a free trial."
         });
     }
     
-    console.log(`✅ Trial eligible for customer ${customer.id}`);
+    console.log(`✅ Trial eligible for NEW email: ${customer.email}`);
 }
 
         /***********************************************************
@@ -3241,6 +3262,22 @@ app.get("/api/customer/terms/check/:email", global.__LT_authCustomer, async (req
         return res.status(500).json({ error: "Error checking agreement" });
     }
 });
+
+// Run this ONCE after deploying
+async function backfillTrialHistory() {
+    const q = await global.__LT_pool.query(
+        `SELECT email, id FROM customers WHERE trial_used = true`
+    );
+    
+    for (const customer of q.rows) {
+        await global.__LT_recordTrialUsage(customer.email, customer.id);
+    }
+    
+    console.log(`✅ Backfilled ${q.rows.length} trial usage records`);
+}
+
+// Uncomment to run once:
+// backfillTrialHistory();
 
 /***************************************************************
  *  SERVER START
