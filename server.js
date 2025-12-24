@@ -686,12 +686,14 @@ global.__LT_logAuditEvent = logAuditEvent;
  * FIX 1: UPDATED REGISTRATION ENDPOINT
  * Replace the existing /api/customer/register endpoint
  ***************************************************************/
+/***************************************************************
+ * 1. CUSTOMER REGISTRATION - Add audit log
+ ***************************************************************/
 app.post("/api/customer/register", async (req, res) => {
     try {
         let { email, password, name } = req.body;
-
         email = global.__LT_sanitize(email);
-        name  = global.__LT_sanitize(name);
+        name = global.__LT_sanitize(name);
 
         if (!email || !password || !name)
             return res.status(400).json({ error: "All fields required" });
@@ -708,20 +710,38 @@ app.post("/api/customer/register", async (req, res) => {
             return res.status(400).json({ error: "Email already exists" });
 
         const hash = await bcrypt.hash(password, 10);
-
-        // ✅ Check if this EMAIL has EVER used a trial (survives account deletion)
         const trialUsed = await global.__LT_hasEmailUsedTrial(email);
 
-        // Create customer with trial_used = true if email has history
-        await global.__LT_pool.query(
+        const result = await global.__LT_pool.query(
             `INSERT INTO customers
                 (email, password_hash, name,
                  has_subscription, current_plan,
                  trial_active, trial_end, trial_used,
                  stripe_customer_id, stripe_subscription_id,
                  subscription_end)
-             VALUES ($1,$2,$3,false,'none',false,NULL,$4,NULL,NULL,NULL)`,
+             VALUES ($1,$2,$3,false,'none',false,NULL,$4,NULL,NULL,NULL)
+             RETURNING id`,
             [email, hash, name, trialUsed]
+        );
+
+        const customerId = result.rows[0].id;
+        const ipAddress = req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+                         req.connection.remoteAddress || 'unknown';
+
+        // ✅ AUDIT LOG
+        await global.__LT_logAuditEvent(
+            'account',
+            'Account Created',
+            `New customer account registered`,
+            {
+                customerEmail: email,
+                customerId: customerId,
+                ipAddress: ipAddress,
+                extra: { 
+                    name: name,
+                    trialEligible: !trialUsed
+                }
+            }
         );
 
         return res.json({ success: true });
@@ -763,12 +783,11 @@ global.__LT_hasEmailUsedTrial = hasEmailUsedTrial;
 global.__LT_recordTrialUsage = recordTrialUsage;
 
 /***************************************************************
- *  CUSTOMER LOGIN
+ * 2. CUSTOMER LOGIN - Add audit log
  ***************************************************************/
 app.post("/api/customer/login", async (req, res) => {
     try {
         let { email, password } = req.body;
-
         email = global.__LT_sanitize(email);
 
         const q = await global.__LT_pool.query(
@@ -780,10 +799,25 @@ app.post("/api/customer/login", async (req, res) => {
             return res.status(400).json({ error: "Invalid credentials" });
 
         const customer = q.rows[0];
-
         const valid = await bcrypt.compare(password, customer.password_hash);
-        if (!valid)
+        
+        if (!valid) {
+            const ipAddress = req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+                             req.connection.remoteAddress || 'unknown';
+            
+            // ✅ AUDIT LOG - Failed login
+            await global.__LT_logAuditEvent(
+                'security',
+                'Failed Login Attempt',
+                `Incorrect password for ${email}`,
+                {
+                    customerEmail: email,
+                    ipAddress: ipAddress
+                }
+            );
+            
             return res.status(400).json({ error: "Invalid credentials" });
+        }
 
         const token = global.__LT_generateToken({
             id: customer.id,
@@ -799,6 +833,21 @@ app.post("/api/customer/login", async (req, res) => {
             maxAge: 7 * 86400 * 1000
         });
 
+        const ipAddress = req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+                         req.connection.remoteAddress || 'unknown';
+
+        // ✅ AUDIT LOG - Successful login
+        await global.__LT_logAuditEvent(
+            'security',
+            'Customer Login',
+            `Customer logged in successfully`,
+            {
+                customerEmail: email,
+                customerId: customer.id,
+                ipAddress: ipAddress
+            }
+        );
+
         return res.json({ success: true });
 
     } catch (err) {
@@ -806,7 +855,6 @@ app.post("/api/customer/login", async (req, res) => {
         return res.status(500).json({ error: "Server error" });
     }
 });
-
 
 /***************************************************************
  *  CUSTOMER LOGOUT
@@ -1437,12 +1485,63 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
     }
 });
 
+await global.__LT_logAuditEvent(
+    'account',
+    'Recipient Added',
+    `New recipient added: ${name}`,
+    {
+        customerEmail: customer.email,
+        customerId: customer.id,
+        extra: {
+            recipientName: name,
+            recipientEmail: email,
+            relationship: relationship,
+            deliveryMethod: delivery_method
+        }
+    }
+);
+
 /***************************************************************
  *  DELETE RECIPIENT
  ***************************************************************/
 /***************************************************************
  *  DELETE RECIPIENT
  ***************************************************************/
+
+/***************************************************************
+ * 8. RECIPIENT DELETED - Add audit log
+ ***************************************************************/
+// Add to your existing /api/customer/recipients/:id DELETE endpoint
+// Before deletion, get recipient info first:
+
+const recipientQ = await global.__LT_pool.query(
+    "SELECT name, email FROM users WHERE id=$1 AND customer_id=$2",
+    [req.params.id, req.user.id]
+);
+
+const customerQ = await global.__LT_pool.query(
+    "SELECT email FROM customers WHERE id=$1",
+    [req.user.id]
+);
+
+if (recipientQ.rows.length > 0 && customerQ.rows.length > 0) {
+    const recipient = recipientQ.rows[0];
+    const customer = customerQ.rows[0];
+    
+    await global.__LT_logAuditEvent(
+        'account',
+        'Recipient Deleted',
+        `Recipient removed: ${recipient.name}`,
+        {
+            customerEmail: customer.email,
+            customerId: req.user.id,
+            extra: {
+                recipientName: recipient.name,
+                recipientEmail: recipient.email
+            }
+        }
+    );
+}
 
 app.delete("/api/customer/recipients/:id", global.__LT_authCustomer, async (req, res) => {
     try {
@@ -1465,39 +1564,44 @@ app.delete("/api/customer/recipients/:id", global.__LT_authCustomer, async (req,
  *  CUSTOMER — DELETE OWN ACCOUNT
  *  ✅ RECORDS TRIAL USAGE BEFORE DELETION
  ***************************************************************/
+/***************************************************************
+ * 3. CUSTOMER DELETE ACCOUNT - Add audit log
+ ***************************************************************/
 app.delete("/api/customer/account", global.__LT_authCustomer, async (req, res) => {
     try {
         const customerId = req.user.id;
 
-        // ✅ Get customer info and record trial usage if they used it
         const customerQ = await global.__LT_pool.query(
-            "SELECT email, trial_used FROM customers WHERE id=$1",
+            "SELECT email, trial_used, current_plan FROM customers WHERE id=$1",
             [customerId]
         );
 
         if (customerQ.rows.length > 0) {
             const customer = customerQ.rows[0];
             
-            // ✅ If they used trial, record it permanently BEFORE deletion
             if (customer.trial_used === true) {
                 await global.__LT_recordTrialUsage(customer.email, customerId);
-                console.log(`✅ Recorded trial usage for ${customer.email} before deletion`);
             }
+
+            // ✅ AUDIT LOG - Self deletion
+            await global.__LT_logAuditEvent(
+                'account',
+                'Account Deleted (Self)',
+                `Customer deleted their own account`,
+                {
+                    customerEmail: customer.email,
+                    customerId: customerId,
+                    extra: {
+                        deletedBy: 'customer',
+                        hadPlan: customer.current_plan
+                    }
+                }
+            );
         }
 
-        // Delete all recipients
-        await global.__LT_pool.query(
-            "DELETE FROM users WHERE customer_id=$1",
-            [customerId]
-        );
+        await global.__LT_pool.query("DELETE FROM users WHERE customer_id=$1", [customerId]);
+        await global.__LT_pool.query("DELETE FROM customers WHERE id=$1", [customerId]);
 
-        // Delete the customer
-        await global.__LT_pool.query(
-            "DELETE FROM customers WHERE id=$1",
-            [customerId]
-        );
-
-        // Clear session
         res.clearCookie("customer_token", {
             httpOnly: true,
             secure: true,
@@ -1509,9 +1613,7 @@ app.delete("/api/customer/account", global.__LT_authCustomer, async (req, res) =
 
     } catch (err) {
         console.error("CUSTOMER DELETE ACCOUNT ERROR:", err);
-        return res.status(500).json({ 
-            error: "Server error deleting account" 
-        });
+        return res.status(500).json({ error: "Server error deleting account" });
     }
 });
 
@@ -2028,9 +2130,9 @@ app.post("/api/cart/remove", global.__LT_authCustomer, async (req, res) => {
 });
 
 /***************************************************************
- *  PASSWORD RESET — REQUEST RESET TOKEN
+ * 5. PASSWORD RESET REQUEST - Add audit log
  ***************************************************************/
-app.post("/api/password/request", async (req, res) => {
+app.post("/api/reset/request", async (req, res) => {
     try {
         let { email } = req.body;
         email = global.__LT_sanitize(email);
@@ -2043,13 +2145,26 @@ app.post("/api/password/request", async (req, res) => {
             [email]
         );
 
-        // ALWAYS act like success (security)
-        if (!q.rows.length)
-            return res.json({ success: true });
+        const ipAddress = req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+                         req.connection.remoteAddress || 'unknown';
+
+        if (!q.rows.length) {
+            // ✅ AUDIT LOG - Failed reset (account doesn't exist)
+            await global.__LT_logAuditEvent(
+                'security',
+                'Password Reset Failed',
+                `Reset requested for non-existent email: ${email}`,
+                {
+                    customerEmail: email,
+                    ipAddress: ipAddress
+                }
+            );
+            
+            return res.json({ success: true }); // Still return success for security
+        }
 
         const customerId = q.rows[0].id;
 
-        // Invalidate older tokens
         await global.__LT_pool.query(
             `UPDATE password_reset_tokens SET used=true WHERE customer_id=$1`,
             [customerId]
@@ -2064,8 +2179,7 @@ app.post("/api/password/request", async (req, res) => {
             [customerId, token, expiresAt]
         );
 
-        const resetURL =
-            `${process.env.BASE_URL}/reset.html?token=${token}`;
+        const resetURL = `${process.env.BASE_URL}/reset.html?token=${token}`;
 
         const html = `
     <!DOCTYPE html>
@@ -2077,7 +2191,7 @@ app.post("/api/password/request", async (req, res) => {
     <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f5f5f5;">
         <div style="max-width:600px;margin:40px auto;background-color:white;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
             <div style="background-color:#d6336c;padding:30px;border-radius:8px 8px 0 0;text-align:center;">
-                <h1 style="color:white;margin:0;font-size:28px;">LoveTextForHer</h1>
+                <h1 style="color:white;margin:0;font-size:28px;">LOVETEXTFORHER</h1>
             </div>
             <div style="padding:40px 30px;">
                 <h2 style="color:#333;margin-top:0;">Reset Your Password</h2>
@@ -2109,6 +2223,18 @@ app.post("/api/password/request", async (req, res) => {
             "Reset Your Password",
             html,
             `Reset your password: ${resetURL}`
+        );
+
+        // ✅ AUDIT LOG - Successful reset email sent
+        await global.__LT_logAuditEvent(
+            'security',
+            'Password Reset Requested',
+            `Password reset email sent`,
+            {
+                customerEmail: email,
+                customerId: customerId,
+                ipAddress: ipAddress
+            }
         );
 
         return res.json({ success: true });
@@ -2722,40 +2848,44 @@ app.get("/api/admin/customers", global.__LT_authAdmin, async (req, res) => {
 });
 
 /***************************************************************
- *  ADMIN — DELETE CUSTOMER (and all their recipients)
- *  ✅ NOW RECORDS TRIAL USAGE BEFORE DELETION
+ * 4. ADMIN DELETE CUSTOMER - Add audit log
  ***************************************************************/
 app.delete("/api/admin/customer/:id", global.__LT_authAdmin, async (req, res) => {
     try {
         const customerId = req.params.id;
 
-        // ✅ FIRST: Get customer info and record trial usage if they used it
         const customerQ = await global.__LT_pool.query(
-            "SELECT email, trial_used FROM customers WHERE id=$1",
+            "SELECT email, trial_used, current_plan FROM customers WHERE id=$1",
             [customerId]
         );
 
         if (customerQ.rows.length > 0) {
             const customer = customerQ.rows[0];
             
-            // ✅ If they used trial, record it permanently BEFORE deletion
             if (customer.trial_used === true) {
                 await global.__LT_recordTrialUsage(customer.email, customerId);
-                console.log(`✅ Recorded trial usage for ${customer.email} before deletion`);
             }
+
+            // ✅ AUDIT LOG - Admin deletion
+            await global.__LT_logAuditEvent(
+                'admin',
+                'Account Deleted (Admin)',
+                `Admin deleted customer account: ${customer.email}`,
+                {
+                    customerEmail: customer.email,
+                    customerId: customerId,
+                    adminEmail: req.admin.email,
+                    adminId: req.admin.id,
+                    extra: {
+                        deletedBy: 'admin',
+                        hadPlan: customer.current_plan
+                    }
+                }
+            );
         }
 
-        // THEN: Delete all recipients for this customer
-        await global.__LT_pool.query(
-            "DELETE FROM users WHERE customer_id=$1",
-            [customerId]
-        );
-
-        // FINALLY: Delete the customer
-        await global.__LT_pool.query(
-            "DELETE FROM customers WHERE id=$1",
-            [customerId]
-        );
+        await global.__LT_pool.query("DELETE FROM users WHERE customer_id=$1", [customerId]);
+        await global.__LT_pool.query("DELETE FROM customers WHERE id=$1", [customerId]);
 
         return res.json({ success: true, deleted: customerId });
 
@@ -3180,6 +3310,9 @@ app.post("/api/reset/request", async (req, res) => {
     }
 });
 
+/***************************************************************
+ * 6. PASSWORD RESET CONFIRM - Add audit log
+ ***************************************************************/
 app.post("/api/reset/confirm", async (req, res) => {
     try {
         let { token, password } = req.body;
@@ -3215,6 +3348,28 @@ app.post("/api/reset/confirm", async (req, res) => {
             `UPDATE password_reset_tokens SET used=true WHERE token=$1`,
             [token]
         );
+
+        const customerQ = await global.__LT_pool.query(
+            "SELECT email FROM customers WHERE id=$1",
+            [record.customer_id]
+        );
+
+        const ipAddress = req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+                         req.connection.remoteAddress || 'unknown';
+
+        // ✅ AUDIT LOG - Password changed
+        if (customerQ.rows.length > 0) {
+            await global.__LT_logAuditEvent(
+                'security',
+                'Password Changed',
+                `Password successfully reset`,
+                {
+                    customerEmail: customerQ.rows[0].email,
+                    customerId: record.customer_id,
+                    ipAddress: ipAddress
+                }
+            );
+        }
 
         return res.json({ success: true });
 

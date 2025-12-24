@@ -75,7 +75,7 @@
             color: var(--primary);
         }
 
-        /* MOBILE MENU BUTTON */
+        /* MOBILE MENU */
         .mobile-menu-btn {
             display: none;
             position: fixed;
@@ -112,7 +112,6 @@
             transform: rotate(45deg) translate(-6px, -6px);
         }
 
-        /* MOBILE NAV OVERLAY */
         .mobile-nav-overlay {
             display: none;
             position: fixed;
@@ -178,6 +177,49 @@
             font-size: 16px;
         }
 
+        /* SEARCH BAR */
+        .search-container {
+            max-width: var(--max-width);
+            margin: 20px auto;
+            padding: 0 28px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .search-bar {
+            flex: 1;
+            padding: 14px 20px;
+            border: 2px solid rgba(214, 51, 108, 0.2);
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: "Inter", sans-serif;
+            transition: 0.2s;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(214, 51, 108, 0.1);
+        }
+
+        .clear-btn {
+            padding: 14px 24px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 15px;
+        }
+
+        .clear-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(214, 51, 108, 0.3);
+        }
+
         /* FILTERS */
         .filters {
             max-width: var(--max-width);
@@ -211,6 +253,44 @@
             border-color: transparent;
         }
 
+        /* STATS BAR */
+        .stats-bar {
+            max-width: var(--max-width);
+            margin: 20px auto;
+            padding: 0 28px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stat-icon {
+            font-size: 24px;
+        }
+
+        .stat-content h4 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .stat-content p {
+            font-size: 12px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         /* AUDIT LOG CONTAINER */
         .audit-container {
             max-width: var(--max-width);
@@ -240,6 +320,7 @@
         .log-entry.admin { border-left-color: #f59e0b; }
         .log-entry.message { border-left-color: #8b5cf6; }
         .log-entry.account { border-left-color: #ef4444; }
+        .log-entry.security { border-left-color: #06b6d4; }
 
         .log-header {
             display: flex;
@@ -256,6 +337,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .log-badge {
@@ -272,6 +354,7 @@
         .badge-admin { background: #fef3c7; color: #92400e; }
         .badge-message { background: #ede9fe; color: #5b21b6; }
         .badge-account { background: #fee2e2; color: #991b1b; }
+        .badge-security { background: #cffafe; color: #155e75; }
 
         .log-time {
             color: var(--text-light);
@@ -298,6 +381,19 @@
             display: flex;
             align-items: center;
             gap: 4px;
+        }
+
+        .log-details {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .log-details strong {
+            color: var(--text-dark);
         }
 
         /* LOADING & EMPTY STATES */
@@ -335,6 +431,26 @@
 
             h2 {
                 font-size: 32px;
+            }
+
+            .search-container {
+                flex-direction: column;
+            }
+
+            .search-bar {
+                width: 100%;
+            }
+
+            .clear-btn {
+                width: 100%;
+            }
+
+            .stats-bar {
+                flex-direction: column;
+            }
+
+            .stat-card {
+                width: 100%;
             }
 
             .log-header {
@@ -428,7 +544,7 @@ async function verifyAdmin() {
             <a href="/admin_customers.html">Customers</a>
             <a href="/admin_message_logs.html">Message Logs</a>
             <a href="/admin_kpis.html">KPIs</a>
-            <a href="/admin_audit_logs.html">Audit Log</a>
+            <a href="/admin_audit_log.html">Audit Log</a>
             <a href="/admin_marketing.html">Marketing</a>
             <a href="#" id="logout-admin">Logout</a>
         </div>
@@ -441,14 +557,45 @@ async function verifyAdmin() {
     <p class="subtitle">Track all system activities and changes</p>
 </div>
 
+<!-- SEARCH BAR -->
+<div class="search-container">
+    <input 
+        type="text" 
+        id="searchBar" 
+        class="search-bar" 
+        placeholder="🔍 Search by email, customer ID, or action..."
+        oninput="handleSearch()"
+    >
+    <button class="clear-btn" onclick="clearSearch()">Clear</button>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+    <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-content">
+            <h4 id="totalEvents">0</h4>
+            <p>Total Events</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+            <h4 id="showingEvents">0</h4>
+            <p>Showing</p>
+        </div>
+    </div>
+</div>
+
 <!-- FILTERS -->
 <div class="filters">
     <button class="filter-btn active" onclick="filterLogs('all')">All Events</button>
     <button class="filter-btn" onclick="filterLogs('billing')">💳 Billing</button>
     <button class="filter-btn" onclick="filterLogs('subscription')">📊 Subscriptions</button>
-    <button class="filter-btn" onclick="filterLogs('admin')">⚡ Admin Actions</button>
-    <button class="filter-btn" onclick="filterLogs('message')">💌 Messages</button>
+    <button class="filter-btn" onclick="filterLogs('admin')">⚡ Admin</button>
     <button class="filter-btn" onclick="filterLogs('account')">🔒 Accounts</button>
+    <button class="filter-btn" onclick="filterLogs('security')">🔐 Security</button>
+    <button class="filter-btn" onclick="filterLogs('message')">💌 Messages</button>
 </div>
 
 <!-- AUDIT LOG -->
@@ -512,11 +659,13 @@ async function handleMobileLogout(event) {
 <!-- AUDIT LOG LOGIC -->
 <script>
 let allLogs = [];
+let filteredLogs = [];
 let currentFilter = 'all';
+let currentSearchTerm = '';
 
 async function loadAuditLog() {
     try {
-        const res = await fetch("/api/admin/audit-log", {
+        const res = await fetch("/api/admin/audit-log?limit=500", {
             credentials: "include",
             cache: "no-store"
         });
@@ -536,7 +685,10 @@ async function loadAuditLog() {
             return;
         }
 
+        document.getElementById("totalEvents").textContent = allLogs.length;
         document.getElementById("logList").style.display = "block";
+        
+        filteredLogs = allLogs;
         renderLogs(allLogs);
 
     } catch (err) {
@@ -552,11 +704,13 @@ function renderLogs(logs) {
     if (logs.length === 0) {
         document.getElementById("emptyState").style.display = "block";
         container.style.display = "none";
+        document.getElementById("showingEvents").textContent = "0";
         return;
     }
 
     document.getElementById("emptyState").style.display = "none";
     container.style.display = "block";
+    document.getElementById("showingEvents").textContent = logs.length;
     container.innerHTML = "";
 
     logs.forEach(log => {
@@ -564,6 +718,26 @@ function renderLogs(logs) {
         
         const entry = document.createElement("div");
         entry.className = `log-entry ${log.action_type}`;
+        
+        // Parse metadata if it exists
+        let metadata = {};
+        try {
+            metadata = typeof log.metadata === 'string' ? JSON.parse(log.metadata) : log.metadata || {};
+        } catch (e) {
+            metadata = {};
+        }
+
+        // Build details section
+        let detailsHTML = '';
+        if (Object.keys(metadata).length > 0) {
+            detailsHTML = '<div class="log-details">';
+            for (const [key, value] of Object.entries(metadata)) {
+                if (key !== 'extra') {
+                    detailsHTML += `<strong>${key}:</strong> ${value}<br>`;
+                }
+            }
+            detailsHTML += '</div>';
+        }
         
         entry.innerHTML = `
             <div class="log-header">
@@ -576,9 +750,11 @@ function renderLogs(logs) {
             <div class="log-description">${log.description}</div>
             <div class="log-meta">
                 ${log.customer_email ? `<span>👤 ${log.customer_email}</span>` : ''}
+                ${log.customer_id ? `<span>🆔 ID: ${log.customer_id}</span>` : ''}
                 ${log.admin_email ? `<span>⚡ Admin: ${log.admin_email}</span>` : ''}
-                ${log.ip_address ? `<span>🌐 IP: ${log.ip_address}</span>` : ''}
+                ${log.ip_address && log.ip_address !== 'unknown' ? `<span>🌐 ${log.ip_address}</span>` : ''}
             </div>
+            ${detailsHTML}
         `;
         
         container.appendChild(entry);
@@ -594,12 +770,46 @@ function filterLogs(type) {
     });
     event.target.classList.add('active');
     
-    // Filter logs
-    const filtered = type === 'all' 
-        ? allLogs 
-        : allLogs.filter(log => log.action_type === type);
+    applyFilters();
+}
+
+function handleSearch() {
+    currentSearchTerm = document.getElementById('searchBar').value.toLowerCase().trim();
+    applyFilters();
+}
+
+function clearSearch() {
+    document.getElementById('searchBar').value = '';
+    currentSearchTerm = '';
+    applyFilters();
+}
+
+function applyFilters() {
+    let logs = allLogs;
     
-    renderLogs(filtered);
+    // Apply type filter
+    if (currentFilter !== 'all') {
+        logs = logs.filter(log => log.action_type === currentFilter);
+    }
+    
+    // Apply search filter
+    if (currentSearchTerm) {
+        logs = logs.filter(log => {
+            const searchableText = [
+                log.action,
+                log.description,
+                log.customer_email,
+                log.customer_id?.toString(),
+                log.admin_email,
+                log.action_type
+            ].filter(Boolean).join(' ').toLowerCase();
+            
+            return searchableText.includes(currentSearchTerm);
+        });
+    }
+    
+    filteredLogs = logs;
+    renderLogs(logs);
 }
 
 // LOGOUT
