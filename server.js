@@ -103,73 +103,96 @@ if (type === "checkout.session.completed") {
 
 
             /***********************************************************
-             * SUBSCRIPTION UPDATED
-             ***********************************************************/
-            if (type === "customer.subscription.updated") {
-                const customerId = obj.customer;
-                const subId = obj.id;
-                
-                const check = await db.query(
-                    `SELECT stripe_subscription_id, id FROM customers WHERE stripe_customer_id=$1`,
-                    [customerId]
-                );
-                
-                if (check.rows.length === 0 || check.rows[0].stripe_subscription_id !== subId) {
-                    console.log(`⚠️  Ignoring update for non-current subscription ${subId}`);
-                    return res.json({ received: true });
-                }
-                
-                const customer_db_id = check.rows[0].id;
-                const priceId = obj.items.data[0].price.id;
+ * SUBSCRIPTION UPDATED (FIXED VERSION)
+ ***********************************************************/
+if (type === "customer.subscription.updated") {
+    const customerId = obj.customer;
+    const subId = obj.id;
+    
+    const check = await db.query(
+        `SELECT stripe_subscription_id, id, trial_active FROM customers WHERE stripe_customer_id=$1`,
+        [customerId]
+    );
+    
+    if (check.rows.length === 0 || check.rows[0].stripe_subscription_id !== subId) {
+        console.log(`⚠️  Ignoring update for non-current subscription ${subId}`);
+        return res.json({ received: true });
+    }
+    
+    const customer_db_id = check.rows[0].id;
+    const wasTrialActive = check.rows[0].trial_active;
+    const priceId = obj.items.data[0].price.id;
 
-                let plan = "none";
-                if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
-                if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
-                if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+    let plan = "none";
+    if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
+    if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
+    if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
 
-                const isCanceled = obj.status === "canceled";
-                const isCanceling = obj.cancel_at_period_end === true;
-                
-                const subscriptionEnd = isCanceling 
-                    ? new Date(obj.current_period_end * 1000)
-                    : null;
+    const isCanceled = obj.status === "canceled";
+    const isCanceling = obj.cancel_at_period_end === true;
+    
+    const subscriptionEnd = isCanceling 
+        ? new Date(obj.current_period_end * 1000)
+        : null;
 
-                if (isCanceled) {
-                    console.log(`❌ IMMEDIATE CANCELLATION DETECTED`);
-                    
-                    await db.query(`DELETE FROM users WHERE customer_id = $1`, [customer_db_id]);
-                    
-                    await db.query(`
-                        UPDATE customers
-                        SET 
-                            has_subscription = false,
-                            current_plan = 'none',
-                            stripe_subscription_id = NULL,
-                            trial_active = false,
-                            subscription_end = NULL
-                        WHERE stripe_customer_id=$1
-                    `, [customerId]);
-                    
-                    console.log(`🗑️  Immediate cancel - Deleted all recipients`);
-                    return res.json({ received: true });
-                }
+    // ✅ CHECK: Did user upgrade from trial to paid plan?
+    if (wasTrialActive && plan !== "trial" && obj.status === "active") {
+        console.log(`🎉 TRIAL → PAID UPGRADE DETECTED: ${plan}`);
+        
+        // End the trial immediately
+        await db.query(`
+            UPDATE customers
+            SET
+                has_subscription = true,
+                current_plan = $1,
+                trial_active = false,
+                trial_end = NULL,
+                subscription_end = NULL
+            WHERE stripe_customer_id = $2
+        `, [plan, customerId]);
+        
+        console.log(`✅ Trial ended, upgraded to ${plan}`);
+        return res.json({ received: true });
+    }
 
-                await db.query(`
-                    UPDATE customers
-                    SET
-                        has_subscription = $1,
-                        current_plan = $2,
-                        subscription_end = $3,
-                        trial_active = false
-                    WHERE stripe_customer_id = $4
-                `, [!isCanceling, plan, subscriptionEnd, customerId]);
+    // Handle immediate cancellation
+    if (isCanceled) {
+        console.log(`❌ IMMEDIATE CANCELLATION DETECTED`);
+        
+        await db.query(`DELETE FROM users WHERE customer_id = $1`, [customer_db_id]);
+        
+        await db.query(`
+            UPDATE customers
+            SET 
+                has_subscription = false,
+                current_plan = 'none',
+                stripe_subscription_id = NULL,
+                trial_active = false,
+                subscription_end = NULL
+            WHERE stripe_customer_id=$1
+        `, [customerId]);
+        
+        console.log(`🗑️  Immediate cancel - Deleted all recipients`);
+        return res.json({ received: true });
+    }
 
-                if (isCanceling) {
-                    console.log(`🔄 Subscription scheduled to cancel at ${subscriptionEnd.toISOString()}`);
-                } else {
-                    console.log(`🔄 Subscription updated: ${plan}`);
-                }
-            }
+    // Handle regular subscription updates
+    await db.query(`
+        UPDATE customers
+        SET
+            has_subscription = $1,
+            current_plan = $2,
+            subscription_end = $3,
+            trial_active = false
+        WHERE stripe_customer_id = $4
+    `, [!isCanceling, plan, subscriptionEnd, customerId]);
+
+    if (isCanceling) {
+        console.log(`🔄 Subscription scheduled to cancel at ${subscriptionEnd.toISOString()}`);
+    } else {
+        console.log(`🔄 Subscription updated: ${plan}`);
+    }
+}
 
             /***********************************************************
              * SUBSCRIPTION DELETED (Trial ended or period ended)
