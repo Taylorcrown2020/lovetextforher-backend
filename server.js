@@ -427,19 +427,35 @@ console.log("💰 PRICE MAP LOADED:", global.__LT_prices);
  ***************************************************************/
 const MESSAGE_TEMPLATES = {
     spouse: [
-        "Hey {name}, your partner loves you deeply ❤️",
-        "{name}, you are appreciated more than you know 💍",
-        "Your spouse is thinking about you right now 💕"
+        "{name}, I love you more than all the stars in the sky✨ all the grains of sand on all the beaches of the world. My love for you is out of this universe. 💞🥺❤️🌎",
+        "{name}, I’m yours✨ and I’ll be yours until the stars fall from the sky, until the rivers run dry, in other words, until I die. 🥺💞✨❤️",
+        "{name}, when I realized I wanted to spend the rest of my life with you, I wanted the rest of my life to start as soon as possible. ❤️🥺💞☀️",
+        "{name}, do I love you? My Goodness, if your love were a grain of sand, mine would be a universe of beaches. 🥺❤️✨💞",
+        "{name}, I don’t just love you to the moon and back - I passed the moon, hit three galaxies, high-fived a comet, and kept going. ✨🥺💞❤️",
+        "{name}, if my heart had a compass, it would always point to you. ✨🥺💞❤️",
+        "{name}, if forever had a face, it would look like you the first moment you smiled at me. ✨🥺💞❤️"
     ],
     girlfriend: [
-        "{name}, you are loved more every single day 💖",
-        "Someone can't stop thinking of you 🌹",
-        "A reminder that you're adored, {name} ❤️"
+        "{name}, you have this way of showing up that makes everything else feel less complicated. ✨❤️🌎",
+        "{name}, if my heart had directions, they’d be handwritten, slightly messy, and all pointing straight to you with a little note that says ‘yep, still you.’ ✨🥺💞❤️",
+        "{name}, if my heart had a suggestion box, it would be full of notes that just say your name, underlined, with unnecessary doodles. ✨🥺💞❤️",
+        "{name}, if my heart had a compass, it would always point to you. ✨🥺💞❤️",
+        "{name}, if thoughts could travel through space, mine would’ve found you light years ago ✨❤️🥺🌎",
+        "{name}, if I had to measure how often you cross my mind, I’d probably need a unit bigger than miles ✨❤️🥺🌎",
+        "{name}, if smiles were currency, you’d have enough to buy every beach, every sunset, and still have change left over. 🥺❤️✨💞",
+        "{name}, if attention worked like gravity, you’d be pulling mine in without even trying — no resistance, no escape route. 🥺💞✨❤️",
+        "{name}, whatever this is feels like starting a song and realizing it’s already stuck in your head. 💞🥺✨❤️🌎"
     ],
     boyfriend: [
-        "Hey {name}, someone is proud of you 💙",
-        "You're appreciated more than you know 💌",
-        "Someone loves you like crazy, {name} 😘"
+        "{name}, you have this way of showing up that makes everything else feel less complicated. ✨❤️🌎",
+        "{name}, if my heart had directions, they’d be handwritten, slightly messy, and all pointing straight to you with a little note that says ‘yep, still you.’ ✨🥺💞❤️",
+        "{name}, if my heart had a suggestion box, it would be full of notes that just say your name, underlined, with unnecessary doodles. ✨🥺💞❤️",
+        "{name}, if my heart had a compass, it would always point to you. ✨🥺💞❤️",
+        "{name}, if thoughts could travel through space, mine would’ve found you light years ago ✨❤️🥺🌎",
+        "{name}, if I had to measure how often you cross my mind, I’d probably need a unit bigger than miles ✨❤️🥺🌎",
+        "{name}, if smiles were currency, you’d have enough to buy every beach, every sunset, and still have change left over. 🥺❤️✨💞",
+        "{name}, if attention worked like gravity, you’d be pulling mine in without even trying — no resistance, no escape route. 🥺💞✨❤️",
+        "{name}, whatever this is feels like starting a song and realizing it’s already stuck in your head. 💞🥺✨❤️🌎"
     ],
     mom: [
         "{name}, you are the heart of your family ❤️",
