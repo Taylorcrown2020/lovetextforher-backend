@@ -111,6 +111,46 @@
             color: var(--primary);
         }
 
+        .recipient-counter {
+    background: linear-gradient(135deg, #ffe3ed, #f3e9ff);
+    border: 2px solid var(--primary);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 30px;
+    text-align: center;
+    display: none; /* Hidden by default, shown when user has subscription */
+}
+
+.recipient-counter .counter-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.recipient-counter .counter-numbers {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: -0.02em;
+}
+
+.recipient-counter .counter-limit {
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+.recipient-counter.at-limit {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border-color: var(--warning);
+}
+
+.recipient-counter.at-limit .counter-numbers {
+    color: var(--warning);
+}
+
         #navbar { 
             width: 100%; 
             height: 95px; 
@@ -819,6 +859,16 @@
 
     <div id="subscriptionBanner"></div>
 
+    <div id="recipientCounter" class="recipient-counter">
+    <div class="counter-text">Recipients Added</div>
+    <div class="counter-numbers">
+        <span id="currentRecipients">0</span> / <span id="maxRecipients">0</span>
+    </div>
+    <div class="counter-limit" id="counterMessage">
+        Add more recipients to spread the love! 💝
+    </div>
+</div>
+
     <div id="plusCallout" class="plus-feature-highlight">
         <h3>🌸 Unlock Send Flowers Feature</h3>
         <p>Upgrade to LoveText Plus to send personalized flowers to your loved ones anytime!</p>
@@ -1141,12 +1191,15 @@ async function loadSubscriptionStatus() {
 
 async function loadRecipients() {
     try {
-        const res = await fetch(`${API_BASE_URL}/api/customer/recipients`, { // ✅ ADD API_BASE_URL
+        const res = await fetch(`${API_BASE_URL}/api/customer/recipients`, {
             credentials: "include"
         });
         const list = await res.json();
         const box = document.getElementById("recipients");
         box.innerHTML = "";
+
+        // ✅ UPDATE RECIPIENT COUNTER
+        updateRecipientCounter(list.length);
 
         if (!list.length) {
             box.innerHTML = `<p style="text-align:center; color:#999; font-size: 16px; grid-column: 1/-1; padding: 40px 0;">No recipients yet. Add your first recipient below! 💝</p>`;
@@ -1190,6 +1243,51 @@ async function loadRecipients() {
 
     } catch (err) {
         console.error("RECIPIENT LOAD ERROR", err);
+    }
+}
+
+// ============================================================
+// ADD THIS NEW FUNCTION AFTER loadRecipients()
+// ============================================================
+
+function updateRecipientCounter(currentCount) {
+    const counter = document.getElementById("recipientCounter");
+    const currentEl = document.getElementById("currentRecipients");
+    const maxEl = document.getElementById("maxRecipients");
+    const messageEl = document.getElementById("counterMessage");
+
+    // Only show counter if user has subscription
+    if (!HAS_ACCESS) {
+        counter.style.display = "none";
+        return;
+    }
+
+    counter.style.display = "block";
+
+    // Determine max based on plan
+    let maxRecipients = 0;
+    if (USER_PLAN === "trial") maxRecipients = 8;
+    else if (USER_PLAN === "basic") maxRecipients = 3;
+    else if (USER_PLAN === "plus") maxRecipients = 8;
+
+    currentEl.textContent = currentCount;
+    maxEl.textContent = maxRecipients;
+
+    // Update styling and message based on usage
+    counter.classList.remove("at-limit");
+    
+    if (currentCount >= maxRecipients) {
+        counter.classList.add("at-limit");
+        if (USER_PLAN === "basic") {
+            messageEl.innerHTML = '⚠️ Recipient limit reached. <a href="/products.html" style="color: var(--primary); font-weight: 700;">Upgrade to Plus</a> for 8 recipients!';
+        } else {
+            messageEl.textContent = "⚠️ You've reached your recipient limit";
+        }
+    } else if (currentCount === maxRecipients - 1) {
+        messageEl.textContent = "⚡ One spot left!";
+    } else {
+        const remaining = maxRecipients - currentCount;
+        messageEl.textContent = `You can add ${remaining} more recipient${remaining === 1 ? '' : 's'}`;
     }
 }
 
@@ -1517,6 +1615,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (HAS_ACCESS && !isPlusUser()) {
         document.getElementById("plusCallout").style.display = "block";
     }
+    // ✅ Counter is now updated inside loadRecipients()
 });
 </script>
 </body>

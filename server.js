@@ -460,8 +460,8 @@ function normalizePlan(productId) {
  *  PLAN LIMITS
  ***************************************************************/
 function getRecipientLimit(plan) {
-    if (plan === "plus") return Infinity;
-    if (plan === "trial") return Infinity;       // Trial = unlimited
+    if (plan === "plus") return 8;
+    if (plan === "trial") return 8;       // Trial = 8
     if (plan === "basic") return 3;              // Basic = only 3
     return 0;                                     // No plan = 0
 }
@@ -472,7 +472,7 @@ function getRecipientLimit(plan) {
 async function enforceRecipientLimit(customerId, newPlan) {
     const limit = getRecipientLimit(newPlan);
 
-    if (limit === Infinity) return;
+    if (limit === Infinity) return;  // This won't trigger anymore since max is 8
 
     const q = await global.__LT_pool.query(
         `SELECT id FROM users
@@ -492,7 +492,7 @@ async function enforceRecipientLimit(customerId, newPlan) {
         [deleteIds]
     );
 
-    console.log(`⚠️ Removed ${deleteIds.length} recipients due to downgrade.`);
+    console.log(`⚠️ Removed ${deleteIds.length} recipients due to plan limit (new limit: ${limit})`);
 }
 
 /***************************************************************
