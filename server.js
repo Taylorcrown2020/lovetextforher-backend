@@ -58,71 +58,76 @@ app.post(
         console.log(`⚡ WEBHOOK: ${type}`);
 
         try {
-            /***********************************************************
-             * CHECKOUT COMPLETED
-             ***********************************************************/
-            if (type === "checkout.session.completed") {
-                const customerId = obj.customer;
-                const subId = obj.subscription;
-                if (!subId) return res.json({ received: true });
 
-                const sub = await stripe.subscriptions.retrieve(subId);
-                const priceId = sub.items.data[0].price.id;
+/***********************************************************
+ * CHECKOUT COMPLETED
+ ***********************************************************/
+if (type === "checkout.session.completed") {
+    const customerId = obj.customer;
+    const subId = obj.subscription;
+    if (!subId) return res.json({ received: true });
 
-                let plan = "none";
-                if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
-                if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
-                if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+    const sub = await stripe.subscriptions.retrieve(subId);
+    const priceId = sub.items.data[0].price.id;
 
-                // Calculate trial end as exactly 3 days from now
-                let trialEnd = null;
+    let plan = "none";
+    if (priceId === process.env.STRIPE_BASIC_PRICE_ID) plan = "basic";
+    if (priceId === process.env.STRIPE_PLUS_PRICE_ID) plan = "plus";
+    if (priceId === process.env.STRIPE_FREETRIAL_PRICE_ID) plan = "trial";
+
+    // ✅ Get customer info FIRST
+    const customerQ = await db.query(
+        "SELECT id, email FROM customers WHERE stripe_customer_id=$1",
+        [customerId]
+    );
+    const customer = customerQ.rows[0];
+
+    // Calculate trial end as exactly 3 days from now
+    let trialEnd = null;
     if (plan === "trial") {
         trialEnd = new Date();
         trialEnd.setDate(trialEnd.getDate() + 3);
         trialEnd.setHours(23, 59, 59, 999);
 
-                // ✅ RECORD EMAIL AS HAVING USED TRIAL (PERMANENT RECORD)
-        await global.__LT_recordTrialUsage(customer.email, customer.id);
+        // ✅ CRITICAL: RECORD TRIAL USAGE IMMEDIATELY
+        // This persists even if account is deleted later
+        if (customer) {
+            await global.__LT_recordTrialUsage(customer.email, customer.id);
+            console.log(`✅ Recorded trial usage for ${customer.email} in permanent history`);
+        }
     }
 
-                // Get customer info for audit log
-                const customerQ = await db.query(
-                    "SELECT id, email FROM customers WHERE stripe_customer_id=$1",
-                    [customerId]
-                );
-                const customer = customerQ.rows[0];
+    // Update customer record
+    await db.query(`
+        UPDATE customers
+        SET 
+            has_subscription = true,
+            current_plan = $1,
+            stripe_subscription_id = $2,
+            stripe_customer_id = $3,
+            trial_active = ($1 = 'trial'),
+            trial_end = $4,
+            trial_used = ($1 = 'trial'),
+            subscription_end = NULL
+        WHERE stripe_customer_id = $3
+    `, [plan, subId, customerId, trialEnd]);
 
-                // Update customer record
-                await db.query(`
-                    UPDATE customers
-                    SET 
-                        has_subscription = true,
-                        current_plan = $1,
-                        stripe_subscription_id = $2,
-                        stripe_customer_id = $3,
-                        trial_active = ($1 = 'trial'),
-                        trial_end = $4,
-                        trial_used = ($1 = 'trial'),
-                        subscription_end = NULL
-                    WHERE stripe_customer_id = $3
-                `, [plan, subId, customerId, trialEnd]);
+    console.log(`🎉 Subscription started: ${plan}${plan === 'trial' ? ' (ends ' + trialEnd.toISOString() + ')' : ''}`);
 
-                console.log(`🎉 Subscription started: ${plan}${plan === 'trial' ? ' (ends ' + trialEnd.toISOString() + ')' : ''}`);
-
-                // AUDIT LOG
-                if (customer) {
-                    await global.__LT_logAuditEvent(
-                        'billing',
-                        'Subscription Started',
-                        `New ${plan} subscription created`,
-                        {
-                            customerEmail: customer.email,
-                            customerId: customer.id,
-                            extra: { plan, subscriptionId: subId }
-                        }
-                    );
-                }
+    // AUDIT LOG
+    if (customer) {
+        await global.__LT_logAuditEvent(
+            'billing',
+            'Subscription Started',
+            `New ${plan} subscription created`,
+            {
+                customerEmail: customer.email,
+                customerId: customer.id,
+                extra: { plan, subscriptionId: subId }
             }
+        );
+    }
+}
 
             /***********************************************************
              * SUBSCRIPTION UPDATED
@@ -704,7 +709,10 @@ app.post("/api/customer/register", async (req, res) => {
 
         const hash = await bcrypt.hash(password, 10);
 
-        // ✅ FIX: Explicitly set trial_used to FALSE on registration
+        // ✅ Check if this EMAIL has EVER used a trial (survives account deletion)
+        const trialUsed = await global.__LT_hasEmailUsedTrial(email);
+
+        // Create customer with trial_used = true if email has history
         await global.__LT_pool.query(
             `INSERT INTO customers
                 (email, password_hash, name,
@@ -712,8 +720,8 @@ app.post("/api/customer/register", async (req, res) => {
                  trial_active, trial_end, trial_used,
                  stripe_customer_id, stripe_subscription_id,
                  subscription_end)
-             VALUES ($1,$2,$3,false,'none',false,NULL,false,NULL,NULL,NULL)`,
-            [email, hash, name]
+             VALUES ($1,$2,$3,false,'none',false,NULL,$4,NULL,NULL,NULL)`,
+            [email, hash, name, trialUsed]
         );
 
         return res.json({ success: true });
@@ -732,16 +740,23 @@ async function hasEmailUsedTrial(email) {
         `SELECT id FROM trial_usage_history WHERE email=$1`,
         [email]
     );
-    return q.rows.length > 0;
+    const hasUsed = q.rows.length > 0;
+    console.log(`🔍 Trial check for ${email}: ${hasUsed ? 'ALREADY USED' : 'ELIGIBLE'}`);
+    return hasUsed;
 }
 
 async function recordTrialUsage(email, customerId) {
-    await global.__LT_pool.query(
-        `INSERT INTO trial_usage_history (email, customer_id, used_at)
-         VALUES ($1, $2, NOW())
-         ON CONFLICT (email) DO NOTHING`,
-        [email, customerId]
-    );
+    try {
+        await global.__LT_pool.query(
+            `INSERT INTO trial_usage_history (email, customer_id, used_at)
+             VALUES ($1, $2, NOW())
+             ON CONFLICT (email) DO NOTHING`,
+            [email, customerId]
+        );
+        console.log(`📝 Permanently recorded trial usage for ${email}`);
+    } catch (err) {
+        console.error(`❌ Error recording trial usage for ${email}:`, err);
+    }
 }
 
 global.__LT_hasEmailUsedTrial = hasEmailUsedTrial;
@@ -1154,11 +1169,11 @@ if (newPlan === "trial") {
     
     if (emailUsedTrial) {
         return res.status(400).json({
-            error: "This email address has already used a free trial."
+            error: "This email address has already used a free trial. Each email is only eligible for one trial."
         });
     }
     
-    console.log(`✅ Trial eligible for NEW email: ${customer.email}`);
+    console.log(`✅ Trial eligible for email: ${customer.email}`);
 }
 
         /***********************************************************
