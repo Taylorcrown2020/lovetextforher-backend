@@ -1499,41 +1499,6 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
  ***************************************************************/
 
 /***************************************************************
- * 8. RECIPIENT DELETED - Add audit log
- ***************************************************************/
-// Add to your existing /api/customer/recipients/:id DELETE endpoint
-// Before deletion, get recipient info first:
-
-const recipientQ = await global.__LT_pool.query(
-    "SELECT name, email FROM users WHERE id=$1 AND customer_id=$2",
-    [req.params.id, req.user.id]
-);
-
-const customerQ = await global.__LT_pool.query(
-    "SELECT email FROM customers WHERE id=$1",
-    [req.user.id]
-);
-
-if (recipientQ.rows.length > 0 && customerQ.rows.length > 0) {
-    const recipient = recipientQ.rows[0];
-    const customer = customerQ.rows[0];
-    
-    await global.__LT_logAuditEvent(
-        'account',
-        'Recipient Deleted',
-        `Recipient removed: ${recipient.name}`,
-        {
-            customerEmail: customer.email,
-            customerId: req.user.id,
-            extra: {
-                recipientName: recipient.name,
-                recipientEmail: recipient.email
-            }
-        }
-    );
-}
-
-/***************************************************************
  *  DELETE RECIPIENT
  ***************************************************************/
 app.delete("/api/customer/recipients/:id", global.__LT_authCustomer, async (req, res) => {

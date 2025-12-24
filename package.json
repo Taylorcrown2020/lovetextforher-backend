@@ -20,7 +20,7 @@
     "@getbrevo/brevo": "^2.0.0",
     "twilio": "^4.19.0"
   },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+"engines": {
+  "node": "18.x"
+}
 }
