@@ -1447,6 +1447,60 @@ app.delete("/api/customer/recipients/:id", global.__LT_authCustomer, async (req,
 });
 
 /***************************************************************
+ *  CUSTOMER — DELETE OWN ACCOUNT
+ *  ✅ RECORDS TRIAL USAGE BEFORE DELETION
+ ***************************************************************/
+app.delete("/api/customer/account", global.__LT_authCustomer, async (req, res) => {
+    try {
+        const customerId = req.user.id;
+
+        // ✅ Get customer info and record trial usage if they used it
+        const customerQ = await global.__LT_pool.query(
+            "SELECT email, trial_used FROM customers WHERE id=$1",
+            [customerId]
+        );
+
+        if (customerQ.rows.length > 0) {
+            const customer = customerQ.rows[0];
+            
+            // ✅ If they used trial, record it permanently BEFORE deletion
+            if (customer.trial_used === true) {
+                await global.__LT_recordTrialUsage(customer.email, customerId);
+                console.log(`✅ Recorded trial usage for ${customer.email} before deletion`);
+            }
+        }
+
+        // Delete all recipients
+        await global.__LT_pool.query(
+            "DELETE FROM users WHERE customer_id=$1",
+            [customerId]
+        );
+
+        // Delete the customer
+        await global.__LT_pool.query(
+            "DELETE FROM customers WHERE id=$1",
+            [customerId]
+        );
+
+        // Clear session
+        res.clearCookie("customer_token", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            path: "/"
+        });
+
+        return res.json({ success: true });
+
+    } catch (err) {
+        console.error("CUSTOMER DELETE ACCOUNT ERROR:", err);
+        return res.status(500).json({ 
+            error: "Server error deleting account" 
+        });
+    }
+});
+
+/***************************************************************
  *  MESSAGE LOG — last 5 messages
  ***************************************************************/
 app.get("/api/message-log/:recipientId", global.__LT_authCustomer, async (req, res) => {
@@ -2654,18 +2708,35 @@ app.get("/api/admin/customers", global.__LT_authAdmin, async (req, res) => {
 
 /***************************************************************
  *  ADMIN — DELETE CUSTOMER (and all their recipients)
+ *  ✅ NOW RECORDS TRIAL USAGE BEFORE DELETION
  ***************************************************************/
 app.delete("/api/admin/customer/:id", global.__LT_authAdmin, async (req, res) => {
     try {
         const customerId = req.params.id;
 
-        // First delete all recipients for this customer
+        // ✅ FIRST: Get customer info and record trial usage if they used it
+        const customerQ = await global.__LT_pool.query(
+            "SELECT email, trial_used FROM customers WHERE id=$1",
+            [customerId]
+        );
+
+        if (customerQ.rows.length > 0) {
+            const customer = customerQ.rows[0];
+            
+            // ✅ If they used trial, record it permanently BEFORE deletion
+            if (customer.trial_used === true) {
+                await global.__LT_recordTrialUsage(customer.email, customerId);
+                console.log(`✅ Recorded trial usage for ${customer.email} before deletion`);
+            }
+        }
+
+        // THEN: Delete all recipients for this customer
         await global.__LT_pool.query(
             "DELETE FROM users WHERE customer_id=$1",
             [customerId]
         );
 
-        // Then delete the customer
+        // FINALLY: Delete the customer
         await global.__LT_pool.query(
             "DELETE FROM customers WHERE id=$1",
             [customerId]

@@ -112,44 +112,137 @@
         }
 
         .recipient-counter {
-    background: linear-gradient(135deg, #ffe3ed, #f3e9ff);
-    border: 2px solid var(--primary);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 30px;
-    text-align: center;
-    display: none; /* Hidden by default, shown when user has subscription */
-}
+            background: linear-gradient(135deg, #ffe3ed, #f3e9ff);
+            border: 2px solid var(--primary);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            display: none;
+        }
 
-.recipient-counter .counter-text {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-dark);
-    margin-bottom: 8px;
-}
+        .recipient-counter .counter-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
 
-.recipient-counter .counter-numbers {
-    font-size: 32px;
-    font-weight: 800;
-    color: var(--primary);
-    letter-spacing: -0.02em;
-}
+        .recipient-counter .counter-numbers {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+        }
 
-.recipient-counter .counter-limit {
-    font-size: 14px;
-    color: #6b7280;
-    margin-top: 8px;
-    font-weight: 500;
-}
+        .recipient-counter .counter-limit {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 8px;
+            font-weight: 500;
+        }
 
-.recipient-counter.at-limit {
-    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
-    border-color: var(--warning);
-}
+        .recipient-counter.at-limit {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border-color: var(--warning);
+        }
 
-.recipient-counter.at-limit .counter-numbers {
-    color: var(--warning);
-}
+        .recipient-counter.at-limit .counter-numbers {
+            color: var(--warning);
+        }
+
+        /* TAB NAVIGATION */
+        .tab-navigation {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            padding: 14px 24px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            font-family: "Inter", sans-serif;
+        }
+
+        .tab-button:hover {
+            color: var(--primary);
+        }
+
+        .tab-button.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* SETTINGS TAB SPECIFIC STYLES */
+        .settings-section {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .settings-section h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 16px;
+        }
+
+        .settings-section p {
+            color: #6b7280;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .danger-zone {
+            border-color: #fee;
+            background: #fff5f5;
+        }
+
+        .danger-zone h3 {
+            color: var(--danger);
+        }
+
+        .delete-account-btn {
+            background: var(--danger);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 12px;
+            border: none;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: "Inter", sans-serif;
+        }
+
+        .delete-account-btn:hover {
+            background: #a01f1f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(198,40,40,0.3);
+        }
 
         #navbar { 
             width: 100%; 
@@ -413,68 +506,68 @@
             box-shadow: 0 4px 12px rgba(198,40,40,0.3);
         }
 
-        #termsModal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.55);
-    backdrop-filter: blur(4px);
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-}
+        #termsModal, #deleteAccountModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
 
-.terms-header {
-    background: linear-gradient(135deg, #ffe3ed, #f3e9ff);
-    padding: 20px;
-    border-radius: 16px;
-    margin-bottom: 24px;
-    text-align: center;
-}
+        .terms-header {
+            background: linear-gradient(135deg, #ffe3ed, #f3e9ff);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
 
-.terms-content {
-    background: #f9fafb;
-    padding: 24px;
-    border-radius: 12px;
-    margin-bottom: 24px;
-    max-height: 300px;
-    overflow-y: auto;
-    border: 2px solid #e5e7eb;
-}
+        .terms-content {
+            background: #f9fafb;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #e5e7eb;
+        }
 
-.terms-checkbox-container {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px;
-    background: white;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    cursor: pointer;
-}
+        .terms-checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
 
-.terms-buttons {
-    display: flex;
-    gap: 12px;
-}
+        .terms-buttons {
+            display: flex;
+            gap: 12px;
+        }
 
-.terms-agree-btn {
-    background: linear-gradient(90deg, #d6336c, #e91e8c);
-    color: white;
-    flex: 1;
-}
+        .terms-agree-btn {
+            background: linear-gradient(90deg, #d6336c, #e91e8c);
+            color: white;
+            flex: 1;
+        }
 
-.terms-agree-btn:disabled {
-    background: #d1d5db;
-    cursor: not-allowed;
-}
+        .terms-agree-btn:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
 
-.terms-cancel-btn {
-    background: #6b7280;
-    color: white;
-    flex: 1;
-}
+        .terms-cancel-btn {
+            background: #6b7280;
+            color: white;
+            flex: 1;
+        }
         
         .log-btn { 
             background: var(--secondary-btn);
@@ -741,6 +834,30 @@
             font-weight: 500;
         }
 
+        /* DELETE ACCOUNT MODAL SPECIFIC */
+        .delete-warning {
+            background: #fee;
+            border: 2px solid var(--danger);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .delete-warning h3 {
+            color: var(--danger);
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .delete-warning ul {
+            margin-left: 20px;
+            color: #666;
+        }
+
+        .delete-warning ul li {
+            margin: 8px 0;
+        }
+
         @media (max-width: 768px) {
             .mobile-menu-btn {
                 display: block;
@@ -761,6 +878,15 @@
             .dashboard-container {
                 margin: 30px auto 40px;
                 padding: 0 20px;
+            }
+
+            .tab-navigation {
+                gap: 8px;
+            }
+
+            .tab-button {
+                padding: 12px 16px;
+                font-size: 14px;
             }
 
             .header-section {
@@ -811,6 +937,10 @@
             .modal-content {
                 padding: 24px 20px;
             }
+
+            .settings-section {
+                padding: 24px 20px;
+            }
         }
 
         @media (max-width: 380px) {
@@ -859,121 +989,158 @@
 
     <div id="subscriptionBanner"></div>
 
-    <div id="recipientCounter" class="recipient-counter">
-    <div class="counter-text">Recipients Added</div>
-    <div class="counter-numbers">
-        <span id="currentRecipients">0</span> / <span id="maxRecipients">0</span>
-    </div>
-    <div class="counter-limit" id="counterMessage">
-        Add more recipients to spread the love! 💝
-    </div>
-</div>
-
-    <div id="plusCallout" class="plus-feature-highlight">
-        <h3>🌸 Unlock Send Flowers Feature</h3>
-        <p>Upgrade to LoveText Plus to send personalized flowers to your loved ones anytime!</p>
-        <a href="/products.html" class="upgrade-btn">Upgrade to Plus →</a>
-    </div>
-
     <div class="header-section">
         <div class="header-subtitle">Your Personal Dashboard</div>
-        <h1 class="header-title">Manage Your Recipients</h1>
+        <h1 class="header-title">Manage Your Account</h1>
         <p class="header-description">Create meaningful connections with personalized messages and thoughtful gestures</p>
     </div>
 
-    <div class="section-header">
-        <h2>Your Recipients</h2>
+    <!-- TAB NAVIGATION -->
+    <div class="tab-navigation">
+        <button class="tab-button active" onclick="switchTab('recipients')">
+            Recipients
+        </button>
+        <button class="tab-button" onclick="switchTab('settings')">
+            Settings
+        </button>
     </div>
 
-    <div class="recipients-grid" id="recipients"></div>
-
-    <div class="form-section">
-        <h2 class="form-title">Add New Recipient</h2>
-
-        <div id="addForm">
-            <div class="form-group">
-                <label class="form-label" for="r_name">Recipient Name</label>
-                <input id="r_name" placeholder="Enter name">
+    <!-- RECIPIENTS TAB -->
+    <div id="recipientsTab" class="tab-content active">
+        <div id="recipientCounter" class="recipient-counter">
+            <div class="counter-text">Recipients Added</div>
+            <div class="counter-numbers">
+                <span id="currentRecipients">0</span> / <span id="maxRecipients">0</span>
             </div>
-
-            <div class="form-group">
-                <label class="form-label" for="delivery_method">Delivery Method</label>
-                <select id="delivery_method">
-                    <option value="email">Email Only</option>
-                    <option value="sms">SMS Only</option>
-                    <option value="both">Both Email & SMS</option>
-                </select>
+            <div class="counter-limit" id="counterMessage">
+                Add more recipients to spread the love! 💝
             </div>
-
-            <div class="form-group">
-                <label class="form-label" for="r_email">Email Address</label>
-                <input id="r_email" type="email" placeholder="recipient@example.com">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="phone_number">Phone Number (Optional)</label>
-                <input type="tel" id="phone_number" placeholder="+1 (555) 123-4567">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="r_relationship">Relationship</label>
-                <select id="r_relationship">
-                    <option value="spouse">Spouse / Partner</option>
-                    <option value="girlfriend">Girlfriend</option>
-                    <option value="boyfriend">Boyfriend</option>
-                    <option value="mom">Mom</option>
-                    <option value="dad">Dad</option>
-                    <option value="sister">Sister</option>
-                    <option value="brother">Brother</option>
-                    <option value="friend">Friend</option>
-                    <option value="custom">Custom Relationship</option>
-                </select>
-            </div>
-
-            <div class="form-group" id="customRelGroup" style="display:none;">
-                <label class="form-label" for="r_customRel">Custom Relationship</label>
-                <input id="r_customRel" placeholder="Enter custom relationship">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="r_frequency">Message Frequency</label>
-                <select id="r_frequency">
-                    <option value="daily">Daily</option>
-                    <option value="every-other-day">Every Other Day</option>
-                    <option value="three-times-week">Three Times a Week</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="bi-weekly">Bi-Weekly</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="r_timings">Preferred Time</label>
-                <select id="r_timings">
-                    <option value="morning">Morning</option>
-                    <option value="afternoon">Afternoon</option>
-                    <option value="evening">Evening</option>
-                    <option value="night">Night</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="r_timezone">Timezone</label>
-                <select id="r_timezone">
-                    <option value="America/Chicago">Central Time</option>
-                    <option value="America/New_York">Eastern Time</option>
-                    <option value="America/Denver">Mountain Time</option>
-                    <option value="America/Los_Angeles">Pacific Time</option>
-                </select>
-            </div>
-
-            <button onclick="showTermsModal()">Add Recipient</button>
         </div>
 
-        <p id="msg"></p>
-    </div>
-</div>
+        <div id="plusCallout" class="plus-feature-highlight">
+            <h3>🌸 Unlock Send Flowers Feature</h3>
+            <p>Upgrade to LoveText Plus to send personalized flowers to your loved ones anytime!</p>
+            <a href="/products.html" class="upgrade-btn">Upgrade to Plus →</a>
+        </div>
 
-<button id="manageSubBtn">Manage Subscription</button>
+        <div class="section-header">
+            <h2>Your Recipients</h2>
+        </div>
+
+        <div class="recipients-grid" id="recipients"></div>
+
+        <div class="form-section">
+            <h2 class="form-title">Add New Recipient</h2>
+
+            <div id="addForm">
+                <div class="form-group">
+                    <label class="form-label" for="r_name">Recipient Name</label>
+                    <input id="r_name" placeholder="Enter name">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="delivery_method">Delivery Method</label>
+                    <select id="delivery_method">
+                        <option value="email">Email Only</option>
+                        <option value="sms">SMS Only</option>
+                        <option value="both">Both Email & SMS</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="r_email">Email Address</label>
+                    <input id="r_email" type="email" placeholder="recipient@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="phone_number">Phone Number (Optional)</label>
+                    <input type="tel" id="phone_number" placeholder="+1 (555) 123-4567">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="r_relationship">Relationship</label>
+                    <select id="r_relationship">
+                        <option value="spouse">Spouse / Partner</option>
+                        <option value="girlfriend">Girlfriend</option>
+                        <option value="boyfriend">Boyfriend</option>
+                        <option value="mom">Mom</option>
+                        <option value="dad">Dad</option>
+                        <option value="sister">Sister</option>
+                        <option value="brother">Brother</option>
+                        <option value="friend">Friend</option>
+                        <option value="custom">Custom Relationship</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="customRelGroup" style="display:none;">
+                    <label class="form-label" for="r_customRel">Custom Relationship</label>
+                    <input id="r_customRel" placeholder="Enter custom relationship">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="r_frequency">Message Frequency</label>
+                    <select id="r_frequency">
+                        <option value="daily">Daily</option>
+                        <option value="every-other-day">Every Other Day</option>
+                        <option value="three-times-week">Three Times a Week</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="bi-weekly">Bi-Weekly</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="r_timings">Preferred Time</label>
+                    <select id="r_timings">
+                        <option value="morning">Morning</option>
+                        <option value="afternoon">Afternoon</option>
+                        <option value="evening">Evening</option>
+                        <option value="night">Night</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="r_timezone">Timezone</label>
+                    <select id="r_timezone">
+                        <option value="America/Chicago">Central Time</option>
+                        <option value="America/New_York">Eastern Time</option>
+                        <option value="America/Denver">Mountain Time</option>
+                        <option value="America/Los_Angeles">Pacific Time</option>
+                    </select>
+                </div>
+
+                <button onclick="showTermsModal()">Add Recipient</button>
+            </div>
+
+            <p id="msg"></p>
+        </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="settingsTab" class="tab-content">
+        <div class="settings-section">
+            <h3>👤 Account Information</h3>
+            <p><strong>Email:</strong> <span id="userEmail">Loading...</span></p>
+            <p>Your account email is used for login and important notifications.</p>
+        </div>
+
+        <div class="settings-section" id="subscriptionSection" style="display:none;">
+            <h3>💳 Subscription Management</h3>
+            <p>Manage your subscription, update payment method, or view billing history.</p>
+            <button id="manageSubBtnSettings" class="delete-account-btn" style="background: var(--primary);">
+                Open Billing Portal
+            </button>
+        </div>
+
+        <div class="settings-section danger-zone">
+            <h3>⚠️ Danger Zone</h3>
+            <p>Once you delete your account, there is no going back. Please be certain.</p>
+            <button class="delete-account-btn" onclick="showDeleteAccountModal()">
+                Delete My Account
+            </button>
+        </div>
+    </div>
+
+</div>
 
 <!-- Terms Agreement Modal -->
 <div id="termsModal">
@@ -1026,6 +1193,54 @@
     </div>
 </div>
 
+<!-- Delete Account Modal -->
+<div id="deleteAccountModal">
+    <div class="modal-content">
+        <h2>⚠️ Delete Account</h2>
+        
+        <div class="delete-warning">
+            <h3>This action cannot be undone!</h3>
+            <p>Deleting your account will:</p>
+            <ul>
+                <li>Permanently delete all your recipients</li>
+                <li>Delete all message history</li>
+                <li>Cancel your active subscription</li>
+                <li>Remove all your data from our system</li>
+            </ul>
+        </div>
+
+        <p style="margin: 20px 0; font-weight: 600; color: var(--text-dark);">
+            Type <strong style="color: var(--danger);">DELETE</strong> to confirm:
+        </p>
+
+        <input 
+            type="text" 
+            id="deleteConfirmInput" 
+            placeholder="Type DELETE here"
+            style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e5e7eb; font-size: 15px; font-family: 'Inter', sans-serif; margin-bottom: 20px;"
+        >
+
+        <div class="terms-buttons">
+            <button 
+                class="delete-account-btn" 
+                id="confirmDeleteBtn" 
+                onclick="confirmDeleteAccount()"
+                disabled
+                style="flex: 1;"
+            >
+                Delete My Account
+            </button>
+            <button 
+                class="terms-cancel-btn" 
+                onclick="closeDeleteAccountModal()"
+                style="flex: 1; padding: 14px 20px; border-radius: 12px; border: none; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.3s ease; font-family: 'Inter', sans-serif;"
+            >
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
 <div id="messageLogModal">
     <div class="modal-content">
         <h2>Message History</h2>
@@ -1061,6 +1276,7 @@
 
 let HAS_ACCESS = false;
 let USER_PLAN = "none";
+let USER_EMAIL = "";
 let CURRENT_FLOWER_RECIPIENT = null;
 let CURRENT_FLOWER_REMAINING = 0;
 
@@ -1079,6 +1295,22 @@ function closeMobileMenu() {
     btn.classList.remove('active');
     nav.classList.remove('active');
     document.body.style.overflow = '';
+}
+
+// TAB SWITCHING
+function switchTab(tabName) {
+    // Remove active from all tabs and buttons
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    
+    // Add active to selected tab
+    if (tabName === 'recipients') {
+        document.getElementById('recipientsTab').classList.add('active');
+        document.querySelector('.tab-button:first-child').classList.add('active');
+    } else if (tabName === 'settings') {
+        document.getElementById('settingsTab').classList.add('active');
+        document.querySelectorAll('.tab-button')[1].classList.add('active');
+    }
 }
 
 function hasActiveAccess(data) {
@@ -1100,7 +1332,7 @@ function getTimeRemaining(endDate) {
     if (diff <= 0) return null;
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    if (days >0) {
+    if (days > 0) {
         return `${days} day${days !== 1 ? 's' : ''} and ${hours} hour${hours !== 1 ? 's' : ''}`;
     } else {
         return `${hours} hour${hours !== 1 ? 's' : ''}`;
@@ -1172,7 +1404,7 @@ function updateSubscriptionBanner(data) {
 
 async function loadSubscriptionStatus() {
     try {
-        const res = await fetch(`${API_BASE_URL}/api/customer/subscription`, { // ✅ ADD API_BASE_URL
+        const res = await fetch(`${API_BASE_URL}/api/customer/subscription`, {
             credentials: "include",
             cache: "no-store"
         });
@@ -1182,10 +1414,28 @@ async function loadSubscriptionStatus() {
 
         updateSubscriptionBanner(data);
 
-        document.getElementById("manageSubBtn").style.display = HAS_ACCESS ? "block" : "none";
+        // Show subscription section in settings if user has access
+        if (HAS_ACCESS) {
+            document.getElementById("subscriptionSection").style.display = "block";
+        }
 
     } catch (err) {
         console.error("SUB LOAD ERROR", err);
+    }
+}
+
+async function loadUserInfo() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/customer/me`, {
+            credentials: "include"
+        });
+        const data = await res.json();
+        if (data.customer) {
+            USER_EMAIL = data.customer.email;
+            document.getElementById("userEmail").textContent = USER_EMAIL;
+        }
+    } catch (err) {
+        console.error("USER INFO ERROR", err);
     }
 }
 
@@ -1198,7 +1448,6 @@ async function loadRecipients() {
         const box = document.getElementById("recipients");
         box.innerHTML = "";
 
-        // ✅ UPDATE RECIPIENT COUNTER
         updateRecipientCounter(list.length);
 
         if (!list.length) {
@@ -1246,17 +1495,12 @@ async function loadRecipients() {
     }
 }
 
-// ============================================================
-// ADD THIS NEW FUNCTION AFTER loadRecipients()
-// ============================================================
-
 function updateRecipientCounter(currentCount) {
     const counter = document.getElementById("recipientCounter");
     const currentEl = document.getElementById("currentRecipients");
     const maxEl = document.getElementById("maxRecipients");
     const messageEl = document.getElementById("counterMessage");
 
-    // Only show counter if user has subscription
     if (!HAS_ACCESS) {
         counter.style.display = "none";
         return;
@@ -1264,7 +1508,6 @@ function updateRecipientCounter(currentCount) {
 
     counter.style.display = "block";
 
-    // Determine max based on plan
     let maxRecipients = 0;
     if (USER_PLAN === "trial") maxRecipients = 8;
     else if (USER_PLAN === "basic") maxRecipients = 3;
@@ -1273,7 +1516,6 @@ function updateRecipientCounter(currentCount) {
     currentEl.textContent = currentCount;
     maxEl.textContent = maxRecipients;
 
-    // Update styling and message based on usage
     counter.classList.remove("at-limit");
     
     if (currentCount >= maxRecipients) {
@@ -1297,10 +1539,7 @@ function showPlusUpgradePrompt() {
     }
 }
 
-// ============================================================
-// TERMS MODAL FUNCTIONS (UPDATED)
-// ============================================================
-
+// TERMS MODAL
 function showTermsModal() {
     const msgEl = document.getElementById("msg");
     
@@ -1333,14 +1572,9 @@ function showTermsModal() {
         return;
     }
 
-    // Clear any previous errors
     msgEl.innerText = "";
-    
-    // Reset checkbox
     document.getElementById("termsAgreeCheckbox").checked = false;
     document.getElementById("termsAgreeBtn").disabled = true;
-    
-    // Show modal
     document.getElementById("termsModal").style.display = "flex";
 }
 
@@ -1372,8 +1606,7 @@ async function acceptTermsAndAddRecipient() {
     const msgEl = document.getElementById("msg");
 
     try {
-        // Step 1: Record terms agreement
-        const termsRes = await fetch(`${API_BASE_URL}/api/customer/terms/agree`, { // ✅ ADD API_BASE_URL
+        const termsRes = await fetch(`${API_BASE_URL}/api/customer/terms/agree`, {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -1387,7 +1620,6 @@ async function acceptTermsAndAddRecipient() {
             throw new Error("Failed to record terms agreement");
         }
 
-        // Step 2: Add recipient
         const payload = {
             name,
             email,
@@ -1399,7 +1631,7 @@ async function acceptTermsAndAddRecipient() {
             timezone: r_timezone.value
         };
 
-        const res = await fetch(`${API_BASE_URL}/api/customer/recipients`, { // ✅ ADD API_BASE_URL
+        const res = await fetch(`${API_BASE_URL}/api/customer/recipients`, {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -1414,7 +1646,6 @@ async function acceptTermsAndAddRecipient() {
             msgEl.innerText = "Recipient added successfully! ✅";
             msgEl.style.color = "#28a745";
             
-            // Clear form
             r_name.value = "";
             r_email.value = "";
             phone_number.value = "";
@@ -1444,13 +1675,57 @@ async function acceptTermsAndAddRecipient() {
     }
 }
 
-// ============================================================
-// OTHER FUNCTIONS
-// ============================================================
+// DELETE ACCOUNT MODAL
+function showDeleteAccountModal() {
+    document.getElementById("deleteConfirmInput").value = "";
+    document.getElementById("confirmDeleteBtn").disabled = true;
+    document.getElementById("deleteAccountModal").style.display = "flex";
+}
+
+function closeDeleteAccountModal() {
+    document.getElementById("deleteAccountModal").style.display = "none";
+}
+
+// Enable delete button only when user types "DELETE"
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("deleteConfirmInput");
+    const btn = document.getElementById("confirmDeleteBtn");
+    
+    if (input && btn) {
+        input.addEventListener("input", () => {
+            btn.disabled = input.value !== "DELETE";
+        });
+    }
+});
+
+async function confirmDeleteAccount() {
+    if (document.getElementById("deleteConfirmInput").value !== "DELETE") {
+        alert("Please type DELETE to confirm account deletion.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/customer/account`, {
+            method: "DELETE",
+            credentials: "include"
+        });
+
+        if (res.ok) {
+            alert("Your account has been deleted successfully.");
+            window.location.href = "/login.html";
+        } else {
+            const data = await res.json();
+            alert(data.error || "Error deleting account.");
+        }
+    } catch (err) {
+        console.error("DELETE ACCOUNT ERROR:", err);
+        alert("Error deleting account. Please try again.");
+    }
+}
 
 async function deleteRecipient(id) {
     if (!confirm("Delete this recipient?")) return;
-    await fetch(`${API_BASE_URL}/api/customer/recipients/${id}`, { // ✅ ADD API_BASE_URL
+    await fetch(`${API_BASE_URL}/api/customer/recipients/${id}`, {
         method: "DELETE",
         credentials: "include"
     });
@@ -1464,7 +1739,7 @@ async function openMessageLog(id) {
     content.innerHTML = "Loading…";
     modal.style.display = "flex";
 
-    const res = await fetch(`${API_BASE_URL}/api/message-log/${id}`, { // ✅ ADD API_BASE_URL
+    const res = await fetch(`${API_BASE_URL}/api/message-log/${id}`, {
         credentials: "include"
     });
 
@@ -1498,7 +1773,7 @@ async function openFlowerModal(id) {
         return;
     }
     try {
-        const statusRes = await fetch(`${API_BASE_URL}/api/customer/flower-status/${id}`, { // ✅ ADD API_BASE_URL
+        const statusRes = await fetch(`${API_BASE_URL}/api/customer/flower-status/${id}`, {
             credentials: "include"
         });
         const status = await statusRes.json();
@@ -1518,7 +1793,7 @@ async function openFlowerModal(id) {
         const modalHeader = document.querySelector("#flowerModal h2");
         if (status.remainingToday === 2) {
             modalHeader.textContent = "Send a Flower 🌸 (2 available today)";
-        } else if (status.remainingToday === 1) {
+} else if (status.remainingToday === 1) {
             modalHeader.textContent = "Send a Flower 🌸 (Last one for today!)";
         } else {
             modalHeader.textContent = "Send a Flower 🌸";
@@ -1542,7 +1817,7 @@ async function sendFlower() {
     const note = document.getElementById("flowerNote").value.trim();
     const message = `${flower}${note ? " — " + note : ""}`;
 
-    const res = await fetch(`${API_BASE_URL}/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, { // ✅ ADD API_BASE_URL
+    const res = await fetch(`${API_BASE_URL}/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -1575,7 +1850,7 @@ async function sendFlower() {
 async function handleLogout(event) {
     if (event) event.preventDefault();
     try {
-        await fetch(`${API_BASE_URL}/api/customer/logout`, { // ✅ ADD API_BASE_URL
+        await fetch(`${API_BASE_URL}/api/customer/logout`, {
             method: "POST",
             credentials: "include"
         });
@@ -1588,12 +1863,9 @@ async function handleLogout(event) {
     }
 }
 
-// ============================================================
-// EVENT LISTENERS
-// ============================================================
-
-document.getElementById("manageSubBtn").addEventListener("click", async () => {
-    const res = await fetch(`${API_BASE_URL}/api/customer/subscription/portal`, { // ✅ ADD API_BASE_URL
+// Settings tab - Manage Subscription button
+document.getElementById("manageSubBtnSettings")?.addEventListener("click", async () => {
+    const res = await fetch(`${API_BASE_URL}/api/customer/subscription/portal`, {
         credentials: "include"
     });
     const data = await res.json();
@@ -1606,16 +1878,15 @@ document.getElementById("r_relationship").addEventListener("change", (e) => {
     customField.style.display = e.target.value === "custom" ? "block" : "none";
 });
 
-// Terms checkbox event listener
 document.getElementById("termsAgreeCheckbox").addEventListener("change", updateTermsAgreeButton);
 
 document.addEventListener("DOMContentLoaded", async () => {
+    await loadUserInfo();
     await loadSubscriptionStatus();
     await loadRecipients();
     if (HAS_ACCESS && !isPlusUser()) {
         document.getElementById("plusCallout").style.display = "block";
     }
-    // ✅ Counter is now updated inside loadRecipients()
 });
 </script>
 </body>
