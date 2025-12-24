@@ -394,7 +394,7 @@ pool.query("SELECT NOW()")
  ***************************************************************/
 let stripe = null;
 if (process.env.STRIPE_SECRET_KEY) {
-    stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY);  // ✅ CORRECT
     console.log("⚡ Stripe loaded");
 }
 global.__LT_stripe = stripe;
@@ -1960,21 +1960,15 @@ app.post("/api/admin/send-now/:id",
  *  LoveTextForHer — BACKEND (PART 6 OF 7)
  *  ----------------------------------------------------------
  *  Includes:
- *      ✔ Resend email integration
- *      ✔ Universal email sender
+ *      ✔ Email/SMS senders (using imports from Part 1)
  *      ✔ Customer cart
  *      ✔ One-time Stripe merch checkout
  *      ✔ Password reset system
  ***************************************************************/
 
 /***************************************************************
- *  TWILIO SENDGRID EMAIL CLIENT
+ *  BREVO EMAIL CLIENT SETUP (using imported brevo)
  ***************************************************************/
-/***************************************************************
- *  BREVO EMAIL CLIENT
- ***************************************************************/
-const brevo = require('@getbrevo/brevo');
-
 let brevoClient = null;
 
 if (process.env.BREVO_API_KEY) {
@@ -1985,14 +1979,6 @@ if (process.env.BREVO_API_KEY) {
     console.log("📧 Brevo email service loaded");
 } else {
     console.warn("⚠️  BREVO_API_KEY not found - email disabled");
-}
-
-// Initialize SendGrid with API key
-if (process.env.SENDGRID_API_KEY) {
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    console.log("📧 SendGrid email service loaded");
-} else {
-    console.warn("⚠️  SENDGRID_API_KEY not found - email disabled");
 }
 
 /***************************************************************
@@ -2035,6 +2021,41 @@ global.__LT_sendEmail = async function (to, subject, html, textVersion) {
             });
         }
         
+        return false;
+    }
+};
+
+/***************************************************************
+ *  TWILIO SMS CLIENT SETUP (using imported twilio)
+ ***************************************************************/
+let twilioClient = null;
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    twilioClient = twilio(
+        process.env.TWILIO_ACCOUNT_SID,
+        process.env.TWILIO_AUTH_TOKEN
+    );
+    console.log("📱 Twilio SMS loaded");
+}
+
+/***************************************************************
+ *  UNIVERSAL SMS SENDER
+ ***************************************************************/
+global.__LT_sendSMS = async function (to, message) {
+    if (!twilioClient) {
+        console.error("❌ Twilio not configured");
+        return false;
+    }
+    
+    try {
+        await twilioClient.messages.create({
+            body: message,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: to
+        });
+        console.log(`📱 SMS sent to ${to}`);
+        return true;
+    } catch (err) {
+        console.error("❌ SMS SEND ERROR:", err);
         return false;
     }
 };
@@ -2340,19 +2361,6 @@ app.post("/api/stripe/merch-checkout", global.__LT_authCustomer, async (req, res
         return res.status(500).json({ error: "Server error processing merch checkout" });
     }
 });
-
-/***************************************************************
- *  TWILIO SMS CLIENT
- ***************************************************************/
-let twilioClient = null;
-if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
-    const twilio = require("twilio");
-    twilioClient = twilio(
-        process.env.TWILIO_ACCOUNT_SID,
-        process.env.TWILIO_AUTH_TOKEN
-    );
-    console.log("📱 Twilio SMS loaded");
-}
 
 /***************************************************************
  *  UNIVERSAL SMS SENDER
