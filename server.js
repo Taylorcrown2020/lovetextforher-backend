@@ -733,22 +733,6 @@ app.post("/api/customer/register", async (req, res) => {
         const ipAddress = req.headers['x-forwarded-for']?.split(',')[0].trim() || 
                          req.connection.remoteAddress || 'unknown';
 
-        // ✅ AUDIT LOG
-        await global.__LT_logAuditEvent(
-            'account',
-            'Account Created',
-            `New customer account registered`,
-            {
-                customerEmail: email,
-                customerId: customerId,
-                ipAddress: ipAddress,
-                extra: { 
-                    name: name,
-                    trialEligible: !trialUsed
-                }
-            }
-        );
-
         return res.json({ success: true });
 
     } catch (err) {
@@ -1482,6 +1466,23 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
             ]
         );
 
+        // ✅ AUDIT LOG - Add it HERE, before returning
+        await global.__LT_logAuditEvent(
+            'account',
+            'Recipient Added',
+            `New recipient added: ${name}`,
+            {
+                customerEmail: customer.email,
+                customerId: customer.id,
+                extra: {
+                    recipientName: name,
+                    recipientEmail: email,
+                    relationship: relationship,
+                    deliveryMethod: delivery_method
+                }
+            }
+        );
+
         return res.json({ success: true });
 
     } catch (err) {
@@ -1489,22 +1490,6 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
         return res.status(500).json({ error: "Server error adding recipient" });
     }
 });
-
-await global.__LT_logAuditEvent(
-    'account',
-    'Recipient Added',
-    `New recipient added: ${name}`,
-    {
-        customerEmail: customer.email,
-        customerId: customer.id,
-        extra: {
-            recipientName: name,
-            recipientEmail: email,
-            relationship: relationship,
-            deliveryMethod: delivery_method
-        }
-    }
-);
 
 /***************************************************************
  *  DELETE RECIPIENT
@@ -1548,14 +1533,47 @@ if (recipientQ.rows.length > 0 && customerQ.rows.length > 0) {
     );
 }
 
+/***************************************************************
+ *  DELETE RECIPIENT
+ ***************************************************************/
 app.delete("/api/customer/recipients/:id", global.__LT_authCustomer, async (req, res) => {
     try {
-        // Allow deletion regardless of subscription status
-        // (Users should be able to manage their data even after canceling)
+        // ✅ Get recipient info BEFORE deletion for audit log
+        const recipientQ = await global.__LT_pool.query(
+            "SELECT name, email FROM users WHERE id=$1 AND customer_id=$2",
+            [req.params.id, req.user.id]
+        );
+
+        const customerQ = await global.__LT_pool.query(
+            "SELECT email FROM customers WHERE id=$1",
+            [req.user.id]
+        );
+
+        // Delete the recipient
         await global.__LT_pool.query(
             `DELETE FROM users WHERE id=$1 AND customer_id=$2`,
             [req.params.id, req.user.id]
         );
+
+        // ✅ AUDIT LOG - After deletion
+        if (recipientQ.rows.length > 0 && customerQ.rows.length > 0) {
+            const recipient = recipientQ.rows[0];
+            const customer = customerQ.rows[0];
+            
+            await global.__LT_logAuditEvent(
+                'account',
+                'Recipient Deleted',
+                `Recipient removed: ${recipient.name}`,
+                {
+                    customerEmail: customer.email,
+                    customerId: req.user.id,
+                    extra: {
+                        recipientName: recipient.name,
+                        recipientEmail: recipient.email
+                    }
+                }
+            );
+        }
 
         return res.json({ success: true });
 
