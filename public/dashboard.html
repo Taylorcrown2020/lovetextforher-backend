@@ -29,7 +29,7 @@
 
         body {
             font-family: "Inter", sans-serif;
-            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+            background: #f8f9fa;
             overflow-x: hidden;
         }
 
@@ -39,16 +39,18 @@
             top: 20px;
             right: 20px;
             z-index: 1000;
-            background: none;
+            background: white;
             border: none;
             cursor: pointer;
-            padding: 10px;
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .mobile-menu-btn span {
             display: block;
-            width: 28px;
-            height: 3px;
+            width: 24px;
+            height: 2px;
             background: var(--text-dark);
             margin: 5px 0;
             transition: 0.3s;
@@ -56,7 +58,7 @@
         }
 
         .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(-45deg) translate(-6px, 6px);
+            transform: rotate(-45deg) translate(-5px, 5px);
         }
 
         .mobile-menu-btn.active span:nth-child(2) {
@@ -64,17 +66,17 @@
         }
 
         .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(45deg) translate(-6px, -6px);
+            transform: rotate(45deg) translate(-5px, -5px);
         }
 
         .mobile-nav-overlay {
             display: none;
             position: fixed;
-            top: 10px;
+            top: 0;
             right: -100%;
             width: 100%;
             height: 100vh;
-            background: #fff;
+            background: white;
             z-index: 999;
             transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
@@ -94,154 +96,23 @@
         }
 
         .mobile-nav-links li {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .mobile-nav-links a {
             color: var(--text-dark);
             text-decoration: none;
-            font-size: 20px;
-            font-weight: 400px;
+            font-size: 18px;
+            font-weight: 500;
             display: block;
-            padding: 10px 0;
-            transition: color 0.2s;
+            padding: 12px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
         }
 
         .mobile-nav-links a:hover {
+            background: var(--primary-light);
             color: var(--primary);
-        }
-
-        .recipient-counter {
-            background: linear-gradient(135deg, #ffe3ed, #f3e9ff);
-            border: 2px solid var(--primary);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 30px;
-            text-align: center;
-            display: none;
-        }
-
-        .recipient-counter .counter-text {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-dark);
-            margin-bottom: 8px;
-        }
-
-        .recipient-counter .counter-numbers {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--primary);
-            letter-spacing: -0.02em;
-        }
-
-        .recipient-counter .counter-limit {
-            font-size: 14px;
-            color: #6b7280;
-            margin-top: 8px;
-            font-weight: 500;
-        }
-
-        .recipient-counter.at-limit {
-            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
-            border-color: var(--warning);
-        }
-
-        .recipient-counter.at-limit .counter-numbers {
-            color: var(--warning);
-        }
-
-        /* TAB NAVIGATION */
-        .tab-navigation {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 40px;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 0;
-            overflow-x: auto;
-        }
-
-        .tab-button {
-            padding: 14px 24px;
-            background: none;
-            border: none;
-            font-size: 16px;
-            font-weight: 600;
-            color: #6b7280;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border-bottom: 3px solid transparent;
-            white-space: nowrap;
-            font-family: "Inter", sans-serif;
-        }
-
-        .tab-button:hover {
-            color: var(--primary);
-        }
-
-        .tab-button.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* SETTINGS TAB SPECIFIC STYLES */
-        .settings-section {
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 20px;
-            padding: 32px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-
-        .settings-section h3 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-dark);
-            margin-bottom: 16px;
-        }
-
-        .settings-section p {
-            color: #6b7280;
-            font-size: 15px;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        .danger-zone {
-            border-color: #fee;
-            background: #fff5f5;
-        }
-
-        .danger-zone h3 {
-            color: var(--danger);
-        }
-
-        .delete-account-btn {
-            background: var(--danger);
-            color: white;
-            padding: 14px 28px;
-            border-radius: 12px;
-            border: none;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: "Inter", sans-serif;
-        }
-
-        .delete-account-btn:hover {
-            background: #a01f1f;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(198,40,40,0.3);
         }
 
         #navbar { 
@@ -249,616 +120,564 @@
             height: 95px; 
         }
 
-        .dashboard-container {
-            max-width: 1200px;
-            margin: 120px auto 60px;
-            padding: 0 40px;
-        }
-
-        .header-section {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .header-subtitle {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--primary);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 12px;
-        }
-
-        h1.header-title {
-            font-size: 48px;
-            font-weight: 800;
-            margin-bottom: 12px;
-            color: var(--text-dark);
-            letter-spacing: -0.02em;
-            line-height: 1.2;
-        }
-
-        .header-description {
-            font-size: 16px;
-            color: #6b7280;
-            max-width: 600px;
-            margin: 0 auto;
-            line-height: 1.6;
-        }
-
-        #subscriptionBanner {
-            display: none;
-            background: white;
-            padding: 24px 32px;
-            border-radius: 20px;
-            text-align: center;
-            margin-bottom: 50px;
-            border: 2px solid #e5e7eb;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            font-size: 15px;
-            color: #4b5563;
-            font-weight: 500;
-        }
-
-        #subscriptionBanner.active {
-            background: linear-gradient(135deg, #d6336c 0%, #e91e8c 100%);
-            color: white;
-            border-color: #d6336c;
-        }
-
-        #subscriptionBanner.canceling {
-            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
-            color: #e65100;
-            border-color: #ff9800;
-        }
-
-        #subscriptionBanner a {
-            display: inline-block;
-            margin-top: 16px;
-            padding: 12px 24px;
-            background: var(--primary);
-            color: white;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 14px;
-            letter-spacing: 0.3px;
-            transition: all 0.3s ease;
-        }
-
-        #subscriptionBanner a:hover {
-            background: #b8285a;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(214,51,108,0.3);
-        }
-
-        .countdown-box {
-            margin-top: 16px;
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .countdown-box strong {
-            font-size: 16px;
-            color: var(--warning);
-            font-weight: 700;
-        }
-
-        .plus-feature-highlight {
-            background: linear-gradient(135deg, #f3e9ff, #ffe3ed);
-            border: 2px solid #8b5cf6;
-            border-radius: 16px;
-            padding: 20px;
-            margin: 30px 0;
-            text-align: center;
-            display: none;
-        }
-
-        .plus-feature-highlight h3 {
-            color: #8b5cf6;
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .plus-feature-highlight p {
-            color: #5f3a4d;
-            font-size: 14px;
-            margin-bottom: 16px;
-        }
-
-        .plus-feature-highlight .upgrade-btn {
-            background: linear-gradient(90deg, #8b5cf6, #6b4bb8);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 14px;
-            display: inline-block;
-            transition: all 0.3s ease;
-        }
-
-        .plus-feature-highlight .upgrade-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.3);
-        }
-
-        .section-header {
+        /* SIDEBAR LAYOUT */
+        .dashboard-wrapper {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
+            min-height: 100vh;
+            padding-top: 95px;
         }
 
-        .section-header h2 {
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            padding: 32px 24px;
+            position: fixed;
+            left: 0;
+            top: 95px;
+            height: calc(100vh - 95px);
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            margin-bottom: 32px;
+        }
+
+        .sidebar-section h3 {
+            font-size: 12px;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 4px;
+        }
+
+        .sidebar-nav button {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: #6b7280;
+            font-size: 15px;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-family: "Inter", sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-nav button:hover {
+            background: #f3f4f6;
+            color: var(--text-dark);
+        }
+
+        .sidebar-nav button.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-nav button .icon {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary), #e91e8c);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 24px;
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-card .sublabel {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 40px;
+            max-width: 1400px;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-header h1 {
             font-size: 32px;
             font-weight: 800;
             color: var(--text-dark);
-            margin: 0;
-            letter-spacing: -0.01em;
+            margin-bottom: 8px;
         }
 
-        .recipients-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 24px;
-            margin-bottom: 60px;
+        .page-header p {
+            color: #6b7280;
+            font-size: 15px;
         }
 
-        .recipient-box {
+        .subscription-alert {
             background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 20px;
-            padding: 28px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
+            border-left: 4px solid var(--primary);
+            padding: 20px 24px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: none;
+        }
+
+        .subscription-alert.warning {
+            border-left-color: var(--warning);
+            background: #fffbf0;
+        }
+
+        .subscription-alert.success {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .subscription-alert h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .subscription-alert p {
+            color: #4b5563;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .subscription-alert a {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .subscription-alert a:hover {
+            background: #b8285a;
+            transform: translateY(-1px);
+        }
+
+        /* RECIPIENT CARDS - COMPACT GRID */
+        .recipients-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .recipient-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
             position: relative;
         }
 
-        .recipient-box:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
-            border-color: var(--primary);
+        .recipient-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
         }
 
-        .recipient-header {
+        .recipient-card-header {
             display: flex;
-            align-items: center;
-            gap: 10px;
+            justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 16px;
-            flex-wrap: wrap;
         }
 
-        .recipient-box strong { 
-            color: var(--text-dark); 
-            font-size: 22px;
+        .recipient-card-header h3 {
+            font-size: 18px;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            color: var(--text-dark);
+            margin-bottom: 4px;
         }
 
         .recipient-badge {
             display: inline-block;
+            padding: 4px 12px;
             background: var(--primary-light);
             color: var(--primary);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
             text-transform: capitalize;
-            letter-spacing: 0.3px;
         }
 
-        .recipient-details {
-            margin: 16px 0;
+        .recipient-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f3f4f6;
         }
 
-        .recipient-box p {
-            margin: 10px 0;
-            font-size: 14px;
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
             color: #6b7280;
+        }
+
+        .info-row .icon {
+            font-size: 14px;
+            width: 16px;
+        }
+
+        .recipient-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: "Inter", sans-serif;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-weight: 500;
-        }
-
-        .recipient-box p strong {
-            font-size: 14px;
-            color: #4b5563;
-            font-weight: 600;
-            display: inline;
-            margin: 0;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 8px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .delete-btn, .log-btn, .flower-btn, .flower-btn-locked {
-            padding: 12px 18px;
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            color: white;
-            font-weight: 700;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            flex: 1;
-            min-width: 100px;
-            letter-spacing: 0.3px;
-            font-family: "Inter", sans-serif;
-        }
-
-        .delete-btn { 
-            background: var(--danger);
-        }
-        
-        .delete-btn:hover {
-            background: #a01f1f;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(198,40,40,0.3);
-        }
-
-        #termsModal, #deleteAccountModal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.55);
-            backdrop-filter: blur(4px);
             justify-content: center;
-            align-items: center;
-            z-index: 9999;
+            gap: 6px;
         }
 
-        .terms-header {
-            background: linear-gradient(135deg, #ffe3ed, #f3e9ff);
-            padding: 20px;
-            border-radius: 16px;
-            margin-bottom: 24px;
-            text-align: center;
-        }
-
-        .terms-content {
-            background: #f9fafb;
-            padding: 24px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            max-height: 300px;
-            overflow-y: auto;
-            border: 2px solid #e5e7eb;
-        }
-
-        .terms-checkbox-container {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 16px;
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            cursor: pointer;
-        }
-
-        .terms-buttons {
-            display: flex;
-            gap: 12px;
-        }
-
-        .terms-agree-btn {
-            background: linear-gradient(90deg, #d6336c, #e91e8c);
+        .btn-icon.primary {
+            background: var(--primary);
             color: white;
-            flex: 1;
         }
 
-        .terms-agree-btn:disabled {
-            background: #d1d5db;
+        .btn-icon.primary:hover {
+            background: #b8285a;
+        }
+
+        .btn-icon.secondary {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .btn-icon.secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn-icon.danger {
+            background: #fee;
+            color: var(--danger);
+        }
+
+        .btn-icon.danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-icon.locked {
+            background: #f3f4f6;
+            color: #9ca3af;
             cursor: not-allowed;
         }
 
-        .terms-cancel-btn {
-            background: #6b7280;
-            color: white;
-            flex: 1;
-        }
-        
-        .log-btn { 
-            background: var(--secondary-btn);
-        }
-        
-        .log-btn:hover {
-            background: #5a3a9a;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(107,75,184,0.3);
-        }
-        
-        .flower-btn { 
-            background: #ff7ac4;
-        }
-        
-        .flower-btn:hover {
-            background: #ff5ab0;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255,122,196,0.3);
-        }
-
-        .flower-btn-locked {
-            border: 2px dashed #ccc;
-            cursor: not-allowed;
-            background: #f5f5f5 !important;
-            color: #999 !important;
-            position: relative;
-        }
-
-        .flower-btn-locked:hover {
-            background: #e8e8e8 !important;
-            border-color: var(--primary);
-            color: var(--primary) !important;
-            cursor: pointer;
-            transform: translateY(-2px);
-        }
-
-        .flower-btn-locked::after {
-            content: "🔒";
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            font-size: 16px;
-        }
-
-        .form-section {
-            margin-top: 60px;
-        }
-
-        .form-title {
-            font-size: 32px;
-            font-weight: 800;
-            margin-bottom: 30px;
-            color: var(--text-dark);
-            letter-spacing: -0.01em;
-            text-align: center;
-        }
-
-        #addForm {
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 8px;
-            letter-spacing: 0.3px;
-        }
-
-        #addForm input, #addForm select {
-            width: 100%;
-            padding: 14px 16px;
-            border-radius: 12px;
-            border: 2px solid #e5e7eb;
-            font-size: 15px;
-            font-family: "Inter", sans-serif;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            background: white;
-            color: var(--text-dark);
-        }
-
-        #addForm input:focus, #addForm select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(214,51,108,0.1);
-        }
-
-        #addForm button {
-            width: 100%;
-            padding: 16px;
-            margin-top: 28px;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(90deg, var(--primary), #e91e8c);
-            color: white;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(214,51,108,0.3);
-            letter-spacing: 0.3px;
-            font-family: "Inter", sans-serif;
-        }
-
-        #addForm button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(214,51,108,0.4);
-        }
-
-        #addForm button:active {
-            transform: scale(0.98);
-        }
-
-        #msg {
-            text-align: center;
-            margin-top: 20px;
+        .btn-icon.locked:hover {
+            background: var(--primary-light);
             color: var(--primary);
-            font-weight: 600;
-            font-size: 15px;
-        }
-
-        #manageSubBtn {
-            display: none;
-            margin: 60px auto;
-            padding: 16px 32px;
-            border-radius: 12px;
-            background: linear-gradient(90deg, var(--primary), #e91e8c);
-            color: white;
-            font-weight: 700;
-            border: none;
             cursor: pointer;
-            text-align: center;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(214,51,108,0.3);
-            letter-spacing: 0.3px;
-            font-family: "Inter", sans-serif;
         }
 
-        #manageSubBtn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(214,51,108,0.4);
+        /* ADD RECIPIENT FORM - MODAL STYLE */
+        .add-recipient-btn {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #e91e8c);
+            color: white;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(214, 51, 108, 0.4);
+            transition: all 0.3s;
+            z-index: 100;
         }
 
-        #messageLogModal, #flowerModal {
+        .add-recipient-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(214, 51, 108, 0.5);
+        }
+
+        .form-modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.55);
+            background: rgba(0,0,0,0.5);
             backdrop-filter: blur(4px);
-            justify-content: center;
+            z-index: 1000;
             align-items: center;
-            z-index: 9999;
+            justify-content: center;
+            padding: 20px;
         }
 
-        .modal-content {
+        .form-modal.active {
+            display: flex;
+        }
+
+        .form-content {
             background: white;
-            width: 90%;
-            max-width: 480px;
+            border-radius: 20px;
             padding: 32px;
-            border-radius: 24px;
-            max-height: 80vh;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
-        .modal-content h2 {
-            margin-top: 0;
-            color: var(--primary);
-            font-size: 28px;
+        .form-content h2 {
+            font-size: 24px;
             font-weight: 800;
-            margin-bottom: 20px;
-            letter-spacing: -0.01em;
+            color: var(--text-dark);
+            margin-bottom: 24px;
         }
 
-        .modal-content label {
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .form-grid.full {
+            grid-template-columns: 1fr;
+        }
+
+        .form-field {
+            margin-bottom: 16px;
+        }
+
+        .form-field label {
             display: block;
-            margin-top: 16px;
+            font-size: 13px;
             font-weight: 600;
             color: var(--text-dark);
-            font-size: 14px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
-        .modal-content select,
-        .modal-content textarea {
+        .form-field input,
+        .form-field select {
             width: 100%;
-            padding: 12px 16px;
-            margin-top: 8px;
-            border-radius: 12px;
-            border: 2px solid #e5e7eb;
+            padding: 12px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
             font-family: "Inter", sans-serif;
-            font-size: 15px;
-            font-weight: 500;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
 
-        .modal-content select:focus,
-        .modal-content textarea:focus {
+        .form-field input:focus,
+        .form-field select:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(214,51,108,0.1);
         }
 
-        .modal-content button {
-            margin-top: 20px;
-            padding: 14px 20px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: 700;
-            font-size: 15px;
-            transition: all 0.3s ease;
-            font-family: "Inter", sans-serif;
-            letter-spacing: 0.3px;
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
         }
 
-        .modal-content button:first-of-type {
-            background: var(--primary);
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: "Inter", sans-serif;
+        }
+
+        .btn.btn-primary {
+            background: linear-gradient(90deg, var(--primary), #e91e8c);
             color: white;
         }
 
-        .modal-content button:first-of-type:hover {
+        .btn.btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(214,51,108,0.3);
         }
 
-        .log-item {
-            padding: 16px;
-            margin-bottom: 12px;
-            background: #fafafa;
-            border-radius: 12px;
+        .btn.btn-secondary {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .btn.btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        /* SETTINGS PAGE */
+        .settings-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        .settings-card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
             border: 1px solid #e5e7eb;
         }
 
-        .log-item strong {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-dark);
-            display: block;
-            margin-bottom: 6px;
-        }
-
-        .log-item .log-date {
-            font-size: 13px;
-            color: #9ca3af;
-            font-weight: 500;
-        }
-
-        /* DELETE ACCOUNT MODAL SPECIFIC */
-        .delete-warning {
-            background: #fee;
-            border: 2px solid var(--danger);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-
-        .delete-warning h3 {
-            color: var(--danger);
+        .settings-card h3 {
             font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
             margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .delete-warning ul {
-            margin-left: 20px;
-            color: #666;
+        .settings-card p {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 16px;
         }
 
-        .delete-warning ul li {
-            margin: 8px 0;
+        .settings-card.danger {
+            border-color: #fee2e2;
+            background: #fff5f5;
         }
 
-        @media (max-width: 768px) {
+        .settings-card.danger h3 {
+            color: var(--danger);
+        }
+
+        /* MODALS */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* MOBILE RESPONSIVE */
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 24px 20px;
+            }
+
             .mobile-menu-btn {
                 display: block;
             }
@@ -871,94 +690,49 @@
                 display: none !important;
             }
 
-            body {
-                padding-top: 60px;
+            .dashboard-wrapper {
+                padding-top: 70px;
             }
 
-            .dashboard-container {
-                margin: 30px auto 40px;
-                padding: 0 20px;
-            }
-
-            .tab-navigation {
-                gap: 8px;
-            }
-
-            .tab-button {
-                padding: 12px 16px;
-                font-size: 14px;
-            }
-
-            .header-section {
-                margin-bottom: 40px;
-            }
-
-            .header-subtitle {
-                font-size: 12px;
-                letter-spacing: 1.5px;
-            }
-
-            h1.header-title {
-                font-size: 36px;
-            }
-
-            .header-description {
-                font-size: 15px;
-            }
-
-            .section-header h2,
-            .form-title {
-                font-size: 28px;
-                margin: 40px 0 24px;
-            }
-
-            .recipients-grid {
+            .recipients-container {
                 grid-template-columns: 1fr;
                 gap: 16px;
             }
 
-            .recipient-box {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .add-recipient-btn {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .main-content {
+                padding: 20px 16px;
+            }
+
+            .page-header h1 {
+                font-size: 24px;
+            }
+
+            .form-content {
                 padding: 24px 20px;
-            }
-
-            #addForm {
-                padding: 28px 20px;
-            }
-
-            .button-group {
-                flex-direction: column;
-            }
-
-            .delete-btn, .log-btn, .flower-btn, .flower-btn-locked {
-                width: 100%;
-                min-width: auto;
             }
 
             .modal-content {
                 padding: 24px 20px;
             }
 
-            .settings-section {
-                padding: 24px 20px;
-            }
-        }
-
-        @media (max-width: 380px) {
-            h1.header-title {
-                font-size: 32px;
+            .form-actions,
+            .modal-actions {
+                flex-direction: column;
             }
 
-            .section-header h2,
-            .form-title {
-                font-size: 24px;
-            }
-
-            .recipient-box {
-                padding: 20px 16px;
-            }
-
-            #addForm {
-                padding: 24px 16px;
+            .btn {
+                width: 100%;
             }
         }
     </style>
@@ -978,294 +752,256 @@
             <li><a href="/dashboard.html" onclick="closeMobileMenu()">Dashboard</a></li>
             <li><a href="/products.html" onclick="closeMobileMenu()">Products</a></li>
             <li><a href="/cart.html" onclick="closeMobileMenu()">Cart</a></li>
-            <li><a href="#" onclick="handleLogout(event); return false;">Logout</a></li>
+            <li><a href="#" onclick="handleLogout(event); closeMobileMenu(); return false;">Logout</a></li>
         </ul>
     </div>
 </div>
 
 <div id="navbar"></div>
 
-<div class="dashboard-container">
-
-    <div id="subscriptionBanner"></div>
-
-    <div class="header-section">
-        <div class="header-subtitle">Your Personal Dashboard</div>
-        <h1 class="header-title">Manage Your Account</h1>
-        <p class="header-description">Create meaningful connections with personalized messages and thoughtful gestures</p>
-    </div>
-
-    <!-- TAB NAVIGATION -->
-    <div class="tab-navigation">
-        <button class="tab-button active" onclick="switchTab('recipients')">
-            Recipients
-        </button>
-        <button class="tab-button" onclick="switchTab('settings')">
-            Settings
-        </button>
-    </div>
-
-    <!-- RECIPIENTS TAB -->
-    <div id="recipientsTab" class="tab-content active">
-        <div id="recipientCounter" class="recipient-counter">
-            <div class="counter-text">Recipients Added</div>
-            <div class="counter-numbers">
-                <span id="currentRecipients">0</span> / <span id="maxRecipients">0</span>
-            </div>
-            <div class="counter-limit" id="counterMessage">
-                Add more recipients to spread the love! 💝
-            </div>
+<div class="dashboard-wrapper">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <h3>Navigation</h3>
+            <ul class="sidebar-nav">
+                <li>
+                    <button class="active" onclick="switchView('recipients')">
+                        <span class="icon">👥</span>
+                        <span>Recipients</span>
+                    </button>
+                </li>
+                <li>
+                    <button onclick="switchView('settings')">
+                        <span class="icon">⚙️</span>
+                        <span>Settings</span>
+                    </button>
+                </li>
+            </ul>
         </div>
 
-        <div id="plusCallout" class="plus-feature-highlight">
-            <h3>🌸 Unlock Send Flowers Feature</h3>
-            <p>Upgrade to LoveText Plus to send personalized flowers to your loved ones anytime!</p>
-            <a href="/products.html" class="upgrade-btn">Upgrade to Plus →</a>
+        <div class="stat-card" id="sidebarStat">
+            <div class="label">Active Recipients</div>
+            <div class="value" id="sidebarRecipientCount">0</div>
+            <div class="sublabel">Receiving messages</div>
         </div>
+    </aside>
 
-        <div class="section-header">
-            <h2>Your Recipients</h2>
-        </div>
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <!-- SUBSCRIPTION ALERT -->
+        <div class="subscription-alert" id="subscriptionAlert"></div>
 
-        <div class="recipients-grid" id="recipients"></div>
-
-        <div class="form-section">
-            <h2 class="form-title">Add New Recipient</h2>
-
-            <div id="addForm">
-                <div class="form-group">
-                    <label class="form-label" for="r_name">Recipient Name</label>
-                    <input id="r_name" placeholder="Enter name">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="delivery_method">Delivery Method</label>
-                    <select id="delivery_method">
-                        <option value="email">Email Only</option>
-                        <option value="sms">SMS Only</option>
-                        <option value="both">Both Email & SMS</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="r_email">Email Address</label>
-                    <input id="r_email" type="email" placeholder="recipient@example.com">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="phone_number">Phone Number (Optional)</label>
-                    <input type="tel" id="phone_number" placeholder="+1 (555) 123-4567">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="r_relationship">Relationship</label>
-                    <select id="r_relationship">
-                        <option value="spouse">Spouse / Partner</option>
-                        <option value="girlfriend">Girlfriend</option>
-                        <option value="boyfriend">Boyfriend</option>
-                        <option value="mom">Mom</option>
-                        <option value="dad">Dad</option>
-                        <option value="sister">Sister</option>
-                        <option value="brother">Brother</option>
-                        <option value="friend">Friend</option>
-                        <option value="custom">Custom Relationship</option>
-                    </select>
-                </div>
-
-                <div class="form-group" id="customRelGroup" style="display:none;">
-                    <label class="form-label" for="r_customRel">Custom Relationship</label>
-                    <input id="r_customRel" placeholder="Enter custom relationship">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="r_frequency">Message Frequency</label>
-                    <select id="r_frequency">
-                        <option value="daily">Daily</option>
-                        <option value="every-other-day">Every Other Day</option>
-                        <option value="three-times-week">Three Times a Week</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="bi-weekly">Bi-Weekly</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="r_timings">Preferred Time</label>
-                    <select id="r_timings">
-                        <option value="morning">Morning</option>
-                        <option value="afternoon">Afternoon</option>
-                        <option value="evening">Evening</option>
-                        <option value="night">Night</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="r_timezone">Timezone</label>
-                    <select id="r_timezone">
-                        <option value="America/Chicago">Central Time</option>
-                        <option value="America/New_York">Eastern Time</option>
-                        <option value="America/Denver">Mountain Time</option>
-                        <option value="America/Los_Angeles">Pacific Time</option>
-                    </select>
-                </div>
-
-                <button onclick="showTermsModal()">Add Recipient</button>
+        <!-- RECIPIENTS VIEW -->
+        <div id="recipientsView">
+            <div class="page-header">
+                <h1>Your Recipients</h1>
+                <p>Manage the people receiving your love messages</p>
             </div>
 
-            <p id="msg"></p>
-        </div>
-    </div>
-
-    <!-- SETTINGS TAB -->
-    <div id="settingsTab" class="tab-content">
-        <div class="settings-section">
-            <h3>👤 Account Information</h3>
-            <p><strong>Email:</strong> <span id="userEmail">Loading...</span></p>
-            <p>Your account email is used for login and important notifications.</p>
+            <div class="recipients-container" id="recipientsContainer">
+                <div class="empty-state">
+                    <div class="icon">💝</div>
+                    <h3>No recipients yet</h3>
+                    <p>Click the + button to add your first recipient</p>
+                </div>
+            </div>
         </div>
 
-        <div class="settings-section" id="subscriptionSection" style="display:none;">
-            <h3>💳 Subscription Management</h3>
-            <p>Manage your subscription, update payment method, or view billing history.</p>
-            <button id="manageSubBtnSettings" class="delete-account-btn" style="background: var(--primary);">
-                Open Billing Portal
-            </button>
-        </div>
+        <!-- SETTINGS VIEW -->
+        <div id="settingsView" style="display:none;">
+            <div class="page-header">
+                <h1>Settings</h1>
+                <p>Manage your account and preferences</p>
+            </div>
 
-        <div class="settings-section danger-zone">
-            <h3>⚠️ Danger Zone</h3>
-            <p>Once you delete your account, there is no going back. Please be certain.</p>
-            <button class="delete-account-btn" onclick="showDeleteAccountModal()">
-                Delete My Account
-            </button>
-        </div>
-    </div>
+            <div class="settings-grid">
+                <div class="settings-card">
+                    <h3><span>👤</span> Account Information</h3>
+                    <p><strong>Email:</strong> <span id="userEmail">Loading...</span></p>
+                    <p>Your account email is used for login and important notifications.</p>
+                </div>
 
+                <div class="settings-card" id="subscriptionSettings" style="display:none;">
+                    <h3><span>💳</span> Subscription Management</h3>
+                    <p>Manage your subscription, update payment method, or view billing history.</p>
+                    <button class="btn btn-primary" id="manageSubBtnSettings">
+                        Open Billing Portal
+                    </button>
+                </div>
+
+                <div class="settings-card danger">
+                    <h3><span>⚠️</span> Danger Zone</h3>
+                    <p>Once you delete your account, there is no going back. Please be certain.</p>
+                    <button class="btn btn-primary" style="background: var(--danger);" onclick="showDeleteModal()">
+                        Delete My Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
 </div>
 
-<!-- Terms Agreement Modal -->
-<div id="termsModal">
+<!-- ADD RECIPIENT BUTTON -->
+<button class="add-recipient-btn" id="addRecipientBtn" onclick="showAddRecipientModal()">+</button>
+
+<!-- ADD RECIPIENT FORM MODAL -->
+<div class="form-modal" id="addRecipientModal">
+    <div class="form-content">
+        <h2>Add New Recipient</h2>
+        
+        <div class="form-grid full">
+            <div class="form-field">
+                <label for="r_name">Recipient Name</label>
+                <input type="text" id="r_name" placeholder="Enter name">
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="delivery_method">Delivery Method</label>
+                <select id="delivery_method">
+                    <option value="email">Email Only</option>
+                    <option value="sms">SMS Only</option>
+                    <option value="both">Both Email & SMS</option>
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="r_relationship">Relationship</label>
+                <select id="r_relationship">
+                    <option value="spouse">Spouse / Partner</option>
+                    <option value="girlfriend">Girlfriend</option>
+                    <option value="boyfriend">Boyfriend</option>
+                    <option value="mom">Mom</option>
+                    <option value="dad">Dad</option>
+                    <option value="sister">Sister</option>
+                    <option value="brother">Brother</option>
+                    <option value="friend">Friend</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-grid full">
+            <div class="form-field">
+                <label for="r_email">Email Address</label>
+                <input type="email" id="r_email" placeholder="recipient@example.com">
+            </div>
+
+            <div class="form-field">
+                <label for="phone_number">Phone Number</label>
+                <input type="tel" id="phone_number" placeholder="+1 (555) 123-4567">
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="r_frequency">Frequency</label>
+                <select id="r_frequency">
+                    <option value="daily">Daily</option>
+                    <option value="every-other-day">Every Other Day</option>
+                    <option value="weekly">Weekly</option>
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="r_timings">Preferred Time</label>
+                <select id="r_timings">
+                    <option value="morning">Morning</option>
+                    <option value="afternoon">Afternoon</option>
+                    <option value="evening">Evening</option>
+                    <option value="night">Night</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-grid full">
+            <div class="form-field">
+                <label for="r_timezone">Timezone</label>
+                <select id="r_timezone">
+                    <option value="America/Chicago">Central Time</option>
+                    <option value="America/New_York">Eastern Time</option>
+                    <option value="America/Denver">Mountain Time</option>
+                    <option value="America/Los_Angeles">Pacific Time</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button class="btn btn-secondary" onclick="closeAddRecipientModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="showTermsModal()">Add Recipient</button>
+        </div>
+
+        <p id="msg" style="text-align:center; margin-top:16px; font-size:14px; font-weight:600;"></p>
+    </div>
+</div>
+
+<!-- TERMS MODAL -->
+<div class="modal" id="termsModal">
     <div class="modal-content">
-        <div class="terms-header">
-            <h2>📋 Recipient Consent Agreement</h2>
-            <p>Please review and accept before adding a recipient</p>
-        </div>
-
-        <div class="terms-content">
-            <h3>Terms of Service</h3>
-            <p>By adding a recipient to LoveTextForHer, you confirm and agree to the following:</p>
-
-            <h3>1. Consent & Authorization</h3>
-            <ul>
-                <li>You have obtained explicit consent from the recipient to receive automated messages</li>
-                <li>The recipient is aware they will receive periodic love messages</li>
-                <li>You are authorized to provide the recipient's contact information</li>
-            </ul>
-
-            <h3>2. Recipient Rights</h3>
-            <ul>
-                <li>Recipients can unsubscribe at any time</li>
-                <li>For SMS, recipients can reply "STOP" to opt out</li>
-            </ul>
-
-            <h3>3. Your Responsibilities</h3>
-            <ul>
-                <li>Provide accurate contact information</li>
-                <li>Respect the recipient's privacy</li>
-                <li>Do not use this service for spam or harassment</li>
-            </ul>
-        </div>
-
-        <div class="terms-checkbox-container" onclick="toggleTermsCheckbox()">
-            <input type="checkbox" id="termsAgreeCheckbox" onclick="event.stopPropagation()">
-            <label for="termsAgreeCheckbox">
-                I confirm that I have obtained explicit consent from this recipient and agree to the Terms of Service.
-            </label>
-        </div>
-
-        <div class="terms-buttons">
-            <button class="terms-agree-btn" id="termsAgreeBtn" onclick="acceptTermsAndAddRecipient()" disabled>
-                I Agree - Add Recipient
-            </button>
-            <button class="terms-cancel-btn" onclick="closeTermsModal()">
-                Cancel
-            </button>
+        <h2>📋 Recipient Consent</h2>
+        <p style="color:#6b7280; margin-bottom:20px; font-size:14px;">
+            By adding this recipient, you confirm:
+        </p>
+        <ul style="margin-left:20px; color:#6b7280; font-size:14px; line-height:1.8;">
+            <li>You have obtained explicit consent</li>
+            <li>Recipient is aware of automated messages</li>
+            <li>You're authorized to provide their contact info</li>
+        </ul>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeTermsModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="addRecipient()">I Agree</button>
         </div>
     </div>
 </div>
 
-<!-- Delete Account Modal -->
-<div id="deleteAccountModal">
+<!-- DELETE ACCOUNT MODAL -->
+<div class="modal" id="deleteModal">
     <div class="modal-content">
         <h2>⚠️ Delete Account</h2>
-        
-        <div class="delete-warning">
-            <h3>This action cannot be undone!</h3>
-            <p>Deleting your account will:</p>
-            <ul>
-                <li>Permanently delete all your recipients</li>
-                <li>Delete all message history</li>
-                <li>Cancel your active subscription</li>
-                <li>Remove all your data from our system</li>
-            </ul>
+        <div style="background:#fee; padding:16px; border-radius:12px; margin:20px 0;">
+            <p style="color:#991b1b; font-weight:600; margin-bottom:8px;">This action cannot be undone!</p>
+            <p style="color:#666; font-size:13px;">All recipients, messages, and subscription data will be permanently deleted.</p>
         </div>
-
-        <p style="margin: 20px 0; font-weight: 600; color: var(--text-dark);">
-            Type <strong style="color: var(--danger);">DELETE</strong> to confirm:
-        </p>
-
-        <input 
-            type="text" 
-            id="deleteConfirmInput" 
-            placeholder="Type DELETE here"
-            style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 2px solid #e5e7eb; font-size: 15px; font-family: 'Inter', sans-serif; margin-bottom: 20px;"
-        >
-
-        <div class="terms-buttons">
-            <button 
-                class="delete-account-btn" 
-                id="confirmDeleteBtn" 
-                onclick="confirmDeleteAccount()"
-                disabled
-                style="flex: 1;"
-            >
-                Delete My Account
-            </button>
-            <button 
-                class="terms-cancel-btn" 
-                onclick="closeDeleteAccountModal()"
-                style="flex: 1; padding: 14px 20px; border-radius: 12px; border: none; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.3s ease; font-family: 'Inter', sans-serif;"
-            >
-                Cancel
-            </button>
+        <p style="font-weight:600; margin-bottom:12px;">Type <strong style="color:var(--danger);">DELETE</strong> to confirm:</p>
+        <input type="text" id="deleteConfirmInput" placeholder="Type DELETE here" style="width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:20px;">
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+            <button class="btn btn-primary" style="background:var(--danger);" onclick="confirmDelete()" id="confirmDeleteBtn" disabled>Delete Account</button>
         </div>
     </div>
 </div>
 
-<div id="messageLogModal">
+<!-- MESSAGE LOG MODAL -->
+<div class="modal" id="messageLogModal">
     <div class="modal-content">
         <h2>Message History</h2>
         <div id="logContent"></div>
-        <button onclick="closeMessageLog()">Close</button>
+        <button class="btn btn-secondary" style="width:100%; margin-top:20px;" onclick="closeMessageLog()">Close</button>
     </div>
 </div>
 
-<div id="flowerModal">
+<!-- FLOWER MODAL -->
+<div class="modal" id="flowerModal">
     <div class="modal-content">
         <h2>Send a Flower 🌸</h2>
-
-        <label for="flowerType">Select Flower</label>
-        <select id="flowerType">
-            <option value="🌹 Rose">🌹 Rose</option>
-            <option value="🌸 Cherry Blossom">🌸 Cherry Blossom</option>
-            <option value="🌻 Sunflower">🌻 Sunflower</option>
-            <option value="🌷 Tulip">🌷 Tulip</option>
-        </select>
-
-        <label for="flowerNote">Personal Note (Optional)</label>
-        <textarea id="flowerNote" placeholder="Add a personal message..." rows="4"></textarea>
-
-        <button onclick="sendFlower()" style="background: #ff7ac4;">Send Flower</button>
-        <button onclick="closeFlowerModal()" style="background: #9ca3af; margin-top: 10px;">Cancel</button>
+        <div class="form-field">
+            <label for="flowerType">Select Flower</label>
+            <select id="flowerType">
+                <option value="🌹 Rose">🌹 Rose</option>
+                <option value="🌸 Cherry Blossom">🌸 Cherry Blossom</option>
+                <option value="🌻 Sunflower">🌻 Sunflower</option>
+                <option value="🌷 Tulip">🌷 Tulip</option>
+            </select>
+        </div>
+        <div class="form-field">
+            <label for="flowerNote">Personal Note (Optional)</label>
+            <textarea id="flowerNote" placeholder="Add a personal message..." rows="4" style="width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:8px; font-family:'Inter',sans-serif;"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeFlowerModal()">Cancel</button>
+            <button class="btn btn-primary" style="background:#ff7ac4;" onclick="sendFlower()">Send Flower</button>
+        </div>
     </div>
 </div>
 
@@ -1273,20 +1009,18 @@
 <script src="/js/nav.js" defer></script>
 
 <script>
-
 let HAS_ACCESS = false;
 let USER_PLAN = "none";
 let USER_EMAIL = "";
 let CURRENT_FLOWER_RECIPIENT = null;
-let CURRENT_FLOWER_REMAINING = 0;
+let CURRENT_VIEW = "recipients";
 
 function toggleMobileMenu() {
     const btn = document.querySelector('.mobile-menu-btn');
     const nav = document.getElementById('mobileNav');
-    const body = document.body;
     btn.classList.toggle('active');
     nav.classList.toggle('active');
-    body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
+    document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
 }
 
 function closeMobileMenu() {
@@ -1297,19 +1031,24 @@ function closeMobileMenu() {
     document.body.style.overflow = '';
 }
 
-// TAB SWITCHING
-function switchTab(tabName) {
-    // Remove active from all tabs and buttons
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+function switchView(view) {
+    CURRENT_VIEW = view;
     
-    // Add active to selected tab
-    if (tabName === 'recipients') {
-        document.getElementById('recipientsTab').classList.add('active');
-        document.querySelector('.tab-button:first-child').classList.add('active');
-    } else if (tabName === 'settings') {
-        document.getElementById('settingsTab').classList.add('active');
-        document.querySelectorAll('.tab-button')[1].classList.add('active');
+    // Update sidebar active state
+    document.querySelectorAll('.sidebar-nav button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    if (view === 'recipients') {
+        document.getElementById('recipientsView').style.display = 'block';
+        document.getElementById('settingsView').style.display = 'none';
+        document.getElementById('addRecipientBtn').style.display = 'flex';
+        document.querySelectorAll('.sidebar-nav button')[0].classList.add('active');
+    } else if (view === 'settings') {
+        document.getElementById('recipientsView').style.display = 'none';
+        document.getElementById('settingsView').style.display = 'block';
+        document.getElementById('addRecipientBtn').style.display = 'none';
+        document.querySelectorAll('.sidebar-nav button')[1].classList.add('active');
     }
 }
 
@@ -1325,83 +1064,6 @@ function isPlusUser() {
     return USER_PLAN === "plus";
 }
 
-function getTimeRemaining(endDate) {
-    const now = new Date();
-    const end = new Date(endDate);
-    const diff = end - now;
-    if (diff <= 0) return null;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    if (days > 0) {
-        return `${days} day${days !== 1 ? 's' : ''} and ${hours} hour${hours !== 1 ? 's' : ''}`;
-    } else {
-        return `${hours} hour${hours !== 1 ? 's' : ''}`;
-    }
-}
-
-function updateSubscriptionBanner(data) {
-    const banner = document.getElementById("subscriptionBanner");
-    banner.style.display = "block";
-    banner.className = "";
-    const active = hasActiveAccess(data);
-    const now = new Date();
-
-    if (active && data.subscription_end && new Date(data.subscription_end) > now) {
-        banner.className = "canceling";
-        
-        const endDate = new Date(data.subscription_end);
-        const endDateStr = endDate.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-        });
-        
-        const timeLeft = getTimeRemaining(data.subscription_end);
-
-        const planNames = {
-            basic: "LoveText Basic ❤️",
-            plus: "LoveText Plus 💜",
-            trial: "Free Trial 💖"
-        };
-
-        banner.innerHTML = `
-            ⚠️ <strong>Your subscription has been canceled</strong><br><br>
-            You still have access to <strong>${planNames[data.current_plan] || "your plan"}</strong> until your billing period ends.
-            <div class="countdown-box">
-                📅 <strong>Access ends:</strong> ${endDateStr}<br>
-                ⏰ <strong>Time remaining:</strong> ${timeLeft || 'Less than an hour'}
-            </div>
-            <small style="display:block; margin-top:10px; opacity:0.8;">
-                Your recipients and messages will be deleted when your subscription ends.
-            </small>
-        `;
-        return;
-    }
-
-    if (active) {
-        banner.className = "active";
-        
-        const planNames = {
-            basic: "LoveText Basic ❤️",
-            plus: "LoveText Plus 💜",
-            trial: "Free Trial 💖"
-        };
-
-        banner.innerHTML = `
-            ✅ You currently have an active <strong>${planNames[data.current_plan] || "subscription"}</strong>.
-        `;
-        return;
-    }
-
-    banner.innerHTML = `
-        You do not have a subscription.<br><br>
-        <a href="/products.html">Choose a Plan</a>
-    `;
-}
-
 async function loadSubscriptionStatus() {
     try {
         const res = await fetch(`${API_BASE_URL}/api/customer/subscription`, {
@@ -1412,11 +1074,40 @@ async function loadSubscriptionStatus() {
         HAS_ACCESS = hasActiveAccess(data);
         USER_PLAN = data.current_plan || "none";
 
-        updateSubscriptionBanner(data);
+        const alert = document.getElementById("subscriptionAlert");
+        alert.style.display = "block";
 
-        // Show subscription section in settings if user has access
+        if (!HAS_ACCESS) {
+            alert.className = "subscription-alert warning";
+            alert.innerHTML = `
+                <h3>⚠️ No Active Subscription</h3>
+                <p>You need an active subscription to add recipients and send messages.</p>
+                <a href="/products.html">Choose a Plan</a>
+            `;
+        } else if (data.subscription_end) {
+            alert.className = "subscription-alert warning";
+            const endDate = new Date(data.subscription_end).toLocaleDateString('en-US', { 
+                month: 'long', day: 'numeric', year: 'numeric'
+            });
+            alert.innerHTML = `
+                <h3>⚠️ Subscription Canceled</h3>
+                <p>Your subscription will end on ${endDate}. Your recipients will be deleted when it expires.</p>
+            `;
+        } else {
+            alert.className = "subscription-alert success";
+            const planNames = {
+                basic: "LoveText Basic ❤️",
+                plus: "LoveText Plus 💜",
+                trial: "Free Trial 💖"
+            };
+            alert.innerHTML = `
+                <h3>✅ Active Subscription</h3>
+                <p>You have an active ${planNames[data.current_plan] || "subscription"}.</p>
+            `;
+        }
+
         if (HAS_ACCESS) {
-            document.getElementById("subscriptionSection").style.display = "block";
+            document.getElementById("subscriptionSettings").style.display = "block";
         }
 
     } catch (err) {
@@ -1445,192 +1136,144 @@ async function loadRecipients() {
             credentials: "include"
         });
         const list = await res.json();
-        const box = document.getElementById("recipients");
-        box.innerHTML = "";
-
-        updateRecipientCounter(list.length);
+        const container = document.getElementById("recipientsContainer");
+        
+        // Update sidebar stat
+        document.getElementById("sidebarRecipientCount").textContent = list.length;
 
         if (!list.length) {
-            box.innerHTML = `<p style="text-align:center; color:#999; font-size: 16px; grid-column: 1/-1; padding: 40px 0;">No recipients yet. Add your first recipient below! 💝</p>`;
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">💝</div>
+                    <h3>No recipients yet</h3>
+                    <p>Click the + button to add your first recipient</p>
+                </div>
+            `;
             return;
         }
 
         const isPlus = isPlusUser();
 
-        list.forEach(r => {
-            const deliveryBadge = r.delivery_method === "both" ? "📧 📱" : 
-                                 r.delivery_method === "sms" ? "📱 SMS" : "📧 Email";
+        container.innerHTML = list.map(r => {
+            const deliveryIcon = r.delivery_method === "both" ? "📧📱" : 
+                                 r.delivery_method === "sms" ? "📱" : "📧";
             
-            const flowerBtnClass = isPlus ? 'flower-btn' : 'flower-btn-locked';
-            const flowerBtnText = isPlus ? '🌸 Send' : '🌸 Plus Only';
-            const flowerOnClick = isPlus 
-                ? `onclick="openFlowerModal(${r.id})"` 
-                : `onclick="showPlusUpgradePrompt()"`;
-            
-            box.innerHTML += `
-                <div class="recipient-box">
-                    <div class="recipient-header">
-                        <strong>${r.name}</strong>
-                        <span class="recipient-badge">${r.relationship}</span>
+            return `
+                <div class="recipient-card">
+                    <div class="recipient-card-header">
+                        <div>
+                            <h3>${r.name}</h3>
+                            <span class="recipient-badge">${r.relationship}</span>
+                        </div>
                     </div>
-                    <div class="recipient-details">
-                        <p><strong>Contact:</strong> ${deliveryBadge}</p>
-                        ${r.email ? `<p><strong>Email:</strong> ${r.email}</p>` : ''}
-                        ${r.phone_number ? `<p><strong>Phone:</strong> ${r.phone_number}</p>` : ''}
-                        <p><strong>Frequency:</strong> ${r.frequency.replace(/-/g, ' ')}</p>
-                        <p><strong>Time:</strong> ${r.timings.charAt(0).toUpperCase() + r.timings.slice(1)}</p>
+                    <div class="recipient-info">
+                        <div class="info-row">
+                            <span class="icon">${deliveryIcon}</span>
+                            <span>${r.email || r.phone_number}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="icon">📅</span>
+                            <span>${r.frequency.replace(/-/g, ' ')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="icon">⏰</span>
+                            <span>${r.timings.charAt(0).toUpperCase() + r.timings.slice(1)}</span>
+                        </div>
                     </div>
-
-                    <div class="button-group">
-                        <button class="log-btn" onclick="openMessageLog(${r.id})">📋 History</button>
-                        <button class="${flowerBtnClass}" ${flowerOnClick}>${flowerBtnText}</button>
-                        <button class="delete-btn" onclick="deleteRecipient(${r.id})">🗑️ Delete</button>
+                    <div class="recipient-actions">
+                        <button class="btn-icon secondary" onclick="openMessageLog(${r.id})" title="View History">
+                            📋
+                        </button>
+                        <button class="btn-icon ${isPlus ? 'primary' : 'locked'}" 
+                                onclick="${isPlus ? `openFlowerModal(${r.id})` : 'showPlusUpgradePrompt()'}"
+                                title="Send Flower">
+                            🌸
+                        </button>
+                        <button class="btn-icon danger" onclick="deleteRecipient(${r.id})" title="Delete">
+                            🗑️
+                        </button>
                     </div>
                 </div>
             `;
-        });
+        }).join('');
 
     } catch (err) {
         console.error("RECIPIENT LOAD ERROR", err);
     }
 }
 
-function updateRecipientCounter(currentCount) {
-    const counter = document.getElementById("recipientCounter");
-    const currentEl = document.getElementById("currentRecipients");
-    const maxEl = document.getElementById("maxRecipients");
-    const messageEl = document.getElementById("counterMessage");
-
-    if (!HAS_ACCESS) {
-        counter.style.display = "none";
-        return;
-    }
-
-    counter.style.display = "block";
-
-    let maxRecipients = 0;
-    if (USER_PLAN === "trial") maxRecipients = 8;
-    else if (USER_PLAN === "basic") maxRecipients = 3;
-    else if (USER_PLAN === "plus") maxRecipients = 8;
-
-    currentEl.textContent = currentCount;
-    maxEl.textContent = maxRecipients;
-
-    counter.classList.remove("at-limit");
-    
-    if (currentCount >= maxRecipients) {
-        counter.classList.add("at-limit");
-        if (USER_PLAN === "basic") {
-            messageEl.innerHTML = '⚠️ Recipient limit reached. <a href="/products.html" style="color: var(--primary); font-weight: 700;">Upgrade to Plus</a> for 8 recipients!';
-        } else {
-            messageEl.textContent = "⚠️ You've reached your recipient limit";
-        }
-    } else if (currentCount === maxRecipients - 1) {
-        messageEl.textContent = "⚡ One spot left!";
-    } else {
-        const remaining = maxRecipients - currentCount;
-        messageEl.textContent = `You can add ${remaining} more recipient${remaining === 1 ? '' : 's'}`;
-    }
-}
-
 function showPlusUpgradePrompt() {
-    if (confirm("🌸 Send Flowers is a Plus Plan Feature!\n\nUpgrade to LoveText Plus to:\n✓ Send flowers anytime\n✓ Unlimited recipients\n✓ Priority support\n\nWould you like to upgrade now?")) {
+    if (confirm("🌸 Send Flowers is a Plus Plan Feature!\n\nUpgrade to LoveText Plus to send flowers anytime.\n\nWould you like to upgrade now?")) {
         window.location.href = "/products.html";
     }
 }
 
-// TERMS MODAL
-function showTermsModal() {
-    const msgEl = document.getElementById("msg");
-    
+// MODALS
+function showAddRecipientModal() {
     if (!HAS_ACCESS) {
-        msgEl.innerText = "You need an active subscription to add recipients.";
-        msgEl.style.color = "var(--danger)";
+        alert("You need an active subscription to add recipients.");
         return;
     }
+    document.getElementById("addRecipientModal").classList.add("active");
+}
 
-    const name = r_name.value.trim();
-    const email = r_email.value.trim();
-    const phone = phone_number.value.trim();
-    const delivery = delivery_method.value;
+function closeAddRecipientModal() {
+    document.getElementById("addRecipientModal").classList.remove("active");
+}
+
+function showTermsModal() {
+    const name = document.getElementById("r_name").value.trim();
+    const email = document.getElementById("r_email").value.trim();
+    const phone = document.getElementById("phone_number").value.trim();
+    const delivery = document.getElementById("delivery_method").value;
 
     if (!name) {
-        msgEl.innerText = "Name is required.";
-        msgEl.style.color = "var(--danger)";
+        alert("Name is required.");
         return;
     }
 
     if (!email && delivery !== "sms") {
-        msgEl.innerText = "Email is required for email delivery.";
-        msgEl.style.color = "var(--danger)";
+        alert("Email is required for email delivery.");
         return;
     }
 
     if ((delivery === "sms" || delivery === "both") && !phone) {
-        msgEl.innerText = "Phone number is required for SMS delivery.";
-        msgEl.style.color = "var(--danger)";
+        alert("Phone number is required for SMS delivery.");
         return;
     }
 
-    msgEl.innerText = "";
-    document.getElementById("termsAgreeCheckbox").checked = false;
-    document.getElementById("termsAgreeBtn").disabled = true;
-    document.getElementById("termsModal").style.display = "flex";
+    document.getElementById("termsModal").classList.add("active");
 }
 
 function closeTermsModal() {
-    document.getElementById("termsModal").style.display = "none";
+    document.getElementById("termsModal").classList.remove("active");
 }
 
-function toggleTermsCheckbox() {
-    const checkbox = document.getElementById("termsAgreeCheckbox");
-    checkbox.checked = !checkbox.checked;
-    updateTermsAgreeButton();
-}
-
-function updateTermsAgreeButton() {
-    const checkbox = document.getElementById("termsAgreeCheckbox");
-    const agreeBtn = document.getElementById("termsAgreeBtn");
-    agreeBtn.disabled = !checkbox.checked;
-}
-
-async function acceptTermsAndAddRecipient() {
-    const name = r_name.value.trim();
-    const email = r_email.value.trim();
-    const phone = phone_number.value.trim();
-    const delivery = delivery_method.value;
-    const relationship = r_relationship.value === "custom" 
-        ? r_customRel.value.trim() 
-        : r_relationship.value;
-
-    const msgEl = document.getElementById("msg");
+async function addRecipient() {
+    const payload = {
+        name: document.getElementById("r_name").value.trim(),
+        email: document.getElementById("r_email").value.trim(),
+        phone_number: document.getElementById("phone_number").value.trim() || null,
+        delivery_method: document.getElementById("delivery_method").value,
+        relationship: document.getElementById("r_relationship").value,
+        frequency: document.getElementById("r_frequency").value,
+        timings: document.getElementById("r_timings").value,
+        timezone: document.getElementById("r_timezone").value
+    };
 
     try {
-        const termsRes = await fetch(`${API_BASE_URL}/api/customer/terms/agree`, {
+        // Record terms agreement
+        await fetch(`${API_BASE_URL}/api/customer/terms/agree`, {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                recipientEmail: email,
-                recipientName: name
+                recipientEmail: payload.email,
+                recipientName: payload.name
             })
         });
 
-        if (!termsRes.ok) {
-            throw new Error("Failed to record terms agreement");
-        }
-
-        const payload = {
-            name,
-            email,
-            phone_number: phone || null,
-            delivery_method: delivery,
-            relationship,
-            frequency: r_frequency.value,
-            timings: r_timings.value,
-            timezone: r_timezone.value
-        };
-
+        // Add recipient
         const res = await fetch(`${API_BASE_URL}/api/customer/recipients`, {
             method: "POST",
             credentials: "include",
@@ -1641,66 +1284,127 @@ async function acceptTermsAndAddRecipient() {
         const data = await res.json();
 
         closeTermsModal();
+        closeAddRecipientModal();
 
         if (data.success) {
-            msgEl.innerText = "Recipient added successfully! ✅";
-            msgEl.style.color = "#28a745";
+            alert("Recipient added successfully! ✅");
             
-            r_name.value = "";
-            r_email.value = "";
-            phone_number.value = "";
-            delivery_method.value = "email";
-            r_relationship.value = "spouse";
-            r_customRel.value = "";
-            document.getElementById("customRelGroup").style.display = "none";
-            r_frequency.value = "daily";
-            r_timings.value = "morning";
-            r_timezone.value = "America/Chicago";
+            // Clear form
+            document.getElementById("r_name").value = "";
+            document.getElementById("r_email").value = "";
+            document.getElementById("phone_number").value = "";
+            document.getElementById("delivery_method").value = "email";
+            document.getElementById("r_relationship").value = "spouse";
+            document.getElementById("r_frequency").value = "daily";
+            document.getElementById("r_timings").value = "morning";
+            document.getElementById("r_timezone").value = "America/Chicago";
             
             loadRecipients();
-            
-            setTimeout(() => {
-                msgEl.innerText = "";
-                msgEl.style.color = "var(--primary)";
-            }, 3000);
         } else {
-            msgEl.innerText = data.error || "Error adding recipient.";
-            msgEl.style.color = "var(--danger)";
+            alert(data.error || "Error adding recipient.");
         }
     } catch (err) {
         closeTermsModal();
-        msgEl.innerText = "Error: " + err.message;
-        msgEl.style.color = "var(--danger)";
+        closeAddRecipientModal();
+        alert("Error: " + err.message);
         console.error("ADD RECIPIENT ERROR:", err);
     }
 }
 
-// DELETE ACCOUNT MODAL
-function showDeleteAccountModal() {
+async function deleteRecipient(id) {
+    if (!confirm("Delete this recipient?")) return;
+    
+    await fetch(`${API_BASE_URL}/api/customer/recipients/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+    });
+
+    loadRecipients();
+}
+
+async function openMessageLog(id) {
+    const modal = document.getElementById("messageLogModal");
+    const content = document.getElementById("logContent");
+    content.innerHTML = "<p style='text-align:center; color:#999;'>Loading…</p>";
+    modal.classList.add("active");
+
+    const res = await fetch(`${API_BASE_URL}/api/message-log/${id}`, {
+        credentials: "include"
+    });
+
+    const data = await res.json();
+
+    if (!data.success || !data.messages.length) {
+        content.innerHTML = "<p style='text-align:center; color:#999;'>No messages yet.</p>";
+    } else {
+        content.innerHTML = data.messages.map(m => `
+            <div style="padding:16px; background:#f9fafb; border-radius:8px; margin-bottom:12px;">
+                <div style="font-weight:600; color:#1a1a1a; margin-bottom:8px;">${m.message_text}</div>
+                <div style="font-size:12px; color:#9ca3af;">${new Date(m.sent_at).toLocaleString()}</div>
+            </div>
+        `).join("");
+    }
+}
+
+function closeMessageLog() {
+    document.getElementById("messageLogModal").classList.remove("active");
+}
+
+async function openFlowerModal(id) {
+    if (!isPlusUser()) {
+        showPlusUpgradePrompt();
+        return;
+    }
+    
+    CURRENT_FLOWER_RECIPIENT = id;
+    document.getElementById("flowerNote").value = "";
+    document.getElementById("flowerModal").classList.add("active");
+}
+
+function closeFlowerModal() {
+    document.getElementById("flowerModal").classList.remove("active");
+}
+
+async function sendFlower() {
+    const flower = document.getElementById("flowerType").value;
+    const note = document.getElementById("flowerNote").value.trim();
+    const message = `${flower}${note ? " — " + note : ""}`;
+
+    const res = await fetch(`${API_BASE_URL}/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: message })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        alert(`Flower sent 🌸\n\nYou can send ${data.remainingToday} more today.`);
+        closeFlowerModal();
+    } else {
+        alert(data.error || "Error sending flower.");
+    }
+}
+
+// DELETE ACCOUNT
+function showDeleteModal() {
     document.getElementById("deleteConfirmInput").value = "";
     document.getElementById("confirmDeleteBtn").disabled = true;
-    document.getElementById("deleteAccountModal").style.display = "flex";
+    document.getElementById("deleteModal").classList.add("active");
 }
 
-function closeDeleteAccountModal() {
-    document.getElementById("deleteAccountModal").style.display = "none";
+function closeDeleteModal() {
+    document.getElementById("deleteModal").classList.remove("active");
 }
 
-// Enable delete button only when user types "DELETE"
-document.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("deleteConfirmInput");
-    const btn = document.getElementById("confirmDeleteBtn");
-    
-    if (input && btn) {
-        input.addEventListener("input", () => {
-            btn.disabled = input.value !== "DELETE";
-        });
-    }
+document.getElementById("deleteConfirmInput")?.addEventListener("input", (e) => {
+    document.getElementById("confirmDeleteBtn").disabled = e.target.value !== "DELETE";
 });
 
-async function confirmDeleteAccount() {
+async function confirmDelete() {
     if (document.getElementById("deleteConfirmInput").value !== "DELETE") {
-        alert("Please type DELETE to confirm account deletion.");
+        alert("Please type DELETE to confirm.");
         return;
     }
 
@@ -1723,130 +1427,6 @@ async function confirmDeleteAccount() {
     }
 }
 
-async function deleteRecipient(id) {
-    if (!confirm("Delete this recipient?")) return;
-    await fetch(`${API_BASE_URL}/api/customer/recipients/${id}`, {
-        method: "DELETE",
-        credentials: "include"
-    });
-
-    loadRecipients();
-}
-
-async function openMessageLog(id) {
-    const modal = document.getElementById("messageLogModal");
-    const content = document.getElementById("logContent");
-    content.innerHTML = "Loading…";
-    modal.style.display = "flex";
-
-    const res = await fetch(`${API_BASE_URL}/api/message-log/${id}`, {
-        credentials: "include"
-    });
-
-    const data = await res.json();
-
-    if (!data.success) {
-        content.innerHTML = "<p>Error loading messages.</p>";
-    } else if (!data.messages.length) {
-        content.innerHTML = "<p>No messages yet.</p>";
-    } else {
-        content.innerHTML = data.messages
-            .map(m => `
-                <div class="log-item">
-                    <strong>${m.message_text}</strong>
-                    <div class="log-date">
-                        ${new Date(m.sent_at).toLocaleString()}
-                    </div>
-                </div>
-            `)
-            .join("");
-    }
-}
-
-function closeMessageLog() {
-    document.getElementById("messageLogModal").style.display = "none";
-}
-
-async function openFlowerModal(id) {
-    if (!isPlusUser()) {
-        showPlusUpgradePrompt();
-        return;
-    }
-    try {
-        const statusRes = await fetch(`${API_BASE_URL}/api/customer/flower-status/${id}`, {
-            credentials: "include"
-        });
-        const status = await statusRes.json();
-
-        if (!status.canSendFlower) {
-            if (status.flowersSentToday >= 2) {
-                alert(`🌸 Daily Limit Reached\n\nYou've sent ${status.flowersSentToday} flowers to this recipient today.\n\nYou can send more tomorrow!`);
-                return;
-            }
-        }
-
-        CURRENT_FLOWER_RECIPIENT = id;
-        CURRENT_FLOWER_REMAINING = status.remainingToday;
-        
-        document.getElementById("flowerNote").value = "";
-        
-        const modalHeader = document.querySelector("#flowerModal h2");
-        if (status.remainingToday === 2) {
-            modalHeader.textContent = "Send a Flower 🌸 (2 available today)";
-} else if (status.remainingToday === 1) {
-            modalHeader.textContent = "Send a Flower 🌸 (Last one for today!)";
-        } else {
-            modalHeader.textContent = "Send a Flower 🌸";
-        }
-        
-        document.getElementById("flowerModal").style.display = "flex";
-    } catch (err) {
-        console.error("Error checking flower status:", err);
-        CURRENT_FLOWER_RECIPIENT = id;
-        document.getElementById("flowerNote").value = "";
-        document.getElementById("flowerModal").style.display = "flex";
-    }
-}
-
-function closeFlowerModal() {
-    document.getElementById("flowerModal").style.display = "none";
-}
-
-async function sendFlower() {
-    const flower = document.getElementById("flowerType").value;
-    const note = document.getElementById("flowerNote").value.trim();
-    const message = `${flower}${note ? " — " + note : ""}`;
-
-    const res = await fetch(`${API_BASE_URL}/api/customer/send-flowers/${CURRENT_FLOWER_RECIPIENT}`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: message })
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-        const remaining = data.remainingToday;
-        const pluralFlowers = remaining === 1 ? 'flower' : 'flowers';
-        alert(`Flower sent 🌸\n\nYou can send ${remaining} more ${pluralFlowers} to this recipient today.`);
-        closeFlowerModal();
-    } else {
-        if (res.status === 403) {
-            if (data.requiresPlan === "plus") {
-                alert("🌸 Send Flowers is a Plus Plan Feature\n\nUpgrade to LoveText Plus to send flowers to your loved ones!\n\nClick OK to view upgrade options.");
-                window.location.href = "/products.html";
-            } else {
-                alert(data.error || "Your subscription is not active.");
-            }
-        } else if (res.status === 429) {
-            alert(`🌸 Daily Limit Reached\n\nYou've sent ${data.sent} flowers today (limit: ${data.limit}).\n\nYou can send more flowers tomorrow!`);
-        } else {
-            alert(data.error || "Error sending flower.");
-        }
-    }
-}
-
 async function handleLogout(event) {
     if (event) event.preventDefault();
     try {
@@ -1863,30 +1443,20 @@ async function handleLogout(event) {
     }
 }
 
-// Settings tab - Manage Subscription button
+// SETTINGS - MANAGE SUBSCRIPTION
 document.getElementById("manageSubBtnSettings")?.addEventListener("click", async () => {
     const res = await fetch(`${API_BASE_URL}/api/customer/subscription/portal`, {
         credentials: "include"
     });
     const data = await res.json();
-
     if (data.url) window.location.href = data.url;
 });
 
-document.getElementById("r_relationship").addEventListener("change", (e) => {
-    const customField = document.getElementById("customRelGroup");
-    customField.style.display = e.target.value === "custom" ? "block" : "none";
-});
-
-document.getElementById("termsAgreeCheckbox").addEventListener("change", updateTermsAgreeButton);
-
+// INIT
 document.addEventListener("DOMContentLoaded", async () => {
     await loadUserInfo();
     await loadSubscriptionStatus();
     await loadRecipients();
-    if (HAS_ACCESS && !isPlusUser()) {
-        document.getElementById("plusCallout").style.display = "block";
-    }
 });
 </script>
 </body>
