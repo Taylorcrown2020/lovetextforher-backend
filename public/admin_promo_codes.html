@@ -6,7 +6,6 @@
     <title>Promo Codes — Admin Dashboard</title>
 
     <script src="/config.js"></script>
-    <script> window.SKIP_NAV_JS = true; </script>
 
     <style>
         :root {
@@ -26,7 +25,7 @@
         body {
             background: linear-gradient(125deg, #fff7fa, #f6f3ff);
             min-height: 100vh;
-            padding-top: 100px;
+            padding: 120px 20px 60px;
         }
 
         /* NAVBAR */
@@ -62,6 +61,7 @@
             text-decoration: none;
             color: #1a1a1a;
             font-weight: 500;
+            transition: color 0.2s;
         }
 
         #navbar a:hover {
@@ -73,92 +73,10 @@
             align-items: center;
         }
 
-        /* MOBILE MENU */
-        .mobile-menu-btn {
-            display: none;
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10001;
-            background: white;
-            border: 1px solid rgba(214, 51, 108, 0.2);
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .mobile-menu-btn span {
-            display: block;
-            width: 28px;
-            height: 3px;
-            background: var(--primary);
-            margin: 5px 0;
-            transition: 0.3s;
-            border-radius: 2px;
-        }
-
-        .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(-45deg) translate(-6px, 6px);
-        }
-
-        .mobile-menu-btn.active span:nth-child(2) {
-            opacity: 0;
-        }
-
-        .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(45deg) translate(-6px, -6px);
-        }
-
-        .mobile-nav-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 100%;
-            height: 100vh;
-            background: #fff;
-            z-index: 10000;
-            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto;
-        }
-
-        .mobile-nav-overlay.active {
-            right: 0;
-        }
-
-        .mobile-nav-content {
-            padding: 80px 30px 40px;
-        }
-
-        .mobile-nav-links {
-            list-style: none;
-            margin-bottom: 40px;
-        }
-
-        .mobile-nav-links li {
-            margin-bottom: 30px;
-        }
-
-        .mobile-nav-links a {
-            color: #1a1a1a;
-            text-decoration: none;
-            font-size: 20px;
-            font-weight: 600;
-            display: block;
-            padding: 10px 0;
-            transition: color 0.2s;
-        }
-
-        .mobile-nav-links a:hover {
-            color: var(--primary);
-        }
-
         /* CONTENT */
         .container {
             max-width: var(--max-width);
-            margin: 40px auto;
-            padding: 0 28px;
+            margin: 0 auto;
         }
 
         h2 {
@@ -208,17 +126,23 @@
             font-size: 14px;
         }
 
-        input, select {
+        input, select, textarea {
             padding: 12px;
             border: 2px solid #e5e7eb;
             border-radius: 10px;
             font-size: 15px;
             transition: all 0.3s;
+            font-family: inherit;
         }
 
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--primary);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
         }
 
         .btn-create {
@@ -237,6 +161,12 @@
         .btn-create:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(214, 51, 108, 0.3);
+        }
+
+        .btn-create:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
         /* PROMO LIST */
@@ -289,13 +219,18 @@
             line-height: 1.6;
         }
 
+        .promo-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
         .promo-status {
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
-            margin-right: 12px;
         }
 
         .status-active {
@@ -308,9 +243,13 @@
             color: #991b1b;
         }
 
-        .btn-deactivate {
+        .status-expired {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .btn-deactivate, .btn-reactivate {
             padding: 8px 16px;
-            background: #ef4444;
             color: white;
             border: none;
             border-radius: 8px;
@@ -320,11 +259,23 @@
             transition: 0.3s;
         }
 
+        .btn-deactivate {
+            background: #ef4444;
+        }
+
         .btn-deactivate:hover {
             background: #dc2626;
         }
 
-        .btn-deactivate:disabled {
+        .btn-reactivate {
+            background: #10b981;
+        }
+
+        .btn-reactivate:hover {
+            background: #059669;
+        }
+
+        .btn-deactivate:disabled, .btn-reactivate:disabled {
             background: #9ca3af;
             cursor: not-allowed;
         }
@@ -357,30 +308,24 @@
             color: #991b1b;
         }
 
+        .helper-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
         /* MOBILE RESPONSIVE */
         @media (max-width: 768px) {
-            .mobile-menu-btn {
-                display: block;
-            }
-
-            .mobile-nav-overlay {
-                display: block;
+            body {
+                padding-top: 100px;
             }
 
             .nav-links {
                 display: none;
             }
 
-            body {
-                padding-top: 80px;
-            }
-
             h2 {
                 font-size: 32px;
-            }
-
-            .container {
-                padding: 0 20px;
             }
 
             .form-grid {
@@ -394,10 +339,16 @@
 
             .promo-info {
                 margin-bottom: 16px;
+                width: 100%;
             }
 
-            .promo-status {
-                margin-bottom: 12px;
+            .promo-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .promo-actions button {
+                width: 100%;
             }
         }
     </style>
@@ -409,49 +360,29 @@
 <script>
 async function verifyAdmin() {
     try {
-        const res = await fetch("/api/admin/me", {
+        const res = await fetch(`${API_BASE_URL}/api/admin/me`, {
             credentials: "include",
             cache: "no-store"
         });
 
-        if (!res.ok) return window.location.href = "/admin_login.html";
+        if (!res.ok) {
+            window.location.href = "/admin_login.html";
+            return;
+        }
 
         const data = await res.json();
 
         if (!data?.admin?.id || data?.admin?.role !== "admin") {
-            return window.location.href = "/admin_login.html";
+            window.location.href = "/admin_login.html";
         }
     } catch (err) {
+        console.error('Auth check error:', err);
         window.location.href = "/admin_login.html";
     }
 }
 
 document.addEventListener("DOMContentLoaded", verifyAdmin);
 </script>
-
-<!-- MOBILE MENU BUTTON -->
-<button class="mobile-menu-btn" onclick="toggleMobileMenu()">
-    <span></span>
-    <span></span>
-    <span></span>
-</button>
-
-<!-- MOBILE NAVIGATION OVERLAY -->
-<div class="mobile-nav-overlay" id="mobileNav">
-    <div class="mobile-nav-content">
-        <ul class="mobile-nav-links">
-            <li><a href="/admin.html" onclick="closeMobileMenu()">Dashboard</a></li>
-            <li><a href="/admin_users.html" onclick="closeMobileMenu()">Users</a></li>
-            <li><a href="/admin_customers.html" onclick="closeMobileMenu()">Customers</a></li>
-            <li><a href="/admin_message_logs.html" onclick="closeMobileMenu()">Message Logs</a></li>
-            <li><a href="/admin_kpis.html" onclick="closeMobileMenu()">KPIs</a></li>
-            <li><a href="/admin_audit_log.html" onclick="closeMobileMenu()">Audit Log</a></li>
-            <li><a href="/admin_marketing.html" onclick="closeMobileMenu()">Marketing</a></li>
-            <li><a href="/admin_promo_codes.html" onclick="closeMobileMenu()">Promo Codes</a></li>
-            <li><a href="#" id="mobile-logout-admin" onclick="handleMobileLogout(event)">Logout</a></li>
-        </ul>
-    </div>
-</div>
 
 <!-- ADMIN NAVBAR -->
 <div id="navbar">
@@ -462,10 +393,7 @@ document.addEventListener("DOMContentLoaded", verifyAdmin);
             <a href="/admin.html">Dashboard</a>
             <a href="/admin_users.html">Users</a>
             <a href="/admin_customers.html">Customers</a>
-            <a href="/admin_message_logs.html">Message Logs</a>
             <a href="/admin_kpis.html">KPIs</a>
-            <a href="/admin_audit_log.html">Audit Log</a>
-            <a href="/admin_marketing.html">Marketing</a>
             <a href="/admin_promo_codes.html">Promo Codes</a>
             <a href="#" id="logout-admin">Logout</a>
         </div>
@@ -473,7 +401,7 @@ document.addEventListener("DOMContentLoaded", verifyAdmin);
 </div>
 
 <div class="container">
-    <h2>Promo Codes</h2>
+    <h2>Promo Code Management</h2>
 
     <!-- CREATE FORM -->
     <div class="create-form">
@@ -484,12 +412,13 @@ document.addEventListener("DOMContentLoaded", verifyAdmin);
         <div class="form-grid">
             <div class="form-group">
                 <label for="code">Promo Code *</label>
-                <input type="text" id="code" placeholder="e.g., FREEMONTH" maxlength="20" required>
+                <input type="text" id="code" placeholder="e.g., SAVE25" maxlength="20" required>
+                <div class="helper-text">3-20 characters, will be auto-uppercased</div>
             </div>
 
             <div class="form-group">
                 <label for="discountType">Discount Type *</label>
-                <select id="discountType" required>
+                <select id="discountType" required onchange="updateValueHint()">
                     <option value="">Select Type</option>
                     <option value="free_month">Free Month(s)</option>
                     <option value="percentage">Percentage Off</option>
@@ -499,10 +428,8 @@ document.addEventListener("DOMContentLoaded", verifyAdmin);
 
             <div class="form-group">
                 <label for="discountValue">Discount Value *</label>
-                <input type="number" id="discountValue" placeholder="e.g., 1 or 50 or 500" required>
-                <small style="color: #6b7280; font-size: 12px; margin-top: 4px;">
-                    Months (1-12), Percentage (1-100), or Cents (500 = $5.00)
-                </small>
+                <input type="number" id="discountValue" placeholder="Enter value" min="1" required>
+                <div class="helper-text" id="valueHint">Select discount type first</div>
             </div>
 
             <div class="form-group">
@@ -517,16 +444,24 @@ document.addEventListener("DOMContentLoaded", verifyAdmin);
 
             <div class="form-group">
                 <label for="maxUses">Max Uses</label>
-                <input type="number" id="maxUses" placeholder="Leave blank for unlimited">
+                <input type="number" id="maxUses" placeholder="Unlimited" min="1">
+                <div class="helper-text">Leave blank for unlimited uses</div>
             </div>
 
             <div class="form-group">
                 <label for="expiresAt">Expires At</label>
                 <input type="datetime-local" id="expiresAt">
+                <div class="helper-text">Leave blank for no expiration</div>
             </div>
         </div>
 
-        <button class="btn-create" onclick="createPromoCode()">Create Promo Code</button>
+        <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="description">Description (Optional)</label>
+            <textarea id="description" placeholder="e.g., Get 25% off your subscription" style="min-height: 80px;"></textarea>
+            <div class="helper-text">This will be shown to customers on the homepage</div>
+        </div>
+
+        <button class="btn-create" id="createBtn" onclick="createPromoCode()">Create Promo Code</button>
     </div>
 
     <!-- PROMO LIST -->
@@ -540,50 +475,32 @@ document.addEventListener("DOMContentLoaded", verifyAdmin);
 
 <!-- SCRIPTS -->
 <script>
-// Mobile menu functions
-function toggleMobileMenu() {
-    const btn = document.querySelector('.mobile-menu-btn');
-    const nav = document.getElementById('mobileNav');
-    const body = document.body;
+// Update value hint based on discount type
+function updateValueHint() {
+    const type = document.getElementById('discountType').value;
+    const hint = document.getElementById('valueHint');
+    const input = document.getElementById('discountValue');
     
-    btn.classList.toggle('active');
-    nav.classList.toggle('active');
-    
-    if (nav.classList.contains('active')) {
-        body.style.overflow = 'hidden';
+    if (type === 'free_month') {
+        hint.textContent = 'Number of months (1-12)';
+        input.max = 12;
+    } else if (type === 'percentage') {
+        hint.textContent = 'Percentage (1-100)';
+        input.max = 100;
+    } else if (type === 'fixed') {
+        hint.textContent = 'Amount in cents (500 = $5.00)';
+        input.max = '';
     } else {
-        body.style.overflow = '';
+        hint.textContent = 'Select discount type first';
+        input.max = '';
     }
-}
-
-function closeMobileMenu() {
-    const btn = document.querySelector('.mobile-menu-btn');
-    const nav = document.getElementById('mobileNav');
-    const body = document.body;
-    
-    btn.classList.remove('active');
-    nav.classList.remove('active');
-    body.style.overflow = '';
-}
-
-async function handleMobileLogout(event) {
-    event.preventDefault();
-    closeMobileMenu();
-    
-    try {
-        await fetch("/api/admin/logout", {
-            method: "POST",
-            credentials: "include"
-        });
-    } catch {}
-    window.location.href = "/admin_login.html";
 }
 
 // Logout
 document.getElementById("logout-admin").addEventListener("click", async (e) => {
     e.preventDefault();
     try {
-        await fetch("/api/admin/logout", {
+        await fetch(`${API_BASE_URL}/api/admin/logout`, {
             method: "POST",
             credentials: "include"
         });
@@ -604,21 +521,30 @@ function showMessage(text, type) {
 
 // Create promo code
 async function createPromoCode() {
+    const btn = document.getElementById('createBtn');
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
+
     const code = document.getElementById('code').value.trim().toUpperCase();
     const discountType = document.getElementById('discountType').value;
     const discountValue = document.getElementById('discountValue').value;
     const planRequired = document.getElementById('planRequired').value || null;
     const maxUses = document.getElementById('maxUses').value || null;
     const expiresAt = document.getElementById('expiresAt').value || null;
+    const description = document.getElementById('description').value.trim() || null;
 
     // Validation
     if (!code || !discountType || !discountValue) {
         showMessage('Please fill in all required fields', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Create Promo Code';
         return;
     }
 
     if (code.length < 3) {
         showMessage('Promo code must be at least 3 characters', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Create Promo Code';
         return;
     }
 
@@ -633,7 +559,8 @@ async function createPromoCode() {
                 discount_value: parseInt(discountValue),
                 plan_required: planRequired,
                 max_uses: maxUses ? parseInt(maxUses) : null,
-                expires_at: expiresAt ? new Date(expiresAt).toISOString() : null
+                expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+                description: description
             })
         });
 
@@ -649,6 +576,8 @@ async function createPromoCode() {
             document.getElementById('planRequired').value = '';
             document.getElementById('maxUses').value = '';
             document.getElementById('expiresAt').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('valueHint').textContent = 'Select discount type first';
             
             // Reload list
             loadPromoCodes();
@@ -658,8 +587,23 @@ async function createPromoCode() {
 
     } catch (err) {
         console.error('Create promo error:', err);
-        showMessage('❌ Error creating promo code', 'error');
+        showMessage('❌ Network error - check console', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Create Promo Code';
     }
+}
+
+// Format discount text
+function formatDiscount(type, value) {
+    if (type === 'free_month') {
+        return `${value} month${value > 1 ? 's' : ''} free`;
+    } else if (type === 'percentage') {
+        return `${value}% off`;
+    } else if (type === 'fixed') {
+        return `$${(value / 100).toFixed(2)} off`;
+    }
+    return 'Unknown discount';
 }
 
 // Load promo codes
@@ -669,27 +613,42 @@ async function loadPromoCodes() {
 
     try {
         const res = await fetch(`${API_BASE_URL}/api/admin/promo/list`, {
-            credentials: 'include'
+            credentials: 'include',
+            cache: 'no-store'
         });
 
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+
         const promos = await res.json();
+        
+        console.log('Loaded promos:', promos);
 
         if (!promos || promos.length === 0) {
-            container.innerHTML = '<div class="loading">No promo codes yet</div>';
+            container.innerHTML = '<div class="loading">No promo codes yet. Create one above!</div>';
             return;
         }
 
         container.innerHTML = promos.map(promo => {
             const isActive = promo.active;
             const isExpired = promo.expires_at && new Date(promo.expires_at) < new Date();
+            const isMaxedOut = promo.max_uses && promo.times_used >= promo.max_uses;
             
-            let discountText = '';
-            if (promo.discount_type === 'free_month') {
-                discountText = `${promo.discount_value} month${promo.discount_value > 1 ? 's' : ''} free`;
-            } else if (promo.discount_type === 'percentage') {
-                discountText = `${promo.discount_value}% off`;
-            } else if (promo.discount_type === 'fixed') {
-                discountText = `$${(promo.discount_value / 100).toFixed(2)} off`;
+            const discountText = formatDiscount(promo.discount_type, promo.discount_value);
+            
+            let statusClass = 'status-active';
+            let statusText = 'Active';
+            
+            if (!isActive) {
+                statusClass = 'status-inactive';
+                statusText = 'Inactive';
+            } else if (isExpired) {
+                statusClass = 'status-expired';
+                statusText = 'Expired';
+            } else if (isMaxedOut) {
+                statusClass = 'status-expired';
+                statusText = 'Max Uses';
             }
 
             return `
@@ -700,21 +659,19 @@ async function loadPromoCodes() {
                             <strong>${discountText}</strong><br>
                             ${promo.plan_required ? `Plan: ${promo.plan_required}` : 'Any plan'} | 
                             Used: ${promo.times_used || 0}${promo.max_uses ? `/${promo.max_uses}` : ''}<br>
-                            ${promo.expires_at ? `Expires: ${new Date(promo.expires_at).toLocaleDateString()}` : 'No expiration'}
-                            ${isExpired ? ' <span style="color: #ef4444;">(EXPIRED)</span>' : ''}
+                            ${promo.expires_at 
+                                ? `Expires: ${new Date(promo.expires_at).toLocaleString()}`
+                                : 'No expiration'
+                            }
+                            ${promo.description ? `<br><em>${promo.description}</em>` : ''}
                         </div>
                     </div>
-                    <div>
-                        <span class="promo-status ${isActive ? 'status-active' : 'status-inactive'}">
-                            ${isActive ? 'Active' : 'Inactive'}
-                        </span>
-                        <button 
-                            class="btn-deactivate" 
-                            onclick="deactivatePromo(${promo.id})"
-                            ${!isActive ? 'disabled' : ''}
-                        >
-                            Deactivate
-                        </button>
+                    <div class="promo-actions">
+                        <span class="promo-status ${statusClass}">${statusText}</span>
+                        ${isActive 
+                            ? `<button class="btn-deactivate" onclick="deactivatePromo(${promo.id})">Deactivate</button>`
+                            : `<button class="btn-reactivate" onclick="reactivatePromo(${promo.id})">Reactivate</button>`
+                        }
                     </div>
                 </div>
             `;
@@ -722,7 +679,7 @@ async function loadPromoCodes() {
 
     } catch (err) {
         console.error('Load promos error:', err);
-        container.innerHTML = '<div class="loading">Error loading promo codes</div>';
+        container.innerHTML = `<div class="loading">Error loading promo codes: ${err.message}</div>`;
     }
 }
 
@@ -753,8 +710,37 @@ async function deactivatePromo(id) {
     }
 }
 
+// Reactivate promo code
+async function reactivatePromo(id) {
+    if (!confirm('Are you sure you want to reactivate this promo code?')) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/promo/reactivate/${id}`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            showMessage('✅ Promo code reactivated', 'success');
+            loadPromoCodes();
+        } else {
+            showMessage('❌ Failed to reactivate promo code', 'error');
+        }
+
+    } catch (err) {
+        console.error('Reactivate error:', err);
+        showMessage('❌ Error reactivating promo code', 'error');
+    }
+}
+
 // Load on page load
-document.addEventListener('DOMContentLoaded', loadPromoCodes);
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(loadPromoCodes, 500);
+});
 </script>
 
 </body>
