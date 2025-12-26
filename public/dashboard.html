@@ -1459,6 +1459,270 @@ async function deleteRecipient(id) {
     loadRecipients();
 }
 
+// Add this script to your dashboard.html to improve the form UX
+
+// Update the delivery method dropdown to show/hide fields dynamically
+document.getElementById("delivery_method")?.addEventListener("change", function() {
+    const method = this.value;
+    const emailField = document.getElementById("r_email").closest('.form-field');
+    const phoneField = document.getElementById("phone_number").closest('.form-field');
+    const emailInput = document.getElementById("r_email");
+    const phoneInput = document.getElementById("phone_number");
+    
+    // Update labels and requirements based on delivery method
+    if (method === "email") {
+        emailField.style.display = "block";
+        phoneField.style.display = "none";
+        emailInput.required = true;
+        phoneInput.required = false;
+        emailInput.placeholder = "recipient@example.com (Required)";
+        phoneInput.value = ""; // Clear phone when not needed
+    } 
+    else if (method === "sms") {
+        emailField.style.display = "none";
+        phoneField.style.display = "block";
+        emailInput.required = false;
+        phoneInput.required = true;
+        phoneInput.placeholder = "+1 (555) 123-4567 (Required)";
+        emailInput.value = ""; // Clear email when not needed
+    } 
+    else if (method === "both") {
+        emailField.style.display = "block";
+        phoneField.style.display = "block";
+        emailInput.required = true;
+        phoneInput.required = true;
+        emailInput.placeholder = "recipient@example.com (Required)";
+        phoneInput.placeholder = "+1 (555) 123-4567 (Required)";
+    }
+});
+
+// Improved validation in showTermsModal function
+function showTermsModal() {
+    const name = document.getElementById("r_name").value.trim();
+    const email = document.getElementById("r_email").value.trim();
+    const phone = document.getElementById("phone_number").value.trim();
+    const delivery = document.getElementById("delivery_method").value;
+
+    // Name is always required
+    if (!name) {
+        alert("❌ Recipient name is required.");
+        return;
+    }
+
+    // Validate based on delivery method
+    if (delivery === "email") {
+        if (!email) {
+            alert("❌ Email address is required for email delivery.");
+            return;
+        }
+        // Basic email validation
+        if (!email.includes("@")) {
+            alert("❌ Please enter a valid email address.");
+            return;
+        }
+    } 
+    else if (delivery === "sms") {
+        if (!phone) {
+            alert("❌ Phone number is required for SMS delivery.");
+            return;
+        }
+        // Basic phone validation (at least 10 digits)
+        const phoneDigits = phone.replace(/\D/g, '');
+        if (phoneDigits.length < 10) {
+            alert("❌ Please enter a valid phone number with at least 10 digits.");
+            return;
+        }
+    } 
+    else if (delivery === "both") {
+        if (!email) {
+            alert("❌ Email address is required when using both delivery methods.");
+            return;
+        }
+        if (!phone) {
+            alert("❌ Phone number is required when using both delivery methods.");
+            return;
+        }
+        // Validate both
+        if (!email.includes("@")) {
+            alert("❌ Please enter a valid email address.");
+            return;
+        }
+        const phoneDigits = phone.replace(/\D/g, '');
+        if (phoneDigits.length < 10) {
+            alert("❌ Please enter a valid phone number with at least 10 digits.");
+            return;
+        }
+    }
+
+    // All validations passed - show terms modal
+    document.getElementById("termsModal").classList.add("active");
+}
+
+// Updated addRecipient function with better error handling
+async function addRecipient() {
+    const delivery = document.getElementById("delivery_method").value;
+    const email = document.getElementById("r_email").value.trim();
+    const phone = document.getElementById("phone_number").value.trim();
+    
+    const payload = {
+        name: document.getElementById("r_name").value.trim(),
+        email: delivery === "sms" ? null : email,  // Only send email if not SMS-only
+        phone_number: delivery === "email" ? null : phone,  // Only send phone if not email-only
+        delivery_method: delivery,
+        relationship: document.getElementById("r_relationship").value,
+        frequency: document.getElementById("r_frequency").value,
+        timings: document.getElementById("r_timings").value,
+        timezone: document.getElementById("r_timezone").value
+    };
+
+    try {
+        // Record terms agreement (use email if available, otherwise use name)
+        await fetch(`${API_BASE_URL}/api/customer/terms/agree`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                recipientEmail: payload.email || "sms_only_" + Date.now(),
+                recipientName: payload.name
+            })
+        });
+
+        // Add recipient
+        const res = await fetch(`${API_BASE_URL}/api/customer/recipients`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        closeTermsModal();
+        closeAddRecipientModal();
+
+        if (data.success) {
+            alert("✅ Recipient added successfully!\n\n📬 Delivery Method: " + 
+                  (delivery === "email" ? "Email Only" : 
+                   delivery === "sms" ? "SMS Only" : 
+                   "Both Email & SMS"));
+            
+            // Clear form
+            document.getElementById("r_name").value = "";
+            document.getElementById("r_email").value = "";
+            document.getElementById("phone_number").value = "";
+            document.getElementById("delivery_method").value = "email";
+            document.getElementById("r_relationship").value = "spouse";
+            document.getElementById("r_frequency").value = "daily";
+            document.getElementById("r_timings").value = "morning";
+            document.getElementById("r_timezone").value = "America/Chicago";
+            
+            loadRecipients();
+        } else {
+            alert("❌ " + (data.error || "Error adding recipient."));
+        }
+    } catch (err) {
+        closeTermsModal();
+        closeAddRecipientModal();
+        alert("❌ Error: " + err.message);
+        console.error("ADD RECIPIENT ERROR:", err);
+    }
+}
+
+// Display delivery method more clearly in recipient cards
+async function loadRecipients() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/customer/recipients`, {
+            credentials: "include"
+        });
+        const list = await res.json();
+        const container = document.getElementById("recipientsContainer");
+        
+        document.getElementById("sidebarRecipientCount").textContent = list.length;
+
+        if (!list.length) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">💝</div>
+                    <h3>No recipients yet</h3>
+                    <p>Click the + button to add your first recipient</p>
+                </div>
+            `;
+            return;
+        }
+
+        const isPlus = isPlusUser();
+
+        container.innerHTML = list.map(r => {
+            // Better delivery method display
+            let deliveryDisplay = "";
+            if (r.delivery_method === "both") {
+                deliveryDisplay = `
+                    <div class="info-row">
+                        <span class="icon">📧</span>
+                        <span>${r.email}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="icon">📱</span>
+                        <span>${r.phone_number}</span>
+                    </div>
+                `;
+            } else if (r.delivery_method === "sms") {
+                deliveryDisplay = `
+                    <div class="info-row">
+                        <span class="icon">📱</span>
+                        <span>${r.phone_number} (SMS Only)</span>
+                    </div>
+                `;
+            } else {
+                deliveryDisplay = `
+                    <div class="info-row">
+                        <span class="icon">📧</span>
+                        <span>${r.email} (Email Only)</span>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="recipient-card">
+                    <div class="recipient-card-header">
+                        <div>
+                            <h3>${r.name}</h3>
+                            <span class="recipient-badge">${r.relationship}</span>
+                        </div>
+                    </div>
+                    <div class="recipient-info">
+                        ${deliveryDisplay}
+                        <div class="info-row">
+                            <span class="icon">📅</span>
+                            <span>${r.frequency.replace(/-/g, ' ')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="icon">⏰</span>
+                            <span>${r.timings.charAt(0).toUpperCase() + r.timings.slice(1)}</span>
+                        </div>
+                    </div>
+                    <div class="recipient-actions">
+                        <button class="btn-icon secondary" onclick="openMessageLog(${r.id})" title="View History">
+                            📋
+                        </button>
+                        <button class="btn-icon ${isPlus ? 'primary' : 'locked'}" 
+                                onclick="${isPlus ? `openFlowerModal(${r.id})` : 'showPlusUpgradePrompt()'}"
+                                title="Send Flower">
+                            🌸
+                        </button>
+                        <button class="btn-icon danger" onclick="deleteRecipient(${r.id})" title="Delete">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (err) {
+        console.error("RECIPIENT LOAD ERROR", err);
+    }
+}
+
 async function openMessageLog(id) {
     const modal = document.getElementById("messageLogModal");
     const content = document.getElementById("logContent");
