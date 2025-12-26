@@ -1,352 +1,350 @@
+<artifact identifier="complete-kpi-dashboard-fixed" type="text/html" title="Complete KPI Dashboard - Fixed">
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
     <title>KPI Dashboard — LoveTextForHer</title>
+<script src="/config.js"></script>
+<script> window.SKIP_NAV_JS = true; </script>
 
-    <script src="/config.js"></script>
-    <script> window.SKIP_NAV_JS = true; </script>
+<style>
+    :root {
+        --primary: #d6336c;
+        --secondary: #8b5cf6;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --text-dark: #1a1a1a;
+        --text-light: #6a6a6a;
+        --max-width: 1400px;
+    }
 
-    <style>
-        :root {
-            --primary: #d6336c;
-            --secondary: #8b5cf6;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --text-dark: #1a1a1a;
-            --text-light: #6a6a6a;
-            --max-width: 1400px;
-        }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Inter", sans-serif;
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Inter", sans-serif;
-        }
+    body {
+        background: linear-gradient(135deg, #fff7fa, #f6f3ff);
+        padding-top: 110px;
+        color: var(--text-dark);
+    }
 
-        body {
-            background: linear-gradient(135deg, #fff7fa, #f6f3ff);
-            padding-top: 110px;
-            color: var(--text-dark);
-        }
+    /* NAVBAR */
+    #navbar {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        padding: 18px 0;
+        background: rgba(255,255,255,0.65);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 2px 14px rgba(0,0,0,0.05);
+        z-index: 9998;
+    }
 
-        /* NAVBAR */
-        #navbar {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            padding: 18px 0;
-            background: rgba(255,255,255,0.65);
-            backdrop-filter: blur(18px);
-            box-shadow: 0 2px 14px rgba(0,0,0,0.05);
-            z-index: 9998;
-        }
+    #navbar-inner {
+        max-width: var(--max-width);
+        margin: auto;
+        padding: 0 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-        #navbar-inner {
-            max-width: var(--max-width);
-            margin: auto;
-            padding: 0 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .logo {
+        font-size: 20px;
+        font-weight: 900;
+        color: var(--primary);
+    }
 
-        .logo {
-            font-size: 20px;
-            font-weight: 900;
-            color: var(--primary);
-        }
+    .nav-links {
+        display: flex;
+        align-items: center;
+    }
 
-        .nav-links {
-            display: flex;
-            align-items: center;
-        }
+    #navbar a {
+        text-decoration: none;
+        margin-left: 22px;
+        color: var(--text-dark);
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+    #navbar a:hover { color: var(--primary); }
 
-        #navbar a {
-            text-decoration: none;
-            margin-left: 22px;
-            color: var(--text-dark);
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-        #navbar a:hover { color: var(--primary); }
+    /* ================= MOBILE MENU ================= */
+    .mobile-menu-btn {
+        display: none;
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10001;
+        background: white;
+        border: 1px solid rgba(214, 51, 108, 0.2);
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
 
-        /* ================= MOBILE MENU ================= */
+    .mobile-menu-btn span {
+        display: block;
+        width: 28px;
+        height: 3px;
+        background: var(--primary);
+        margin: 5px 0;
+        transition: 0.3s;
+        border-radius: 2px;
+    }
+
+    .mobile-menu-btn.active span:nth-child(1) {
+        transform: rotate(-45deg) translate(-6px, 6px);
+    }
+
+    .mobile-menu-btn.active span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .mobile-menu-btn.active span:nth-child(3) {
+        transform: rotate(45deg) translate(-6px, -6px);
+    }
+
+    .mobile-nav-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 100%;
+        height: 100vh;
+        background: #fff;
+        z-index: 10000;
+        transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+    }
+
+    .mobile-nav-overlay.active {
+        right: 0;
+    }
+
+    .mobile-nav-content {
+        padding: 80px 30px 40px;
+    }
+
+    .mobile-nav-links {
+        list-style: none;
+        margin-bottom: 40px;
+    }
+
+    .mobile-nav-links li {
+        margin-bottom: 30px;
+    }
+
+    .mobile-nav-links a {
+        color: var(--text-dark);
+        text-decoration: none;
+        font-size: 20px;
+        font-weight: 600;
+        display: block;
+        padding: 10px 0;
+        transition: color 0.2s;
+    }
+
+    .mobile-nav-links a:hover {
+        color: var(--primary);
+    }
+
+    .mobile-nav-cta {
+        margin-top: 40px;
+    }
+
+    .mobile-nav-cta .cta-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* HEADER */
+    .page-header {
+        max-width: var(--max-width);
+        margin: 40px auto;
+        padding: 0 28px;
+    }
+
+    .kpi-title {
+        font-size: 42px;
+        font-weight: 800;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .kpi-subtitle {
+        font-size: 18px;
+        color: var(--text-light);
+        margin-top: 8px;
+    }
+
+    /* SECTION HEADERS */
+    .section-header {
+        max-width: var(--max-width);
+        margin: 50px auto 20px;
+        padding: 0 28px;
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    /* KPI GRID */
+    .kpi-grid {
+        max-width: var(--max-width);
+        margin: auto;
+        padding: 0 28px 40px;
+        display: grid;
+        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .kpi-card {
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(214,51,108,0.15);
+        border-radius: 20px;
+        padding: 24px 28px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+        transition: 0.25s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 45px rgba(214,51,108,0.15);
+    }
+
+    .kpi-card h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-light);
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .kpi-number {
+        font-size: 36px;
+        font-weight: 800;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+    }
+
+    .kpi-label {
+        font-size: 14px;
+        color: var(--text-light);
+        margin-top: 4px;
+    }
+
+    .kpi-metric {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 8px 0;
+    }
+
+    .kpi-growth {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        margin-top: 8px;
+    }
+
+    .kpi-growth.positive {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .kpi-growth.negative {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .kpi-growth.neutral {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    /* HIGHLIGHT CARD */
+    .kpi-card.highlight {
+        background: linear-gradient(135deg, rgba(214,51,108,0.1), rgba(139,92,246,0.1));
+        border: 2px solid var(--primary);
+    }
+
+    /* LOADING STATE */
+    .loading {
+        text-align: center;
+        padding: 60px;
+        font-size: 18px;
+        color: var(--text-light);
+    }
+
+    /* ERROR STATE */
+    .error {
+        text-align: center;
+        padding: 60px;
+        font-size: 18px;
+        color: var(--danger);
+    }
+
+    /* MOBILE RESPONSIVE */
+    @media (max-width: 768px) {
         .mobile-menu-btn {
-            display: none;
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10001;
-            background: white;
-            border: 1px solid rgba(214, 51, 108, 0.2);
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .mobile-menu-btn span {
             display: block;
-            width: 28px;
-            height: 3px;
-            background: var(--primary);
-            margin: 5px 0;
-            transition: 0.3s;
-            border-radius: 2px;
-        }
-
-        .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(-45deg) translate(-6px, 6px);
-        }
-
-        .mobile-menu-btn.active span:nth-child(2) {
-            opacity: 0;
-        }
-
-        .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(45deg) translate(-6px, -6px);
         }
 
         .mobile-nav-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 100%;
-            height: 100vh;
-            background: #fff;
-            z-index: 10000;
-            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto;
-        }
-
-        .mobile-nav-overlay.active {
-            right: 0;
-        }
-
-        .mobile-nav-content {
-            padding: 80px 30px 40px;
-        }
-
-        .mobile-nav-links {
-            list-style: none;
-            margin-bottom: 40px;
-        }
-
-        .mobile-nav-links li {
-            margin-bottom: 30px;
-        }
-
-        .mobile-nav-links a {
-            color: var(--text-dark);
-            text-decoration: none;
-            font-size: 20px;
-            font-weight: 600;
             display: block;
-            padding: 10px 0;
-            transition: color 0.2s;
         }
 
-        .mobile-nav-links a:hover {
-            color: var(--primary);
+        .nav-links {
+            display: none;
         }
 
-        .mobile-nav-cta {
-            margin-top: 40px;
-        }
-
-        .mobile-nav-cta .cta-btn {
-            width: 100%;
-            text-align: center;
-        }
-
-        /* HEADER */
-        .page-header {
-            max-width: var(--max-width);
-            margin: 40px auto;
-            padding: 0 28px;
+        body {
+            padding-top: 80px;
         }
 
         .kpi-title {
-            font-size: 42px;
-            font-weight: 800;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 32px;
         }
 
         .kpi-subtitle {
-            font-size: 18px;
-            color: var(--text-light);
-            margin-top: 8px;
-        }
-
-        /* SECTION HEADERS */
-        .section-header {
-            max-width: var(--max-width);
-            margin: 50px auto 20px;
-            padding: 0 28px;
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        /* KPI GRID */
-        .kpi-grid {
-            max-width: var(--max-width);
-            margin: auto;
-            padding: 0 28px 40px;
-            display: grid;
-            gap: 24px;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        }
-
-        .kpi-card {
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(214,51,108,0.15);
-            border-radius: 20px;
-            padding: 24px 28px;
-            box-shadow: 0 12px 30px rgba(0,0,0,0.06);
-            transition: 0.25s ease;
-        }
-
-        .kpi-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 45px rgba(214,51,108,0.15);
-        }
-
-        .kpi-card h3 {
             font-size: 16px;
-            font-weight: 600;
-            color: var(--text-light);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        }
+
+        .section-header {
+            font-size: 20px;
+            margin: 30px auto 15px;
+        }
+
+        .kpi-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+            padding: 0 20px 30px;
         }
 
         .kpi-number {
-            font-size: 36px;
-            font-weight: 800;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
+            font-size: 28px;
         }
-
-        .kpi-label {
-            font-size: 14px;
-            color: var(--text-light);
-            margin-top: 4px;
-        }
-
-        .kpi-metric {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin: 8px 0;
-        }
-
-        .kpi-growth {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-top: 8px;
-        }
-
-        .kpi-growth.positive {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .kpi-growth.negative {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .kpi-growth.neutral {
-            background: #f3f4f6;
-            color: #374151;
-        }
-
-        /* HIGHLIGHT CARD */
-        .kpi-card.highlight {
-            background: linear-gradient(135deg, rgba(214,51,108,0.1), rgba(139,92,246,0.1));
-            border: 2px solid var(--primary);
-        }
-
-        /* LOADING STATE */
-        .loading {
-            text-align: center;
-            padding: 60px;
-            font-size: 18px;
-            color: var(--text-light);
-        }
-
-        /* ERROR STATE */
-        .error {
-            text-align: center;
-            padding: 60px;
-            font-size: 18px;
-            color: var(--danger);
-        }
-
-        /* MOBILE RESPONSIVE */
-        @media (max-width: 768px) {
-            .mobile-menu-btn {
-                display: block;
-            }
-
-            .mobile-nav-overlay {
-                display: block;
-            }
-
-            .nav-links {
-                display: none;
-            }
-
-            body {
-                padding-top: 80px;
-            }
-
-            .kpi-title {
-                font-size: 32px;
-            }
-
-            .kpi-subtitle {
-                font-size: 16px;
-            }
-
-            .section-header {
-                font-size: 20px;
-                margin: 30px auto 15px;
-            }
-
-            .kpi-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-                padding: 0 20px 30px;
-            }
-
-            .kpi-number {
-                font-size: 28px;
-            }
-        }
-    </style>
+    }
+</style>
 </head>
-
 <body>
-
 <script>
 async function verifyAdmin() {
     try {
-        const res = await fetch("/api/admin/me", {
+        const res = await fetch(`${API_BASE_URL}/api/admin/me`, {
             credentials: "include",
             cache: "no-store"
         });
@@ -371,14 +369,12 @@ async function verifyAdmin() {
     }
 }
 </script>
-
 <!-- MOBILE MENU BUTTON -->
 <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
     <span></span>
     <span></span>
     <span></span>
 </button>
-
 <!-- MOBILE NAVIGATION OVERLAY -->
 <div class="mobile-nav-overlay" id="mobileNav">
     <div class="mobile-nav-content">
@@ -395,7 +391,6 @@ async function verifyAdmin() {
         </ul>
     </div>
 </div>
-
 <!-- NAVBAR -->
 <div id="navbar">
     <div id="navbar-inner">
@@ -413,55 +408,41 @@ async function verifyAdmin() {
         </div>
     </div>
 </div>
-
 <!-- HEADER -->
 <div class="page-header">
     <h1 class="kpi-title">Business KPIs & Financial Health</h1>
     <p class="kpi-subtitle" id="updateTime">Loading analytics...</p>
 </div>
-
 <!-- LOADING -->
 <div id="loadingState" class="loading">
     <p>📊 Calculating business metrics...</p>
 </div>
-
 <!-- ERROR -->
 <div id="errorState" class="error" style="display:none;">
     <p>❌ Failed to load KPI data. Please refresh the page.</p>
 </div>
-
 <!-- KPI SECTIONS -->
 <div id="kpiContent" style="display:none;">
+<!-- REVENUE METRICS -->
+<div class="section-header">💰 Revenue & Growth</div>
+<div class="kpi-grid" id="revenueGrid"></div>
 
-    <!-- REVENUE METRICS -->
-    <div class="section-header">💰 Revenue & Growth</div>
-    <div class="kpi-grid" id="revenueGrid"></div>
+<!-- SUBSCRIPTION METRICS -->
+<div class="section-header">📊 Subscription Health</div>
+<div class="kpi-grid" id="subscriptionGrid"></div>
 
-    
-    <!-- ENGAGEMENT METRICS -->
-    <div class="section-header">💌 Engagement & Activity</div>
-    <div class="kpi-grid" id="engagementGrid"></div>
+<!-- CUSTOMER METRICS -->
+<div class="section-header">👥 Customer Metrics</div>
+<div class="kpi-grid" id="customerGrid"></div>
 
-    <!-- PROMO CODE METRICS -->
-    <div class="section-header">🎁 Promo Code Performance</div>
-    <div class="kpi-grid" id="promoGrid"></div>
+<!-- ENGAGEMENT METRICS -->
+<div class="section-header">💌 Engagement & Activity</div>
+<div class="kpi-grid" id="engagementGrid"></div>
 
+<!-- PROMO CODE METRICS -->
+<div class="section-header">🎁 Promo Code Performance</div>
+<div class="kpi-grid" id="promoGrid"></div>
 </div>
-
-    <!-- SUBSCRIPTION METRICS -->
-    <div class="section-header">📊 Subscription Health</div>
-    <div class="kpi-grid" id="subscriptionGrid"></div>
-
-    <!-- CUSTOMER METRICS -->
-    <div class="section-header">👥 Customer Metrics</div>
-    <div class="kpi-grid" id="customerGrid"></div>
-
-    <!-- ENGAGEMENT METRICS -->
-    <div class="section-header">💌 Engagement & Activity</div>
-    <div class="kpi-grid" id="engagementGrid"></div>
-
-</div>
-
 <!-- MOBILE MENU SCRIPTS -->
 <script>
 function toggleMobileMenu() {
@@ -494,7 +475,7 @@ async function handleMobileLogout(event) {
     closeMobileMenu();
     
     try {
-        await fetch("/api/admin/logout", {
+        await fetch(`${API_BASE_URL}/api/admin/logout`, {
             method: "POST",
             credentials: "include"
         });
@@ -502,7 +483,6 @@ async function handleMobileLogout(event) {
     window.location.href = "/admin_login.html";
 }
 </script>
-
 <script>
 function formatCurrency(value) {
     return new Intl.NumberFormat('en-US', {
@@ -519,9 +499,61 @@ function formatGrowth(value) {
     return `<span class="kpi-growth ${className}">${symbol} ${Math.abs(num).toFixed(2)}%</span>`;
 }
 
+async function loadPromoKPIs() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/promo-kpis`, {
+            credentials: "include",
+            cache: "no-store"
+        });
+
+        if (!res.ok) {
+            console.error("Failed to load promo KPIs");
+            return;
+        }
+
+        const p = await res.json();
+
+        document.getElementById("promoGrid").innerHTML = `
+            <div class="kpi-card">
+                <h3>Total Promo Codes</h3>
+                <div class="kpi-number">${p.total}</div>
+                <div class="kpi-metric">Active: ${p.active}</div>
+                <div class="kpi-label">Total codes created</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Total Redemptions</h3>
+                <div class="kpi-number">${p.totalRedemptions}</div>
+                <div class="kpi-label">All-time redemptions</div>
+            </div>
+
+            <div class="kpi-card highlight">
+                <h3>Redemptions This Month</h3>
+                <div class="kpi-number">${p.redemptionsThisMonth}</div>
+                <div class="kpi-label">Current month activity</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Most Popular Code</h3>
+                <div class="kpi-number">${p.topPromo ? p.topPromo.code : 'N/A'}</div>
+                <div class="kpi-label">${p.topPromo ? `Used ${p.topPromo.times_used} times` : 'No redemptions yet'}</div>
+            </div>
+        `;
+
+    } catch (err) {
+        console.error("PROMO KPI ERROR:", err);
+        document.getElementById("promoGrid").innerHTML = `
+            <div class="kpi-card">
+                <h3>Promo Data Unavailable</h3>
+                <div class="kpi-label">Check backend endpoint</div>
+            </div>
+        `;
+    }
+}
+
 async function loadKPIs() {
     try {
-        const res = await fetch("/api/admin/kpis", {
+        const res = await fetch(`${API_BASE_URL}/api/admin/kpis`, {
             credentials: "include",
             cache: "no-store"
         });
@@ -651,6 +683,9 @@ async function loadKPIs() {
             </div>
         `;
 
+        // Load promo KPIs
+        await loadPromoKPIs();
+
         // Show content
         document.getElementById("loadingState").style.display = "none";
         document.getElementById("kpiContent").style.display = "block";
@@ -665,7 +700,7 @@ async function loadKPIs() {
 // LOGOUT
 document.getElementById("logout-admin").addEventListener("click", async (e) => {
     e.preventDefault();
-    await fetch("/api/admin/logout", {
+    await fetch(`${API_BASE_URL}/api/admin/logout`, {
         method: "POST",
         credentials: "include"
     });
@@ -678,6 +713,6 @@ document.getElementById("logout-admin").addEventListener("click", async (e) => {
     if (ok) loadKPIs();
 })();
 </script>
-
 </body>
 </html>
+</artifact>
