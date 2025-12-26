@@ -1,3 +1,4 @@
+<artifact identifier="complete-homepage-fixed" type="text/html" title="Complete Homepage with Dynamic Promo">
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -147,10 +148,10 @@ body {padding-top:40px;}
 </style>
 </head>
 <body>
-<div class="promo-banner">
+<div class="promo-banner" id="topPromoBanner">
 <div class="promo-banner-content">
-<span class="promo-badge">Free Trial</span>
-<span class="promo-text">Limited Time Only — Try LoveTextForHer Free for 3 Days</span>
+<span class="promo-badge" id="topPromoBadge">Free Trial</span>
+<span class="promo-text" id="topPromoText">Limited Time Only — Try LoveTextForHer Free for 3 Days</span>
 <a href="/register.html" class="promo-cta">Get Started →</a>
 </div>
 </div>
@@ -298,18 +299,90 @@ body {padding-top:40px;}
 </div>
 </section>
 <script>
-function toggleMobileMenu(){const btn=document.querySelector('.mobile-menu-btn');const nav=document.getElementById('mobileNav');const body=document.body;btn.classList.toggle('active');nav.classList.toggle('active');if(nav.classList.contains('active')){body.style.overflow='hidden';}else{body.style.overflow='';}}
-function closeMobileMenu(){const btn=document.querySelector('.mobile-menu-btn');const nav=document.getElementById('mobileNav');const body=document.body;btn.classList.remove('active');nav.classList.remove('active');body.style.overflow='';}
-function openModal(){const modal=document.getElementById('welcomeModal');modal.classList.add('active');document.body.style.overflow='hidden';}
-function closeModal(){
-    const modal=document.getElementById('welcomeModal');
+function toggleMobileMenu() {
+    const btn = document.querySelector('.mobile-menu-btn');
+    const nav = document.getElementById('mobileNav');
+    const body = document.body;
+    btn.classList.toggle('active');
+    nav.classList.toggle('active');
+    if (nav.classList.contains('active')) {
+        body.style.overflow = 'hidden';
+    } else {
+        body.style.overflow = '';
+    }
+}
+
+function closeMobileMenu() {
+    const btn = document.querySelector('.mobile-menu-btn');
+    const nav = document.getElementById('mobileNav');
+    const body = document.body;
+    btn.classList.remove('active');
+    nav.classList.remove('active');
+    body.style.overflow = '';
+}
+
+function closeModal() {
+    const modal = document.getElementById('welcomeModal');
     modal.classList.remove('active');
-    document.body.style.overflow='';
+    document.body.style.overflow = '';
+}
+
+async function loadLatestPromo() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/promo/latest`, {
+            cache: "no-store"
+        });
+        
+        const data = await response.json();
+        
+        if (data.hasPromo) {
+            console.log("Promo loaded:", data.code);
+            
+            // Update modal promo section
+            document.getElementById('promoCodeSection').style.display = 'block';
+            document.getElementById('promoCodeDisplay').textContent = data.code;
+            document.getElementById('promoDescription').textContent = data.description;
+            document.getElementById('modalBadge').textContent = '🎁 Special Offer';
+            document.getElementById('modalTitle').textContent = 'Exclusive Promo Available!';
+            document.getElementById('modalSubtitle').textContent = `Use code ${data.code} at checkout to claim your special offer.`;
+            
+            // Update top banner
+            document.getElementById('topPromoBadge').textContent = 'Special Offer';
+            document.getElementById('topPromoText').textContent = `${data.description} — Use code: ${data.code}`;
+        } else {
+            console.log("No active promo");
+            
+            // Hide promo section
+            document.getElementById('promoCodeSection').style.display = 'none';
+            
+            // Reset modal to default
+            document.getElementById('modalBadge').textContent = 'Free 3-Day Trial';
+            document.getElementById('modalTitle').textContent = 'Start Sending Love Today';
+            document.getElementById('modalSubtitle').textContent = 'Join thousands who are keeping their relationships strong with thoughtful, automated messages.';
+            
+            // Reset top banner to default
+            document.getElementById('topPromoBadge').textContent = 'Free Trial';
+            document.getElementById('topPromoText').textContent = 'Limited Time Only — Try LoveTextForHer Free for 3 Days';
+        }
+        
+    } catch (error) {
+        console.error("Error loading promo:", error);
+        document.getElementById('promoCodeSection').style.display = 'none';
+    }
+}
+
+function openModal() {
+    const modal = document.getElementById('welcomeModal');
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 window.addEventListener('load', function () {
-    setTimeout(openModal, 800); // slight delay feels smoother
+    loadLatestPromo().then(() => {
+        setTimeout(openModal, 800);
+    });
 });
 </script>
 </body>
 </html>
+</artifact>
