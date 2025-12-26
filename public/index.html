@@ -1,4 +1,3 @@
-<artifact identifier="complete-homepage-fixed" type="text/html" title="Complete Homepage with Dynamic Promo">
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -327,16 +326,30 @@ function closeModal() {
     document.body.style.overflow = '';
 }
 
+// ✅ FIXED: Aggressive cache-busting for promo code API
 async function loadLatestPromo() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/promo/latest`, {
-            cache: "no-store"
+        // Add timestamp to prevent ANY caching
+        const cacheBuster = `?t=${Date.now()}&r=${Math.random()}`;
+        
+        console.log('🔄 Loading promo with cache buster:', cacheBuster);
+        
+        const response = await fetch(`${API_BASE_URL}/api/promo/latest${cacheBuster}`, {
+            method: 'GET',
+            cache: "no-store",
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
         });
         
         const data = await response.json();
         
+        console.log('📊 Promo API response:', data);
+        
         if (data.hasPromo) {
-            console.log("Promo loaded:", data.code);
+            console.log("✅ Active promo found:", data.code);
             
             // Update modal promo section
             document.getElementById('promoCodeSection').style.display = 'block';
@@ -350,7 +363,7 @@ async function loadLatestPromo() {
             document.getElementById('topPromoBadge').textContent = 'Special Offer';
             document.getElementById('topPromoText').textContent = `${data.description} — Use code: ${data.code}`;
         } else {
-            console.log("No active promo");
+            console.log("ℹ️  No active promo available");
             
             // Hide promo section
             document.getElementById('promoCodeSection').style.display = 'none';
@@ -366,7 +379,7 @@ async function loadLatestPromo() {
         }
         
     } catch (error) {
-        console.error("Error loading promo:", error);
+        console.error("❌ Error loading promo:", error);
         document.getElementById('promoCodeSection').style.display = 'none';
     }
 }
@@ -377,12 +390,21 @@ function openModal() {
     document.body.style.overflow = 'hidden';
 }
 
+// Load promo immediately on page load
 window.addEventListener('load', function () {
+    console.log('🚀 Page loaded, fetching latest promo...');
     loadLatestPromo().then(() => {
         setTimeout(openModal, 800);
     });
 });
+
+// ✅ NEW: Reload promo when user returns to the page
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        console.log('👀 Page became visible, refreshing promo...');
+        loadLatestPromo();
+    }
+});
 </script>
 </body>
 </html>
-</artifact>

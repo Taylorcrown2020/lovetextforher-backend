@@ -6,7 +6,6 @@
     <title>KPI Dashboard — LoveTextForHer</title>
 
     <script src="/config.js"></script>
-    <script> window.SKIP_NAV_JS = true; </script>
 
     <style>
         :root {
@@ -73,96 +72,6 @@
             transition: color 0.2s;
         }
         #navbar a:hover { color: var(--primary); }
-
-        /* ================= MOBILE MENU ================= */
-        .mobile-menu-btn {
-            display: none;
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10001;
-            background: white;
-            border: 1px solid rgba(214, 51, 108, 0.2);
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .mobile-menu-btn span {
-            display: block;
-            width: 28px;
-            height: 3px;
-            background: var(--primary);
-            margin: 5px 0;
-            transition: 0.3s;
-            border-radius: 2px;
-        }
-
-        .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(-45deg) translate(-6px, 6px);
-        }
-
-        .mobile-menu-btn.active span:nth-child(2) {
-            opacity: 0;
-        }
-
-        .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(45deg) translate(-6px, -6px);
-        }
-
-        .mobile-nav-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 100%;
-            height: 100vh;
-            background: #fff;
-            z-index: 10000;
-            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto;
-        }
-
-        .mobile-nav-overlay.active {
-            right: 0;
-        }
-
-        .mobile-nav-content {
-            padding: 80px 30px 40px;
-        }
-
-        .mobile-nav-links {
-            list-style: none;
-            margin-bottom: 40px;
-        }
-
-        .mobile-nav-links li {
-            margin-bottom: 30px;
-        }
-
-        .mobile-nav-links a {
-            color: var(--text-dark);
-            text-decoration: none;
-            font-size: 20px;
-            font-weight: 600;
-            display: block;
-            padding: 10px 0;
-            transition: color 0.2s;
-        }
-
-        .mobile-nav-links a:hover {
-            color: var(--primary);
-        }
-
-        .mobile-nav-cta {
-            margin-top: 40px;
-        }
-
-        .mobile-nav-cta .cta-btn {
-            width: 100%;
-            text-align: center;
-        }
 
         /* HEADER */
         .page-header {
@@ -281,6 +190,28 @@
             border: 2px solid var(--primary);
         }
 
+        /* TOP PROMO TABLE */
+        .promo-table {
+            width: 100%;
+            margin-top: 12px;
+            border-collapse: collapse;
+        }
+
+        .promo-table th {
+            text-align: left;
+            font-size: 12px;
+            color: var(--text-light);
+            padding: 8px 4px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .promo-table td {
+            padding: 8px 4px;
+            font-size: 14px;
+            color: var(--text-dark);
+            border-bottom: 1px solid #f3f4f6;
+        }
+
         /* LOADING STATE */
         .loading {
             text-align: center;
@@ -299,14 +230,6 @@
 
         /* MOBILE RESPONSIVE */
         @media (max-width: 768px) {
-            .mobile-menu-btn {
-                display: block;
-            }
-
-            .mobile-nav-overlay {
-                display: block;
-            }
-
             .nav-links {
                 display: none;
             }
@@ -342,59 +265,6 @@
 </head>
 
 <body>
-
-<script>
-async function verifyAdmin() {
-    try {
-        const res = await fetch("/api/admin/me", {
-            credentials: "include",
-            cache: "no-store"
-        });
-
-        if (!res.ok) {
-            window.location.href = "/admin_login.html";
-            return false;
-        }
-
-        const data = await res.json();
-
-        if (!data?.admin || data.admin.role !== "admin") {
-            window.location.href = "/admin_login.html";
-            return false;
-        }
-
-        return true;
-
-    } catch {
-        window.location.href = "/admin_login.html";
-        return false;
-    }
-}
-</script>
-
-<!-- MOBILE MENU BUTTON -->
-<button class="mobile-menu-btn" onclick="toggleMobileMenu()">
-    <span></span>
-    <span></span>
-    <span></span>
-</button>
-
-<!-- MOBILE NAVIGATION OVERLAY -->
-<div class="mobile-nav-overlay" id="mobileNav">
-    <div class="mobile-nav-content">
-        <ul class="mobile-nav-links">
-            <li><a href="/admin.html" onclick="closeMobileMenu()">Dashboard</a></li>
-            <li><a href="/admin_users.html" onclick="closeMobileMenu()">Users</a></li>
-            <li><a href="/admin_customers.html" onclick="closeMobileMenu()">Customers</a></li>
-            <li><a href="/admin_message_logs.html" onclick="closeMobileMenu()">Message Logs</a></li>
-            <li><a href="/admin_kpis.html" onclick="closeMobileMenu()">KPIs</a></li>
-            <li><a href="/admin_audit_log.html" onclick="closeMobileMenu()">Audit Log</a></li>
-            <li><a href="/admin_marketing.html" onclick="closeMobileMenu()">Marketing</a></li>
-            <li><a href="/admin_promo_codes.html" onclick="closeMobileMenu()">Promo Codes</a></li>
-            <li><a href="#" id="mobile-logout-admin" onclick="handleMobileLogout(event)">Logout</a></li>
-        </ul>
-    </div>
-</div>
 
 <!-- NAVBAR -->
 <div id="navbar">
@@ -437,17 +307,6 @@ async function verifyAdmin() {
     <div class="section-header">💰 Revenue & Growth</div>
     <div class="kpi-grid" id="revenueGrid"></div>
 
-    
-    <!-- ENGAGEMENT METRICS -->
-    <div class="section-header">💌 Engagement & Activity</div>
-    <div class="kpi-grid" id="engagementGrid"></div>
-
-    <!-- PROMO CODE METRICS -->
-    <div class="section-header">🎁 Promo Code Performance</div>
-    <div class="kpi-grid" id="promoGrid"></div>
-
-</div>
-
     <!-- SUBSCRIPTION METRICS -->
     <div class="section-header">📊 Subscription Health</div>
     <div class="kpi-grid" id="subscriptionGrid"></div>
@@ -456,52 +315,15 @@ async function verifyAdmin() {
     <div class="section-header">👥 Customer Metrics</div>
     <div class="kpi-grid" id="customerGrid"></div>
 
+    <!-- PROMO CODE METRICS -->
+    <div class="section-header">🎁 Promo Code Performance</div>
+    <div class="kpi-grid" id="promoGrid"></div>
+
     <!-- ENGAGEMENT METRICS -->
     <div class="section-header">💌 Engagement & Activity</div>
     <div class="kpi-grid" id="engagementGrid"></div>
 
 </div>
-
-<!-- MOBILE MENU SCRIPTS -->
-<script>
-function toggleMobileMenu() {
-    const btn = document.querySelector('.mobile-menu-btn');
-    const nav = document.getElementById('mobileNav');
-    const body = document.body;
-    
-    btn.classList.toggle('active');
-    nav.classList.toggle('active');
-    
-    if (nav.classList.contains('active')) {
-        body.style.overflow = 'hidden';
-    } else {
-        body.style.overflow = '';
-    }
-}
-
-function closeMobileMenu() {
-    const btn = document.querySelector('.mobile-menu-btn');
-    const nav = document.getElementById('mobileNav');
-    const body = document.body;
-    
-    btn.classList.remove('active');
-    nav.classList.remove('active');
-    body.style.overflow = '';
-}
-
-async function handleMobileLogout(event) {
-    event.preventDefault();
-    closeMobileMenu();
-    
-    try {
-        await fetch("/api/admin/logout", {
-            method: "POST",
-            credentials: "include"
-        });
-    } catch {}
-    window.location.href = "/admin_login.html";
-}
-</script>
 
 <script>
 function formatCurrency(value) {
@@ -517,6 +339,17 @@ function formatGrowth(value) {
     const className = num > 0 ? 'positive' : num < 0 ? 'negative' : 'neutral';
     const symbol = num > 0 ? '↑' : num < 0 ? '↓' : '→';
     return `<span class="kpi-growth ${className}">${symbol} ${Math.abs(num).toFixed(2)}%</span>`;
+}
+
+function getPromoDescription(discountType, discountValue) {
+    if (discountType === 'free_month') {
+        return `${discountValue} month${discountValue > 1 ? 's' : ''} free`;
+    } else if (discountType === 'percentage') {
+        return `${discountValue}% off`;
+    } else if (discountType === 'fixed') {
+        return `$${(discountValue / 100).toFixed(2)} off`;
+    }
+    return 'Discount';
 }
 
 async function loadKPIs() {
@@ -628,6 +461,52 @@ async function loadKPIs() {
             </div>
         `;
 
+        // PROMO CODE METRICS
+        const topPromoRows = k.promos.topCodes.map(promo => `
+            <tr>
+                <td><strong>${promo.code}</strong></td>
+                <td>${getPromoDescription(promo.discount_type, promo.discount_value)}</td>
+                <td>${promo.redemptions}</td>
+            </tr>
+        `).join('');
+
+        document.getElementById("promoGrid").innerHTML = `
+            <div class="kpi-card">
+                <h3>Active Promo Codes</h3>
+                <div class="kpi-number">${k.promos.activeCount}</div>
+                <div class="kpi-label">Currently available codes</div>
+            </div>
+
+            <div class="kpi-card highlight">
+                <h3>Redemptions This Month</h3>
+                <div class="kpi-number">${k.promos.redeemedThisMonth}</div>
+                <div class="kpi-label">Promo codes used</div>
+                <div class="kpi-metric">Total: ${k.promos.totalRedemptions}</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Estimated Discount Impact</h3>
+                <div class="kpi-number">${formatCurrency(k.promos.estimatedDiscount)}</div>
+                <div class="kpi-label">Total discounts given</div>
+            </div>
+
+            <div class="kpi-card">
+                <h3>Top Promo Codes</h3>
+                <table class="promo-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Discount</th>
+                            <th>Uses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topPromoRows || '<tr><td colspan="3" style="text-align:center;color:#9ca3af;">No data yet</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
         // ENGAGEMENT METRICS
         document.getElementById("engagementGrid").innerHTML = `
             <div class="kpi-card">
@@ -673,10 +552,7 @@ document.getElementById("logout-admin").addEventListener("click", async (e) => {
 });
 
 // INIT
-(async () => {
-    const ok = await verifyAdmin();
-    if (ok) loadKPIs();
-})();
+loadKPIs();
 </script>
 
 </body>
