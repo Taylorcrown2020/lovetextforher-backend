@@ -811,6 +811,16 @@ function showPromoMessage(text, type) {
 }
 
 async function handleCheckout(productId) {
+    const sub = await getSubscription();
+    const subscribed = sub?.subscribed === true;
+    
+    // If user has an active subscription, handle upgrade/downgrade
+    if (subscribed && productId !== 'free-trial') {
+        await handleSubscriptionChange(productId);
+        return;
+    }
+    
+    // Otherwise, proceed with normal checkout
     const endpoint = APPLIED_PROMO_CODE 
         ? '/api/stripe/checkout-with-promo'
         : '/api/stripe/checkout';
@@ -837,6 +847,57 @@ async function handleCheckout(productId) {
     } catch (err) {
         console.error('Checkout error:', err);
         alert('Error processing checkout');
+    }
+}
+
+async function handleSubscriptionChange(newProductId) {
+    const confirmed = confirm('Are you sure you want to change your subscription plan?');
+    if (!confirmed) return;
+    
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/stripe/change-subscription`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newProductId })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            alert('Subscription updated successfully!');
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to update subscription');
+        }
+    } catch (err) {
+        console.error('Subscription change error:', err);
+        alert('Error updating subscription');
+    }
+}
+
+async function cancelSubscription() {
+    const confirmed = confirm('Are you sure you want to cancel your subscription? You will lose access at the end of your billing period.');
+    if (!confirmed) return;
+    
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/stripe/cancel-subscription`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            alert('Subscription cancelled. You will have access until the end of your billing period.');
+            window.location.reload();
+        } else {
+            alert(data.error || 'Failed to cancel subscription');
+        }
+    } catch (err) {
+        console.error('Cancellation error:', err);
+        alert('Error cancelling subscription');
     }
 }
 
