@@ -4,703 +4,300 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LoveTextForHer — Automated Messages for the People You Care About</title>
-
-    <!-- This page must always show the public navbar -->
     <script src="/config.js"></script>
     <script> window.FORCE_PUBLIC_NAV = true; </script>
     <script src="/js/nav.js" defer></script>
-
 <style>
-        :root {
-            --primary: #d6336c;
-            --secondary: #8b5cf6;
-            --primary-light: #ffe3ed;
-            --secondary-light: #ede9fe;
-            --text-dark: #1a1a1a;
-            --text-light: #555;
-            --max-width: 1200px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Inter", sans-serif;
-        }
-
-        body {
-            background: #fff;
-            color: var(--text-dark);
-            overflow-x: hidden;
-        }
-
-        /* ================= PROMO BANNER ================= */
-        .promo-banner {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, #ffe3ed, #ffcfe0);
-            padding: 8px 20px;
-            text-align: center;
-            z-index: 998;
-            border-bottom: 1px solid rgba(214, 51, 108, 0.2);
-            box-shadow: 0 2px 10px rgba(214, 51, 108, 0.15);
-        }
-
-        .promo-banner-content {
-            max-width: var(--max-width);
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .promo-badge {
-            background: var(--primary);
-            color: white;
-            padding: 3px 10px;
-            border-radius: 5px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        .promo-text {
-            font-size: 13px;
-            font-weight: 600;
-            color: #b81847;
-            line-height: 1.2;
-        }
-
-        .promo-cta {
-            background: var(--primary);
-            color: white;
-            padding: 4px 14px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: 0.2s;
-            margin-left: 6px;
-        }
-
-        .promo-cta:hover {
-            background: #b8285b;
-            transform: translateY(-1px);
-        }
-
-        /* ================= MOBILE MENU ================= */
-        .mobile-menu-btn {
-            display: none;
-            position: fixed;
-            top: 45px;
-            right: 20px;
-            z-index: 1000;
-            background: white;
-            border: 1px solid rgba(214, 51, 108, 0.2);
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .mobile-menu-btn span {
-            display: block;
-            width: 28px;
-            height: 3px;
-            background: var(--text-dark);
-            margin: 5px 0;
-            transition: 0.3s;
-            border-radius: 2px;
-        }
-
-        .mobile-menu-btn.active span:nth-child(1) {
-            transform: rotate(-45deg) translate(-6px, 6px);
-        }
-
-        .mobile-menu-btn.active span:nth-child(2) {
-            opacity: 0;
-        }
-
-        .mobile-menu-btn.active span:nth-child(3) {
-            transform: rotate(45deg) translate(-6px, -6px);
-        }
-
-        .mobile-nav-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 100%;
-            height: 100vh;
-            background: #fff;
-            z-index: 999;
-            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto;
-        }
-
-        .mobile-nav-overlay.active {
-            right: 0;
-        }
-
-        .mobile-nav-content {
-            padding: 80px 30px 40px;
-        }
-
-        .mobile-nav-links {
-            list-style: none;
-            margin-bottom: 40px;
-        }
-
-        .mobile-nav-links li {
-            margin-bottom: 30px;
-        }
-
-        .mobile-nav-links a {
-            color: var(--text-dark);
-            text-decoration: none;
-            font-size: 20px;
-            font-weight: 600;
-            display: block;
-            padding: 10px 0;
-            transition: color 0.2s;
-        }
-
-        .mobile-nav-links a:hover {
-            color: var(--primary);
-        }
-
-        .mobile-nav-cta {
-            margin-top: 40px;
-        }
-
-        .mobile-nav-cta .cta-btn {
-            width: 100%;
-            text-align: center;
-        }
-
-        /* ================= HERO ================= */
-        .hero {
-            max-width: var(--max-width);
-            margin: 140px auto 0;
-            padding: 0 28px;
-            min-height: 520px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        body {
-            padding-top: 35px;
-        }
-
-        .hero-text { max-width: 520px; }
-
-        .hero-title {
-            font-size: 54px;
-            line-height: 1.15;
-            font-weight: 800;
-            margin-bottom: 25px;
-        }
-
-        .hero-sub {
-            font-size: 18px;
-            color: var(--text-light);
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-
-        .cta-btn {
-            background: var(--primary);
-            color: #fff;
-            padding: 14px 28px;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: 0.25s ease;
-            box-shadow: 0 12px 28px rgba(214,51,108,0.25);
-        }
-
-        .cta-btn:hover {
-            background: #b8285b;
-            transform: translateY(-2px);
-        }
-
-        /* ================= HERO MOCKUP ================= */
-        .hero-mockup {
-            position: relative;
-            width: 440px;
-            height: 420px;
-        }
-
-        .glass-card {
-            position: absolute;
-            width: 320px;
-            height: 140px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.55);
-            backdrop-filter: blur(22px);
-            border: 1px solid rgba(255,255,255,0.7);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-        }
-
-        .glass-card .line {
-            height: 10px;
-            border-radius: 6px;
-            margin: 15px 20px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-        }
-
-        .card-top { top: 0; right: 10px; transform: rotate(2deg); }
-        .card-mid { top: 130px; left: 20px; transform: rotate(-3deg); }
-        .card-bottom { top: 260px; right: 50px; transform: rotate(1deg); }
-
-        /* ================= FEATURES ================= */
-        .features-strip {
-            background: var(--primary-light);
-            padding: 70px 0;
-            margin-top: 70px;
-        }
-
-        .features {
-            max-width: var(--max-width);
-            margin: auto;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 28px;
-        }
-
-        .feature {
-            text-align: center;
-            width: 25%;
-        }
-
-        .feature svg {
-            width: 45px;
-            height: 45px;
-            stroke: var(--primary);
-            stroke-width: 2;
-            fill: none;
-            margin-bottom: 14px;
-        }
-
-        /* ================= PRODUCTS ================= */
-        .products-section {
-            max-width: var(--max-width);
-            margin: 90px auto;
-            padding: 0 28px;
-        }
-
-        .products-title {
-            text-align: center;
-            font-size: 34px;
-            font-weight: 800;
-            margin-bottom: 40px;
-        }
-
-        .products {
-            display: flex;
-            justify-content: space-between;
-            gap: 32px;
-        }
-
-        .product-card {
-            flex: 1;
-            background: rgba(255,255,255,0.65);
-            backdrop-filter: blur(18px);
-            border-radius: 22px;
-            padding: 28px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.7);
-            box-shadow: 0 25px 45px rgba(0,0,0,0.06);
-        }
-
-        .product-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .product-desc {
-            color: var(--text-light);
-            font-size: 15px;
-            margin-bottom: 16px;
-        }
-
-        .product-price {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 18px;
-        }
-
-        .product-btn {
-            background: var(--primary);
-            color: #fff;
-            padding: 10px 22px;
-            font-size: 15px;
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .product-btn:hover { background: #b8285b; }
-
-        /* ============== MOBILE ============== */
-        @media (max-width: 768px) {
-            
-            /* Show mobile menu button */
-            .mobile-menu-btn {
-                display: block;
-            }
-
-            .mobile-nav-overlay {
-                display: block;
-            }
-
-            /* Hide desktop nav */
-            #navbar {
-                display: none !important;
-            }
-
-            body {
-                padding-top: 40px;
-            }
-
-            .hero {
-                flex-direction: column;
-                text-align: center;
-                margin-top: 80px;
-                padding: 0 24px;
-                min-height: auto;
-            }
-
-            .hero-text { 
-                max-width: 100%;
-                padding: 0 20px;
-            }
-
-            .hero-title { 
-                font-size: 42px; 
-                line-height: 1.2;
-                margin-bottom: 20px;
-                font-weight: 800;
-            }
-
-            .hero-sub { 
-                font-size: 17px; 
-                line-height: 1.65;
-                margin-bottom: 28px;
-                color: var(--text-light);
-            }
-
-            .cta-btn {
-                width: 100%;
-                max-width: 320px;
-                padding: 16px 28px;
-                font-size: 17px;
-            }
-
-            .hero-mockup {
-                width: 100%;
-                max-width: 400px;
-                height: 340px;
-                margin-top: 50px;
-            }
-
-            .glass-card {
-                width: 280px;
-                height: 120px;
-            }
-
-            .card-top { 
-                top: 0; 
-                left: 50%; 
-                transform: translateX(-50%) rotate(2deg); 
-            }
-
-            .card-mid { 
-                top: 120px; 
-                left: 50%; 
-                transform: translateX(-50%) rotate(-2deg); 
-            }
-
-            .card-bottom { 
-                top: 240px; 
-                left: 50%; 
-                transform: translateX(-50%) rotate(1deg); 
-            }
-
-            .features-strip {
-                padding: 60px 0;
-                margin-top: 60px;
-            }
-
-            .features {
-                flex-direction: column;
-                gap: 45px;
-                padding: 0 24px;
-            }
-
-            .feature { 
-                width: 100%; 
-            }
-
-            .feature svg {
-                width: 50px;
-                height: 50px;
-                margin-bottom: 16px;
-            }
-
-            .feature div {
-                font-size: 16px;
-                font-weight: 600;
-            }
-
-            .products-section {
-                margin: 70px auto;
-                padding: 0 24px;
-            }
-
-            .products-title {
-                font-size: 32px;
-                margin-bottom: 35px;
-            }
-
-            .products {
-                flex-direction: column;
-                gap: 28px;
-            }
-
-            .product-card {
-                padding: 32px 24px;
-            }
-
-            .product-title {
-                font-size: 22px;
-                margin-bottom: 12px;
-            }
-
-            .product-desc {
-                font-size: 16px;
-                margin-bottom: 18px;
-                line-height: 1.5;
-            }
-
-            .product-price {
-                font-size: 24px;
-                margin-bottom: 20px;
-            }
-
-            .product-btn {
-                width: 100%;
-                padding: 14px 22px;
-                font-size: 16px;
-            }
-
-            /* Mobile promo banner adjustments */
-            .promo-banner {
-                padding: 6px 16px;
-            }
-
-            .promo-banner-content {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-
-            .promo-badge {
-                font-size: 10px;
-                padding: 2px 8px;
-            }
-
-            .promo-text {
-                font-size: 11px;
-            }
-
-            .promo-cta {
-                font-size: 11px;
-                padding: 3px 12px;
-                margin-left: 0;
-            }
-        }
-    </style>
+:root {
+    --primary: #d6336c;
+    --secondary: #8b5cf6;
+    --primary-light: #ffe3ed;
+    --secondary-light: #ede9fe;
+    --text-dark: #1a1a1a;
+    --text-light: #555;
+    --max-width: 1200px;
+}
+* {margin:0;padding:0;box-sizing:border-box;font-family:"Inter",sans-serif;}
+body {background:#fff;color:var(--text-dark);overflow-x:hidden;padding-top:35px;}
+.modal-overlay {display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:2000;animation:fadeIn 0.3s ease;}
+.modal-overlay.active {display:flex;justify-content:center;align-items:center;padding:20px;}
+@keyframes fadeIn {from{opacity:0;}to{opacity:1;}}
+@keyframes slideUp {from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+.modal-content {background:white;border-radius:24px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 30px 60px rgba(0,0,0,0.3);animation:slideUp 0.4s cubic-bezier(0.4,0,0.2,1);position:relative;}
+.modal-close {position:absolute;top:20px;right:20px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.9);border:1px solid rgba(214,51,108,0.2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.2s;z-index:10;}
+.modal-close:hover {background:var(--primary-light);transform:rotate(90deg);}
+.modal-close::before,.modal-close::after {content:'';position:absolute;width:20px;height:2px;background:var(--primary);}
+.modal-close::before {transform:rotate(45deg);}
+.modal-close::after {transform:rotate(-45deg);}
+.modal-grid {display:grid;grid-template-columns:1fr 1fr;}
+.modal-image {background:linear-gradient(135deg,var(--primary-light),var(--secondary-light));padding:60px 40px;display:flex;flex-direction:column;justify-content:center;align-items:center;border-radius:24px 0 0 24px;}
+.modal-image-icon {width:120px;height:120px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:30px;box-shadow:0 10px 30px rgba(214,51,108,0.2);}
+.modal-image-icon svg {width:60px;height:60px;stroke:var(--primary);fill:none;stroke-width:2;}
+.modal-image-text {text-align:center;color:var(--text-dark);}
+.modal-image-text h3 {font-size:24px;font-weight:700;margin-bottom:15px;line-height:1.3;}
+.modal-image-text p {font-size:15px;line-height:1.6;color:var(--text-light);}
+.modal-body {padding:50px 45px;}
+.modal-badge {display:inline-block;background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:20px;}
+.modal-title {font-size:32px;font-weight:800;margin-bottom:15px;line-height:1.2;}
+.modal-subtitle {font-size:16px;color:var(--text-light);margin-bottom:30px;line-height:1.6;}
+.modal-features {margin-bottom:35px;}
+.modal-feature-item {display:flex;align-items:flex-start;margin-bottom:18px;}
+.modal-feature-icon {width:24px;height:24px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;margin-right:12px;flex-shrink:0;margin-top:2px;}
+.modal-feature-icon svg {width:14px;height:14px;stroke:var(--primary);fill:none;stroke-width:3;}
+.modal-feature-text {font-size:15px;color:var(--text-dark);line-height:1.5;}
+.modal-cta-section {border-top:1px solid rgba(214,51,108,0.1);padding-top:30px;}
+.modal-cta-buttons {display:flex;gap:12px;margin-bottom:20px;}
+.modal-btn {flex:1;padding:16px 24px;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;border:none;transition:0.2s;text-decoration:none;text-align:center;display:inline-block;}
+.modal-btn-primary {background:var(--primary);color:white;box-shadow:0 8px 20px rgba(214,51,108,0.3);}
+.modal-btn-primary:hover {background:#b8285b;transform:translateY(-2px);}
+.modal-btn-secondary {background:white;color:var(--primary);border:2px solid var(--primary);}
+.modal-btn-secondary:hover {background:var(--primary-light);}
+.modal-footer-text {text-align:center;font-size:13px;color:var(--text-light);}
+.promo-banner {position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#ffe3ed,#ffcfe0);padding:8px 20px;text-align:center;z-index:998;border-bottom:1px solid rgba(214,51,108,0.2);box-shadow:0 2px 10px rgba(214,51,108,0.15);}
+.promo-banner-content {max-width:var(--max-width);margin:0 auto;display:flex;align-items:center;justify-content:center;gap:10px;}
+.promo-badge {background:var(--primary);color:white;padding:3px 10px;border-radius:5px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;}
+.promo-text {font-size:13px;font-weight:600;color:#b81847;line-height:1.2;}
+.promo-cta {background:var(--primary);color:white;padding:4px 14px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;transition:0.2s;margin-left:6px;}
+.promo-cta:hover {background:#b8285b;transform:translateY(-1px);}
+.mobile-menu-btn {display:none;position:fixed;top:45px;right:20px;z-index:1000;background:white;border:1px solid rgba(214,51,108,0.2);cursor:pointer;padding:10px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.mobile-menu-btn span {display:block;width:28px;height:3px;background:var(--text-dark);margin:5px 0;transition:0.3s;border-radius:2px;}
+.mobile-menu-btn.active span:nth-child(1) {transform:rotate(-45deg) translate(-6px,6px);}
+.mobile-menu-btn.active span:nth-child(2) {opacity:0;}
+.mobile-menu-btn.active span:nth-child(3) {transform:rotate(45deg) translate(-6px,-6px);}
+.mobile-nav-overlay {display:none;position:fixed;top:0;right:-100%;width:100%;height:100vh;background:#fff;z-index:999;transition:right 0.4s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;}
+.mobile-nav-overlay.active {right:0;}
+.mobile-nav-content {padding:80px 30px 40px;}
+.mobile-nav-links {list-style:none;margin-bottom:40px;}
+.mobile-nav-links li {margin-bottom:30px;}
+.mobile-nav-links a {color:var(--text-dark);text-decoration:none;font-size:20px;font-weight:600;display:block;padding:10px 0;transition:color 0.2s;}
+.mobile-nav-links a:hover {color:var(--primary);}
+.mobile-nav-cta {margin-top:40px;}
+.mobile-nav-cta .cta-btn {width:100%;text-align:center;}
+.hero {max-width:var(--max-width);margin:140px auto 0;padding:0 28px;min-height:520px;display:flex;justify-content:space-between;align-items:center;}
+.hero-text {max-width:520px;}
+.hero-title {font-size:54px;line-height:1.15;font-weight:800;margin-bottom:25px;}
+.hero-sub {font-size:18px;color:var(--text-light);margin-bottom:30px;line-height:1.6;}
+.cta-btn {background:var(--primary);color:#fff;padding:14px 28px;border-radius:12px;font-size:18px;font-weight:600;cursor:pointer;border:none;transition:0.25s ease;box-shadow:0 12px 28px rgba(214,51,108,0.25);}
+.cta-btn:hover {background:#b8285b;transform:translateY(-2px);}
+.hero-mockup {position:relative;width:440px;height:420px;}
+.glass-card {position:absolute;width:320px;height:140px;border-radius:20px;background:rgba(255,255,255,0.55);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,0.7);box-shadow:0 25px 50px rgba(0,0,0,0.15);}
+.glass-card .line {height:10px;border-radius:6px;margin:15px 20px;background:linear-gradient(90deg,var(--primary),var(--secondary));}
+.card-top {top:0;right:10px;transform:rotate(2deg);}
+.card-mid {top:130px;left:20px;transform:rotate(-3deg);}
+.card-bottom {top:260px;right:50px;transform:rotate(1deg);}
+.features-strip {background:var(--primary-light);padding:70px 0;margin-top:70px;}
+.features {max-width:var(--max-width);margin:auto;display:flex;justify-content:space-between;padding:0 28px;}
+.feature {text-align:center;width:25%;}
+.feature svg {width:45px;height:45px;stroke:var(--primary);stroke-width:2;fill:none;margin-bottom:14px;}
+.products-section {max-width:var(--max-width);margin:90px auto;padding:0 28px;}
+.products-title {text-align:center;font-size:34px;font-weight:800;margin-bottom:40px;}
+.products {display:flex;justify-content:space-between;gap:32px;}
+.product-card {flex:1;background:rgba(255,255,255,0.65);backdrop-filter:blur(18px);border-radius:22px;padding:28px;text-align:center;border:1px solid rgba(255,255,255,0.7);box-shadow:0 25px 45px rgba(0,0,0,0.06);}
+.product-title {font-size:20px;font-weight:700;margin-bottom:8px;}
+.product-desc {color:var(--text-light);font-size:15px;margin-bottom:16px;}
+.product-price {font-size:22px;font-weight:700;margin-bottom:18px;}
+.product-btn {background:var(--primary);color:#fff;padding:10px 22px;font-size:15px;border-radius:10px;border:none;cursor:pointer;font-weight:600;}
+.product-btn:hover {background:#b8285b;}
+@media (max-width:768px) {
+.modal-grid {grid-template-columns:1fr;}
+.modal-image {border-radius:24px 24px 0 0;padding:40px 30px;}
+.modal-image-icon {width:100px;height:100px;margin-bottom:20px;}
+.modal-image-icon svg {width:50px;height:50px;}
+.modal-image-text h3 {font-size:20px;}
+.modal-image-text p {font-size:14px;}
+.modal-body {padding:35px 25px;}
+.modal-title {font-size:26px;}
+.modal-subtitle {font-size:15px;}
+.modal-cta-buttons {flex-direction:column;}
+.modal-btn {width:100%;}
+.modal-close {width:36px;height:36px;}
+.mobile-menu-btn {display:block;}
+.mobile-nav-overlay {display:block;}
+#navbar {display:none!important;}
+body {padding-top:40px;}
+.hero {flex-direction:column;text-align:center;margin-top:80px;padding:0 24px;min-height:auto;}
+.hero-text {max-width:100%;padding:0 20px;}
+.hero-title {font-size:42px;line-height:1.2;margin-bottom:20px;}
+.hero-sub {font-size:17px;line-height:1.65;margin-bottom:28px;}
+.cta-btn {width:100%;max-width:320px;padding:16px 28px;font-size:17px;}
+.hero-mockup {width:100%;max-width:400px;height:340px;margin-top:50px;}
+.glass-card {width:280px;height:120px;}
+.card-top {top:0;left:50%;transform:translateX(-50%) rotate(2deg);}
+.card-mid {top:120px;left:50%;transform:translateX(-50%) rotate(-2deg);}
+.card-bottom {top:240px;left:50%;transform:translateX(-50%) rotate(1deg);}
+.features-strip {padding:60px 0;margin-top:60px;}
+.features {flex-direction:column;gap:45px;padding:0 24px;}
+.feature {width:100%;}
+.feature svg {width:50px;height:50px;margin-bottom:16px;}
+.feature div {font-size:16px;font-weight:600;}
+.products-section {margin:70px auto;padding:0 24px;}
+.products-title {font-size:32px;margin-bottom:35px;}
+.products {flex-direction:column;gap:28px;}
+.product-card {padding:32px 24px;}
+.product-title {font-size:22px;margin-bottom:12px;}
+.product-desc {font-size:16px;margin-bottom:18px;line-height:1.5;}
+.product-price {font-size:24px;margin-bottom:20px;}
+.product-btn {width:100%;padding:14px 22px;font-size:16px;}
+.promo-banner {padding:6px 16px;}
+.promo-banner-content {flex-wrap:wrap;gap:8px;}
+.promo-badge {font-size:10px;padding:2px 8px;}
+.promo-text {font-size:11px;}
+.promo-cta {font-size:11px;padding:3px 12px;margin-left:0;}
+}
+</style>
 </head>
-
 <body>
-
-<!-- Promo Banner -->
 <div class="promo-banner">
-    <div class="promo-banner-content">
-        <span class="promo-badge">Free Trial</span>
-        <span class="promo-text">Limited Time Only — Try LoveTextForHer Free for 3 Days</span>
-        <a href="/register.html" class="promo-cta">Get Started →</a>
-    </div>
+<div class="promo-banner-content">
+<span class="promo-badge">Free Trial</span>
+<span class="promo-text">Limited Time Only — Try LoveTextForHer Free for 3 Days</span>
+<a href="/register.html" class="promo-cta">Get Started →</a>
 </div>
-
-<!-- Mobile Menu Button -->
+</div>
 <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
-    <span></span>
-    <span></span>
-    <span></span>
+<span></span><span></span><span></span>
 </button>
-
-<!-- Mobile Navigation Overlay -->
 <div class="mobile-nav-overlay" id="mobileNav">
-    <div class="mobile-nav-content">
-        <ul class="mobile-nav-links">
-            <li><a href="/index.html" onclick="closeMobileMenu()">Home</a></li>
-            <li><a href="/login.html" onclick="closeMobileMenu()">Login</a></li>
-            <li><a href="/register.html" onclick="closeMobileMenu()">Register</a></li>
-            <li><a href="/admin.html" onclick="closeMobileMenu()">Admin</a></li>
-        </ul>
-        <div class="mobile-nav-cta">
-            <button class="cta-btn" onclick="location.href='/register.html'">
-                Start Sending Love
-            </button>
-        </div>
-    </div>
+<div class="mobile-nav-content">
+<ul class="mobile-nav-links">
+<li><a href="/index.html" onclick="closeMobileMenu()">Home</a></li>
+<li><a href="/login.html" onclick="closeMobileMenu()">Login</a></li>
+<li><a href="/register.html" onclick="closeMobileMenu()">Register</a></li>
+<li><a href="/admin.html" onclick="closeMobileMenu()">Admin</a></li>
+</ul>
+<div class="mobile-nav-cta">
+<button class="cta-btn" onclick="location.href='/register.html'">Start Sending Love</button>
 </div>
-
+</div>
+</div>
 <div id="navbar"></div>
-
-<!-- ========================= HERO ========================= -->
+<div class="modal-overlay" id="welcomeModal">
+<div class="modal-content">
+<button class="modal-close" onclick="closeModal()"></button>
+<div class="modal-grid">
+<div class="modal-image">
+<div class="modal-image-icon">
+<svg viewBox="0 0 24 24">
+<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</div>
+<div class="modal-image-text">
+<h3>Strengthen Every Relationship That Matters</h3>
+<p>We believe meaningful connections shouldn't be forgotten in our busy lives. Let us help you stay close to the people you love.</p>
+</div>
+</div>
+<div class="modal-body">
+<span class="modal-badge">Free 3-Day Trial</span>
+<h2 class="modal-title">Start Sending Love Today</h2>
+<p class="modal-subtitle">Join thousands who are keeping their relationships strong with thoughtful, automated messages.</p>
+<div class="modal-features">
+<div class="modal-feature-item">
+<div class="modal-feature-icon">
+<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</div>
+<div class="modal-feature-text"><strong>3 days completely free</strong> — No credit card required</div>
+</div>
+<div class="modal-feature-item">
+<div class="modal-feature-icon">
+<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</div>
+<div class="modal-feature-text"><strong>Personalized messages</strong> for partners, family, and friends</div>
+</div>
+<div class="modal-feature-item">
+<div class="modal-feature-icon">
+<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</div>
+<div class="modal-feature-text"><strong>Set it once</strong> and let us handle the rest</div>
+</div>
+<div class="modal-feature-item">
+<div class="modal-feature-icon">
+<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</div>
+<div class="modal-feature-text"><strong>Cancel anytime</strong> — No long-term commitment</div>
+</div>
+</div>
+<div class="modal-cta-section">
+<div class="modal-cta-buttons">
+<a href="/register.html" class="modal-btn modal-btn-primary">Create Account</a>
+<a href="/login.html" class="modal-btn modal-btn-secondary">Login</a>
+</div>
+<p class="modal-footer-text">Start your free trial today. No payment info needed.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
 <section class="hero">
-    <div class="hero-text">
-        <h1 class="hero-title">
-            Thoughtful Messages<br>
-            For Everyone You Care About.
-        </h1>
-
-        <p class="hero-sub">
-            Whether it's your partner, mom, dad, sister, brother, or best friend —
-            send meaningful messages automatically in the tone and style that fits
-            your unique relationship.
-        </p>
-
-        <button class="cta-btn" onclick="location.href='/register.html'">
-            Start Sending Love
-        </button>
-    </div>
-
-    <div class="hero-mockup">
-        <div class="glass-card card-top">
-            <div class="line" style="width: 65%;"></div>
-            <div class="line" style="width: 40%;"></div>
-        </div>
-
-        <div class="glass-card card-mid">
-            <div class="line" style="width: 70%;"></div>
-            <div class="line" style="width: 55%;"></div>
-        </div>
-
-        <div class="glass-card card-bottom">
-            <div class="line" style="width: 50%;"></div>
-            <div class="line" style="width: 35%;"></div>
-        </div>
-    </div>
+<div class="hero-text">
+<h1 class="hero-title">Thoughtful Messages<br>For Everyone You Care About.</h1>
+<p class="hero-sub">Whether it's your partner, mom, dad, sister, brother, or best friend — send meaningful messages automatically in the tone and style that fits your unique relationship.</p>
+<button class="cta-btn" onclick="location.href='/register.html'">Start Sending Love</button>
+</div>
+<div class="hero-mockup">
+<div class="glass-card card-top">
+<div class="line" style="width:65%;"></div>
+<div class="line" style="width:40%;"></div>
+</div>
+<div class="glass-card card-mid">
+<div class="line" style="width:70%;"></div>
+<div class="line" style="width:55%;"></div>
+</div>
+<div class="glass-card card-bottom">
+<div class="line" style="width:50%;"></div>
+<div class="line" style="width:35%;"></div>
+</div>
+</div>
 </section>
-
-<!-- ========================= FEATURES ========================= -->
 <section class="features-strip">
-    <div class="features">
-
-        <div class="feature">
-            <svg viewBox="0 0 24 24"><path d="M3 12h18M12 3v18" stroke-linecap="round"/></svg>
-            <div>Automated Delivery</div>
-        </div>
-
-        <div class="feature">
-            <svg viewBox="0 0 24 24">
-                <path d="M4 4h16v12H4z"/>
-                <path d="M8 20h8" stroke-linecap="round"/>
-            </svg>
-            <div>Personalized for Any Relationship</div>
-        </div>
-
-        <div class="feature">
-            <svg viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="8"/>
-                <path d="M12 8v4l2 2" stroke-linecap="round"/>
-            </svg>
-            <div>Secure & Private Messaging</div>
-        </div>
-
-        <div class="feature">
-            <svg viewBox="0 0 24 24">
-                <path d="M12 5v14M5 12h14" stroke-linecap="round"/>
-            </svg>
-            <div>Set It Once</div>
-        </div>
-
-    </div>
+<div class="features">
+<div class="feature">
+<svg viewBox="0 0 24 24"><path d="M3 12h18M12 3v18" stroke-linecap="round"/></svg>
+<div>Automated Delivery</div>
+</div>
+<div class="feature">
+<svg viewBox="0 0 24 24"><path d="M4 4h16v12H4z"/><path d="M8 20h8" stroke-linecap="round"/></svg>
+<div>Personalized for Any Relationship</div>
+</div>
+<div class="feature">
+<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2 2" stroke-linecap="round"/></svg>
+<div>Secure & Private Messaging</div>
+</div>
+<div class="feature">
+<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+<div>Set It Once</div>
+</div>
+</div>
 </section>
-
-<!-- ========================= PRODUCTS ========================= -->
 <section class="products-section">
-    <h2 class="products-title">Choose Your Plan</h2>
-
-    <div class="products">
-
-        <div class="product-card">
-            <div class="product-title">LoveText Basic Subscription</div>
-            <div class="product-desc">
-                Daily uplifting messages for up to 3 recipients.
-            </div>
-            <div class="product-price">$2.99 / month</div>
-            <button class="product-btn" onclick="location.href='/register.html'">Sign Up</button>
-        </div>
-
-        <div class="product-card">
-            <div class="product-title">LoveText Plus Subscription</div>
-            <div class="product-desc">
-                Daily uplifting messages for up to 8 recipients.
-            </div>
-            <div class="product-price">$6.99 / month</div>
-            <button class="product-btn" onclick="location.href='/register.html'">Sign Up</button>
-        </div>
-
-        <div class="product-card">
-            <div class="product-title">LoveText Free Trial</div>
-            <div class="product-desc">Get full access for 3 days, completely free.</div>
-            <div class="product-price">$0.00</div>
-            <button class="product-btn" onclick="location.href='/register.html'">Try Free</button>
-        </div>
-
-    </div>
+<h2 class="products-title">Choose Your Plan</h2>
+<div class="products">
+<div class="product-card">
+<div class="product-title">LoveText Basic Subscription</div>
+<div class="product-desc">Daily uplifting messages for up to 3 recipients.</div>
+<div class="product-price">$2.99 / month</div>
+<button class="product-btn" onclick="location.href='/register.html'">Sign Up</button>
+</div>
+<div class="product-card">
+<div class="product-title">LoveText Plus Subscription</div>
+<div class="product-desc">Daily uplifting messages for up to 8 recipients.</div>
+<div class="product-price">$6.99 / month</div>
+<button class="product-btn" onclick="location.href='/register.html'">Sign Up</button>
+</div>
+<div class="product-card">
+<div class="product-title">LoveText Free Trial</div>
+<div class="product-desc">Get full access for 3 days, completely free.</div>
+<div class="product-price">$0.00</div>
+<button class="product-btn" onclick="location.href='/register.html'">Try Free</button>
+</div>
+</div>
 </section>
-
 <script>
-    function toggleMobileMenu() {
-        const btn = document.querySelector('.mobile-menu-btn');
-        const nav = document.getElementById('mobileNav');
-        const body = document.body;
-        
-        btn.classList.toggle('active');
-        nav.classList.toggle('active');
-        
-        // Prevent scrolling when menu is open
-        if (nav.classList.contains('active')) {
-            body.style.overflow = 'hidden';
-        } else {
-            body.style.overflow = '';
-        }
-    }
-
-    function closeMobileMenu() {
-        const btn = document.querySelector('.mobile-menu-btn');
-        const nav = document.getElementById('mobileNav');
-        const body = document.body;
-        
-        btn.classList.remove('active');
-        nav.classList.remove('active');
-        body.style.overflow = '';
-    }
+function toggleMobileMenu(){const btn=document.querySelector('.mobile-menu-btn');const nav=document.getElementById('mobileNav');const body=document.body;btn.classList.toggle('active');nav.classList.toggle('active');if(nav.classList.contains('active')){body.style.overflow='hidden';}else{body.style.overflow='';}}
+function closeMobileMenu(){const btn=document.querySelector('.mobile-menu-btn');const nav=document.getElementById('mobileNav');const body=document.body;btn.classList.remove('active');nav.classList.remove('active');body.style.overflow='';}
+function openModal(){const modal=document.getElementById('welcomeModal');modal.classList.add('active');document.body.style.overflow='hidden';}
+function closeModal(){const modal=document.getElementById('welcomeModal');modal.classList.remove('active');document.body.style.overflow='';const date=new Date();date.setTime(date.getTime()+(7*24*60*60*1000));document.cookie=`modalShown=true; expires=${date.toUTCString()}; path=/`;}
+document.addEventListener('click',function(event){const modal=document.getElementById('welcomeModal');if(event.target===modal){closeModal();}});
+window.addEventListener('load',function(){const hasSeenModal=document.cookie.split('; ').find(row=>row.startsWith('modalShown='));if(!hasSeenModal){setTimeout(openModal,2000);}});
 </script>
-
 </body>
 </html>
