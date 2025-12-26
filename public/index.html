@@ -195,7 +195,7 @@ body {padding-top:40px;}
 <div class="modal-feature-icon">
 <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
 </div>
-<div class="modal-feature-text"><strong>3 days completely free</strong> — No credit card required</div>
+<div class="modal-feature-text"><strong>3 days completely free</strong> — Free Daily Love Messages</div>
 </div>
 <div class="modal-feature-item">
 <div class="modal-feature-icon">
@@ -221,7 +221,7 @@ body {padding-top:40px;}
 <a href="/register.html" class="modal-btn modal-btn-primary">Create Account</a>
 <a href="/login.html" class="modal-btn modal-btn-secondary">Login</a>
 </div>
-<p class="modal-footer-text">Start your free trial today. No payment info needed.</p>
+<p class="modal-footer-text">Start your free trial today!</p>
 </div>
 </div>
 </div>
@@ -295,9 +295,15 @@ body {padding-top:40px;}
 function toggleMobileMenu(){const btn=document.querySelector('.mobile-menu-btn');const nav=document.getElementById('mobileNav');const body=document.body;btn.classList.toggle('active');nav.classList.toggle('active');if(nav.classList.contains('active')){body.style.overflow='hidden';}else{body.style.overflow='';}}
 function closeMobileMenu(){const btn=document.querySelector('.mobile-menu-btn');const nav=document.getElementById('mobileNav');const body=document.body;btn.classList.remove('active');nav.classList.remove('active');body.style.overflow='';}
 function openModal(){const modal=document.getElementById('welcomeModal');modal.classList.add('active');document.body.style.overflow='hidden';}
-function closeModal(){const modal=document.getElementById('welcomeModal');modal.classList.remove('active');document.body.style.overflow='';const date=new Date();date.setTime(date.getTime()+(7*24*60*60*1000));document.cookie=`modalShown=true; expires=${date.toUTCString()}; path=/`;}
-document.addEventListener('click',function(event){const modal=document.getElementById('welcomeModal');if(event.target===modal){closeModal();}});
-window.addEventListener('load',function(){const hasSeenModal=document.cookie.split('; ').find(row=>row.startsWith('modalShown='));if(!hasSeenModal){setTimeout(openModal,2000);}});
+function closeModal(){
+    const modal=document.getElementById('welcomeModal');
+    modal.classList.remove('active');
+    document.body.style.overflow='';
+}
+
+window.addEventListener('load', function () {
+    setTimeout(openModal, 800); // slight delay feels smoother
+});
 </script>
 </body>
 </html>
