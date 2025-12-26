@@ -667,6 +667,91 @@
             font-size: 14px;
         }
 
+        /* PROMO BANNERS */
+.promo-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    color: white;
+    display: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.promo-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+}
+
+.promo-banner h3 {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.promo-banner p {
+    font-size: 14px;
+    margin-bottom: 16px;
+    opacity: 0.95;
+    position: relative;
+    z-index: 1;
+}
+
+.promo-banner-actions {
+    display: flex;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.promo-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    font-family: "Inter", sans-serif;
+}
+
+.promo-btn.primary {
+    background: white;
+    color: #667eea;
+}
+
+.promo-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.promo-btn.secondary {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.promo-btn.secondary:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.promo-banner.trial {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.promo-banner.flowers {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
         /* MOBILE RESPONSIVE */
         @media (max-width: 1024px) {
             .sidebar {
@@ -792,6 +877,26 @@
     <main class="main-content">
         <!-- SUBSCRIPTION ALERT -->
         <div class="subscription-alert" id="subscriptionAlert"></div>
+
+        <!-- FREE TRIAL PROMO BANNER -->
+<div class="promo-banner trial" id="trialPromoBanner">
+    <h3>🎉 Try LoveText Free for 3 Days!</h3>
+    <p>Get full access to all features including unlimited recipients and advanced scheduling. No credit card required!</p>
+    <div class="promo-banner-actions">
+        <button class="promo-btn primary" onclick="startFreeTrial()">Start Free Trial</button>
+        <button class="promo-btn secondary" onclick="dismissTrialBanner()">Maybe Later</button>
+    </div>
+</div>
+
+<!-- FLOWERS UPGRADE PROMO BANNER -->
+<div class="promo-banner flowers" id="flowersPromoBanner">
+    <h3>🌸 Unlock Send Flowers Feature!</h3>
+    <p>Upgrade to LoveText Plus to send beautiful flowers to your loved ones anytime. Make every day special!</p>
+    <div class="promo-banner-actions">
+        <button class="promo-btn primary" onclick="upgradeToPlus()">Upgrade to Plus</button>
+        <button class="promo-btn secondary" onclick="dismissFlowersBanner()">Not Now</button>
+    </div>
+</div>
 
         <!-- RECIPIENTS VIEW -->
         <div id="recipientsView">
@@ -1015,6 +1120,7 @@ let USER_PLAN = "none";
 let USER_EMAIL = "";
 let CURRENT_FLOWER_RECIPIENT = null;
 let CURRENT_VIEW = "recipients";
+let TRIAL_ELIGIBLE = false;
 
 function toggleMobileMenu() {
     const btn = document.querySelector('.mobile-menu-btn');
@@ -1072,6 +1178,7 @@ async function loadSubscriptionStatus() {
             cache: "no-store"
         });
         const data = await res.json();
+        TRIAL_ELIGIBLE = data.trial_eligible !== false;
         HAS_ACCESS = hasActiveAccess(data);
         USER_PLAN = data.current_plan || "none";
 
@@ -1110,6 +1217,9 @@ async function loadSubscriptionStatus() {
         if (HAS_ACCESS) {
             document.getElementById("subscriptionSettings").style.display = "block";
         }
+
+        // Show promo banners
+showPromoBanners();
 
     } catch (err) {
         console.error("SUB LOAD ERROR", err);
@@ -1207,6 +1317,44 @@ function showPlusUpgradePrompt() {
     if (confirm("🌸 Send Flowers is a Plus Plan Feature!\n\nUpgrade to LoveText Plus to send flowers anytime.\n\nWould you like to upgrade now?")) {
         window.location.href = "/products.html";
     }
+}
+
+// PROMO BANNERS
+function showPromoBanners() {
+    const trialBanner = document.getElementById("trialPromoBanner");
+    const flowersBanner = document.getElementById("flowersPromoBanner");
+    
+    // Check if banners were dismissed in this session
+    const trialDismissed = sessionStorage.getItem('trialBannerDismissed');
+    const flowersDismissed = sessionStorage.getItem('flowersBannerDismissed');
+    
+    // Show trial banner if: no subscription, eligible for trial, and not dismissed
+    if (!HAS_ACCESS && TRIAL_ELIGIBLE && !trialDismissed) {
+        trialBanner.style.display = "block";
+    }
+    
+    // Show flowers banner if: has Basic or Trial plan (not Plus), and not dismissed
+    if (HAS_ACCESS && (USER_PLAN === "basic" || USER_PLAN === "trial") && !flowersDismissed) {
+        flowersBanner.style.display = "block";
+    }
+}
+
+function startFreeTrial() {
+    window.location.href = "/products.html";
+}
+
+function dismissTrialBanner() {
+    document.getElementById("trialPromoBanner").style.display = "none";
+    sessionStorage.setItem('trialBannerDismissed', 'true');
+}
+
+function upgradeToPlus() {
+    window.location.href = "/products.html";
+}
+
+function dismissFlowersBanner() {
+    document.getElementById("flowersPromoBanner").style.display = "none";
+    sessionStorage.setItem('flowersBannerDismissed', 'true');
 }
 
 // MODALS
