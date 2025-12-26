@@ -1054,9 +1054,9 @@ function getButton(p, sub) {
     const targetLevel = planHierarchy[p.id] || 0;
 
     if (targetLevel > currentLevel) {
-        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Upgrade to ${p.name}</button>`;
+        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Upgrade</button>`;
     } else if (targetLevel < currentLevel) {
-        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Downgrade to ${p.name}</button>`;
+        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Downgrade</button>`;
     }
 
     return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Switch to ${p.name}</button>`;
@@ -1083,7 +1083,7 @@ function renderProducts(sub) {
                         <span class="amount">${p.price.toFixed(2)}</span>
                         ${p.price > 0 ? '<span class="period">/ month</span>' : ''}
                     </div>
-                    ${p.price === 0 ? '<div class="bonus-text">✨ No credit card required</div>' : ''}
+                    ${p.price === 0 ? '<div class="bonus-text"></div>' : ''}
                     <div class="price-details">${p.billing}</div>
                 </div>
 
