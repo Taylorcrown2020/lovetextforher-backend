@@ -2387,17 +2387,9 @@ global.__LT_sendSMS = async function (to, message) {
  ***************************************************************/
 
 /***************************************************************
- *  NEXT DELIVERY TIME CALCULATOR
- ***************************************************************/
-/***************************************************************
  *  TIMEZONE-AWARE NEXT DELIVERY CALCULATOR
- *  Uses the moment-timezone library for accurate conversions
+ *  Uses the moment-timezone library (already imported in Part 1)
  ***************************************************************/
-
-// First, install moment-timezone if you haven't:
-// npm install moment-timezone
-
-import moment from 'moment-timezone';
 
 function calculateNextDelivery(freq, timing, timezone) {
     // Default timezone if not provided
