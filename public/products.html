@@ -1010,7 +1010,8 @@ function getButton(p, sub) {
         current,
         trial_eligible: sub?.trial_eligible,
         trial_used: sub?.trial_used,
-        trialEligible
+        trialEligible,
+        productId: p.id
     });
 
     // User has no subscription
@@ -1024,8 +1025,16 @@ function getButton(p, sub) {
         return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Subscribe Now</button>`;
     }
 
-    // User has an active subscription
-    if (p.id === current) {
+    // Map backend plan names to frontend product IDs
+    const planToProductId = {
+        "trial": "free-trial",
+        "basic": "love-basic",
+        "plus": "love-plus"
+    };
+
+    // Check if this is the current plan
+    const currentProductId = planToProductId[current];
+    if (p.id === currentProductId) {
         return `<button class="btn btn-disabled" disabled>Current Plan</button>`;
     }
 
@@ -1034,10 +1043,15 @@ function getButton(p, sub) {
         return `<button class="btn btn-disabled" disabled>Trial Not Available</button>`;
     }
 
-    // Other paid plans
-    const planOrder = { "love-basic": 1, "love-plus": 2 };
-    const currentLevel = planOrder[current] || 0;
-    const targetLevel = planOrder[p.id] || 0;
+    // Define plan hierarchy for upgrades/downgrades
+    const planHierarchy = {
+        "free-trial": 0,
+        "love-basic": 1,
+        "love-plus": 2
+    };
+
+    const currentLevel = planHierarchy[currentProductId] || 0;
+    const targetLevel = planHierarchy[p.id] || 0;
 
     if (targetLevel > currentLevel) {
         return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Upgrade to ${p.name}</button>`;
