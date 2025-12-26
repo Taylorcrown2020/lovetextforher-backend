@@ -811,25 +811,28 @@ function showPromoMessage(text, type) {
 }
 
 async function handleCheckout(productId) {
-    const sub = await getSubscription();
-    const subscribed = sub?.subscribed === true;
-    
-    // If user has an active subscription, handle upgrade/downgrade
-    if (subscribed && productId !== 'free-trial') {
-        await handleSubscriptionChange(productId);
-        return;
-    }
-    
-    // Otherwise, proceed with normal checkout
-    const endpoint = APPLIED_PROMO_CODE 
-        ? '/api/stripe/checkout-with-promo'
-        : '/api/stripe/checkout';
-    
-    const body = APPLIED_PROMO_CODE
-        ? { productId, promoCode: APPLIED_PROMO_CODE }
-        : { productId };
-    
     try {
+        const sub = await getSubscription();
+        const subscribed = sub?.subscribed === true;
+        
+        // Determine which endpoint to use
+        let endpoint, body;
+        
+        if (subscribed && productId !== 'free-trial') {
+            // User has active subscription - use regular checkout for upgrade/downgrade
+            endpoint = '/api/stripe/checkout';
+            body = { productId };
+        } else {
+            // New subscription - use promo endpoint if code is applied
+            endpoint = APPLIED_PROMO_CODE 
+                ? '/api/stripe/checkout-with-promo'
+                : '/api/stripe/checkout';
+            
+            body = APPLIED_PROMO_CODE
+                ? { productId, promoCode: APPLIED_PROMO_CODE }
+                : { productId };
+        }
+        
         const res = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: 'POST',
             credentials: 'include',
@@ -847,36 +850,6 @@ async function handleCheckout(productId) {
     } catch (err) {
         console.error('Checkout error:', err);
         alert('Error processing checkout');
-    }
-}
-
-async function handleSubscriptionChange(newProductId) {
-    const confirmed = confirm('Are you sure you want to change your subscription plan?');
-    if (!confirmed) return;
-    
-    try {
-        // Use the regular checkout endpoint with the new product
-        const res = await fetch(`${API_BASE_URL}/api/stripe/checkout`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productId: newProductId })
-        });
-        
-        const data = await res.json();
-        
-        if (data.url) {
-            // If it returns a URL, redirect to Stripe or dashboard
-            window.location.href = data.url;
-        } else if (data.error) {
-            alert(data.error);
-        } else {
-            alert('Subscription updated successfully!');
-            window.location.reload();
-        }
-    } catch (err) {
-        console.error('Subscription change error:', err);
-        alert('Error updating subscription');
     }
 }
 
@@ -1054,9 +1027,9 @@ function getButton(p, sub) {
     const targetLevel = planHierarchy[p.id] || 0;
 
     if (targetLevel > currentLevel) {
-        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Upgrade</button>`;
+        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Upgrade to ${p.name}</button>`;
     } else if (targetLevel < currentLevel) {
-        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Downgrade</button>`;
+        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Downgrade to ${p.name}</button>`;
     }
 
     return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Switch to ${p.name}</button>`;
@@ -1083,7 +1056,7 @@ function renderProducts(sub) {
                         <span class="amount">${p.price.toFixed(2)}</span>
                         ${p.price > 0 ? '<span class="period">/ month</span>' : ''}
                     </div>
-                    ${p.price === 0 ? '<div class="bonus-text"></div>' : ''}
+                    ${p.price === 0 ? '<div class="bonus-text">✨ No credit card required</div>' : ''}
                     <div class="price-details">${p.billing}</div>
                 </div>
 
