@@ -3977,68 +3977,6 @@ app.post("/api/admin/promo/deactivate/:id",
     }
 });
 
-// ============================================================
-// HELPER FUNCTIONS
-// ============================================================
-
-function getPromoDescription(promo) {
-    if (promo.discount_type === "free_month") {
-        const months = promo.discount_value || 1;
-        return `${months} month${months > 1 ? 's' : ''} free`;
-    }
-    if (promo.discount_type === "percentage") {
-        return `${promo.discount_value}% off`;
-    }
-    if (promo.discount_type === "fixed") {
-        return `$${(promo.discount_value / 100).toFixed(2)} off`;
-    }
-    return "Discount";
-}
-
-async function createStripeCoupon(promoData) {
-    const couponConfig = {
-        id: `PROMO_${promoData.code}_${Date.now()}`,
-        name: promoData.code
-    };
-
-    if (promoData.discount_type === "free_month") {
-        // 100% off for X months
-        couponConfig.percent_off = 100;
-        couponConfig.duration = "repeating";
-        couponConfig.duration_in_months = promoData.discount_value || 1;
-    } 
-    else if (promoData.discount_type === "percentage") {
-        couponConfig.percent_off = promoData.discount_value;
-        couponConfig.duration = "once";
-    } 
-    else if (promoData.discount_type === "fixed") {
-        couponConfig.amount_off = promoData.discount_value;
-        couponConfig.currency = "usd";
-        couponConfig.duration = "once";
-    }
-
-    const coupon = await global.__LT_stripe.coupons.create(couponConfig);
-    return coupon.id;
-}
-
-async function recordPromoRedemption(promoId, customerId, stripeCouponId) {
-    // Record redemption
-    await global.__LT_pool.query(
-        `INSERT INTO promo_code_redemptions 
-         (promo_code_id, customer_id, stripe_coupon_id)
-         VALUES ($1, $2, $3)`,
-        [promoId, customerId, stripeCouponId]
-    );
-
-    // Increment usage counter
-    await global.__LT_pool.query(
-        `UPDATE promo_codes 
-         SET times_used = times_used + 1 
-         WHERE id = $1`,
-        [promoId]
-    );
-}
-
 /***************************************************************
  * PROMO CODE SYSTEM - FIXED VERSION
  * Add these functions and replace existing promo endpoints
