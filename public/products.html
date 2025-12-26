@@ -724,7 +724,7 @@
     <div class="promo-section">
         <div class="promo-banner">
             <div class="promo-header">
-                <div class="promo-icon">🎁</div>
+                <div class="promo-icon"></div>
                 <h3 class="promo-title">Have a Promo Code?</h3>
             </div>
             <p class="promo-subtitle">Enter your code below to unlock special discounts and offers</p>
@@ -734,7 +734,7 @@
                         type="text" 
                         id="promoCodeInput" 
                         class="promo-input"
-                        placeholder="Enter code (e.g., FREEMONTH)"
+                        placeholder="Enter code"
                         maxlength="20"
                     />
                 </div>
@@ -1056,7 +1056,7 @@ function renderProducts(sub) {
                         <span class="amount">${p.price.toFixed(2)}</span>
                         ${p.price > 0 ? '<span class="period">/ month</span>' : ''}
                     </div>
-                    ${p.price === 0 ? '<div class="bonus-text">✨ No credit card required</div>' : ''}
+                    ${p.price === 0 ? '<div class="bonus-text"></div>' : ''}
                     <div class="price-details">${p.billing}</div>
                 </div>
 
