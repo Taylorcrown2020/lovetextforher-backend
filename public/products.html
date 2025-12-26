@@ -738,6 +738,7 @@
     </div>
 </div>
 
+<!-- Replace the script section in your products.html with this -->
 <script>
 let APPLIED_PROMO_CODE = null;
 
@@ -767,12 +768,15 @@ async function validatePromoCode() {
         
         if (data.valid) {
             APPLIED_PROMO_CODE = code;
-            showPromoMessage(`✅ Success! ${data.description} applied to your next purchase`, 'success');
+            showPromoMessage(`✅ Success! ${data.description} will be applied to your subscription`, 'success');
             input.classList.add('valid');
             input.classList.remove('invalid');
             input.disabled = true;
             btn.textContent = 'Applied ✓';
             btn.style.background = '#10b981';
+            
+            // Update all subscribe buttons to show promo is applied
+            updateSubscribeButtons();
         } else {
             APPLIED_PROMO_CODE = null;
             showPromoMessage(`❌ ${data.error || 'Invalid promo code'}`, 'error');
@@ -793,6 +797,17 @@ function showPromoMessage(text, type) {
     messageDiv.className = `promo-message show ${type}`;
 }
 
+function updateSubscribeButtons() {
+    // This will be called after rendering to show promo is applied
+    const buttons = document.querySelectorAll('.btn-subscribe:not([disabled])');
+    buttons.forEach(btn => {
+        if (APPLIED_PROMO_CODE && !btn.textContent.includes('✨')) {
+            btn.textContent = btn.textContent + ' ✨';
+            btn.title = 'Promo code will be applied';
+        }
+    });
+}
+
 async function handleCheckout(productId) {
     try {
         const sub = await getSubscription();
@@ -802,9 +817,14 @@ async function handleCheckout(productId) {
         let endpoint, body;
         
         if (subscribed && productId !== 'free-trial') {
-            // User has active subscription - use regular checkout for upgrade/downgrade
-            endpoint = '/api/stripe/checkout';
-            body = { productId };
+            // User has active subscription - check if they can apply promo
+            if (APPLIED_PROMO_CODE) {
+                endpoint = '/api/stripe/checkout-with-promo';
+                body = { productId, promoCode: APPLIED_PROMO_CODE };
+            } else {
+                endpoint = '/api/stripe/checkout';
+                body = { productId };
+            }
         } else {
             // New subscription - use promo endpoint if code is applied
             endpoint = APPLIED_PROMO_CODE 
@@ -827,8 +847,23 @@ async function handleCheckout(productId) {
         
         if (data.url) {
             window.location.href = data.url;
+        } else if (data.error) {
+            alert(data.error);
+            
+            // If promo was rejected, clear it
+            if (data.error.includes('promo') || data.error.includes('month')) {
+                APPLIED_PROMO_CODE = null;
+                const input = document.getElementById('promoCodeInput');
+                const btn = document.getElementById('validatePromoBtn');
+                input.disabled = false;
+                input.classList.remove('valid');
+                btn.textContent = 'Apply Code';
+                btn.style.background = '';
+                btn.disabled = false;
+                showPromoMessage('', 'error');
+            }
         } else {
-            alert(data.error || 'Checkout error');
+            alert('Checkout error - please try again');
         }
     } catch (err) {
         console.error('Checkout error:', err);
@@ -978,7 +1013,8 @@ function getButton(p, sub) {
             }
             return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Start Free Trial</button>`;
         }
-        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Subscribe Now</button>`;
+        const promoText = APPLIED_PROMO_CODE ? ' ✨' : '';
+        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Subscribe Now${promoText}</button>`;
     }
 
     // Map backend plan names to frontend product IDs
@@ -1009,13 +1045,15 @@ function getButton(p, sub) {
     const currentLevel = planHierarchy[currentProductId] || 0;
     const targetLevel = planHierarchy[p.id] || 0;
 
+    const promoText = APPLIED_PROMO_CODE ? ' ✨' : '';
+
     if (targetLevel > currentLevel) {
-        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Upgrade to ${p.name}</button>`;
+        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Upgrade to ${p.name}${promoText}</button>`;
     } else if (targetLevel < currentLevel) {
-        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Downgrade to ${p.name}</button>`;
+        return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Downgrade to ${p.name}${promoText}</button>`;
     }
 
-    return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Switch to ${p.name}</button>`;
+    return `<button class="btn btn-subscribe" onclick="handleCheckout('${p.id}')">Switch to ${p.name}${promoText}</button>`;
 }
 
 function renderProducts(sub) {
@@ -1053,6 +1091,11 @@ function renderProducts(sub) {
     });
     
     grid.innerHTML = cards.join('');
+    
+    // Update buttons if promo is applied
+    if (APPLIED_PROMO_CODE) {
+        updateSubscribeButtons();
+    }
 }
 
 async function init() {
