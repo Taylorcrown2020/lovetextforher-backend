@@ -118,7 +118,7 @@
 
         .header-container {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 50px;
             padding: 0 20px;
         }
 
@@ -855,20 +855,24 @@ async function handleSubscriptionChange(newProductId) {
     if (!confirmed) return;
     
     try {
-        const res = await fetch(`${API_BASE_URL}/api/stripe/change-subscription`, {
+        // Use the regular checkout endpoint with the new product
+        const res = await fetch(`${API_BASE_URL}/api/stripe/checkout`, {
             method: 'POST',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ newProductId })
+            body: JSON.stringify({ productId: newProductId })
         });
         
         const data = await res.json();
         
-        if (data.success) {
+        if (data.url) {
+            // If it returns a URL, redirect to Stripe or dashboard
+            window.location.href = data.url;
+        } else if (data.error) {
+            alert(data.error);
+        } else {
             alert('Subscription updated successfully!');
             window.location.reload();
-        } else {
-            alert(data.error || 'Failed to update subscription');
         }
     } catch (err) {
         console.error('Subscription change error:', err);
