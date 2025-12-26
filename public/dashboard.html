@@ -1324,17 +1324,13 @@ function showPromoBanners() {
     const trialBanner = document.getElementById("trialPromoBanner");
     const flowersBanner = document.getElementById("flowersPromoBanner");
     
-    // Check if banners were dismissed in this session
-    const trialDismissed = sessionStorage.getItem('trialBannerDismissed');
-    const flowersDismissed = sessionStorage.getItem('flowersBannerDismissed');
-    
-    // Show trial banner if: no subscription, eligible for trial, and not dismissed
-    if (!HAS_ACCESS && TRIAL_ELIGIBLE && !trialDismissed) {
+    // Show trial banner if: no subscription and eligible for trial
+    if (!HAS_ACCESS && TRIAL_ELIGIBLE) {
         trialBanner.style.display = "block";
     }
     
-    // Show flowers banner if: has Basic or Trial plan (not Plus), and not dismissed
-    if (HAS_ACCESS && (USER_PLAN === "basic" || USER_PLAN === "trial") && !flowersDismissed) {
+    // Show flowers banner if: has Basic or Trial plan (not Plus)
+    if (HAS_ACCESS && (USER_PLAN === "basic" || USER_PLAN === "trial")) {
         flowersBanner.style.display = "block";
     }
 }
@@ -1345,7 +1341,6 @@ function startFreeTrial() {
 
 function dismissTrialBanner() {
     document.getElementById("trialPromoBanner").style.display = "none";
-    sessionStorage.setItem('trialBannerDismissed', 'true');
 }
 
 function upgradeToPlus() {
@@ -1354,7 +1349,6 @@ function upgradeToPlus() {
 
 function dismissFlowersBanner() {
     document.getElementById("flowersPromoBanner").style.display = "none";
-    sessionStorage.setItem('flowersBannerDismissed', 'true');
 }
 
 // MODALS
