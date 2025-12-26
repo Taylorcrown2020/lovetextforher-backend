@@ -3548,6 +3548,431 @@ async function backfillTrialHistory() {
 // Uncomment to run once:
 // backfillTrialHistory();
 
+// -----------------------------------------------------------
+// VALIDATE PROMO CODE
+// -----------------------------------------------------------
+app.post("/api/promo/validate", 
+    global.__LT_authCustomer, 
+    async (req, res) => {
+    try {
+        let { code } = req.body;
+        code = global.__LT_sanitize(code?.toUpperCase());
+
+        if (!code) {
+            return res.status(400).json({ 
+                valid: false, 
+                error: "Promo code required" 
+            });
+        }
+
+        // Get promo code from database
+        const promoQ = await global.__LT_pool.query(
+            `SELECT * FROM promo_codes 
+             WHERE code = $1 AND active = true`,
+            [code]
+        );
+
+        if (promoQ.rows.length === 0) {
+            return res.json({ 
+                valid: false, 
+                error: "Invalid promo code" 
+            });
+        }
+
+        const promo = promoQ.rows[0];
+        const now = new Date();
+
+        // Check if expired
+        if (promo.expires_at && new Date(promo.expires_at) < now) {
+            return res.json({ 
+                valid: false, 
+                error: "This promo code has expired" 
+            });
+        }
+
+        // Check if max uses reached
+        if (promo.max_uses && promo.times_used >= promo.max_uses) {
+            return res.json({ 
+                valid: false, 
+                error: "This promo code has reached its usage limit" 
+            });
+        }
+
+        // Check if customer already used this code
+        const redemptionQ = await global.__LT_pool.query(
+            `SELECT id FROM promo_code_redemptions 
+             WHERE promo_code_id = $1 AND customer_id = $2`,
+            [promo.id, req.user.id]
+        );
+
+        if (redemptionQ.rows.length > 0) {
+            return res.json({ 
+                valid: false, 
+                error: "You've already used this promo code" 
+            });
+        }
+
+        // Check if customer's plan is eligible
+        const customerQ = await global.__LT_pool.query(
+            `SELECT current_plan FROM customers WHERE id = $1`,
+            [req.user.id]
+        );
+
+        const currentPlan = customerQ.rows[0]?.current_plan || 'none';
+
+        if (promo.plan_required && currentPlan !== promo.plan_required) {
+            return res.json({ 
+                valid: false, 
+                error: `This code is only valid for ${promo.plan_required} plan` 
+            });
+        }
+
+        // Return valid promo code details
+        return res.json({
+            valid: true,
+            code: promo.code,
+            discount_type: promo.discount_type,
+            discount_value: promo.discount_value,
+            plan_required: promo.plan_required,
+            description: getPromoDescription(promo)
+        });
+
+    } catch (err) {
+        console.error("PROMO VALIDATE ERROR:", err);
+        return res.status(500).json({ 
+            valid: false, 
+            error: "Error validating promo code" 
+        });
+    }
+});
+
+// -----------------------------------------------------------
+// APPLY PROMO CODE TO CHECKOUT
+// -----------------------------------------------------------
+app.post("/api/stripe/checkout-with-promo",
+    global.__LT_authCustomer,
+    async (req, res) => {
+
+    const { productId, promoCode } = req.body;
+
+    try {
+        const customer = await getCustomerRecord(req.user.id);
+        if (!customer) {
+            return res.status(404).json({ error: "Customer not found" });
+        }
+
+        const priceId = global.__LT_prices[productId];
+        if (!priceId) {
+            return res.status(400).json({ error: "Invalid product" });
+        }
+
+        const newPlan = global.__LT_normalizePlan(productId);
+        const stripeCustomerId = await ensureStripeCustomer(customer);
+
+        // Validate promo code if provided
+        let stripeCouponId = null;
+        let promoData = null;
+
+        if (promoCode) {
+            const code = promoCode.toUpperCase();
+            
+            const promoQ = await global.__LT_pool.query(
+                `SELECT * FROM promo_codes 
+                 WHERE code = $1 AND active = true`,
+                [code]
+            );
+
+            if (promoQ.rows.length === 0) {
+                return res.status(400).json({ error: "Invalid promo code" });
+            }
+
+            promoData = promoQ.rows[0];
+
+            // Check redemption
+            const redemptionQ = await global.__LT_pool.query(
+                `SELECT id FROM promo_code_redemptions 
+                 WHERE promo_code_id = $1 AND customer_id = $2`,
+                [promoData.id, req.user.id]
+            );
+
+            if (redemptionQ.rows.length > 0) {
+                return res.status(400).json({ 
+                    error: "You've already used this promo code" 
+                });
+            }
+
+            // Create Stripe coupon
+            stripeCouponId = await createStripeCoupon(promoData);
+        }
+
+        // Check for existing subscription
+        let stripeSub = null;
+        if (customer.stripe_subscription_id) {
+            try {
+                stripeSub = await global.__LT_stripe.subscriptions.retrieve(
+                    customer.stripe_subscription_id
+                );
+            } catch {
+                stripeSub = null;
+            }
+        }
+
+        // If upgrading existing subscription
+        if (stripeSub && stripeSub.status !== "canceled") {
+            const itemId = stripeSub.items.data[0].id;
+
+            const updateData = {
+                cancel_at_period_end: false,
+                proration_behavior: "always_invoice",
+                items: [{ id: itemId, price: priceId }]
+            };
+
+            // Apply coupon if provided
+            if (stripeCouponId) {
+                updateData.coupon = stripeCouponId;
+            }
+
+            await global.__LT_stripe.subscriptions.update(
+                stripeSub.id,
+                updateData
+            );
+
+            // Record promo redemption
+            if (promoData) {
+                await recordPromoRedemption(
+                    promoData.id, 
+                    customer.id, 
+                    stripeCouponId
+                );
+            }
+
+            return res.json({ url: "/dashboard.html" });
+        }
+
+        // Create new subscription with promo
+        const sessionConfig = {
+            mode: "subscription",
+            customer: stripeCustomerId,
+            line_items: [{ price: priceId, quantity: 1 }],
+            success_url: `${process.env.BASE_URL}/success.html`,
+            cancel_url: `${process.env.BASE_URL}/products.html`,
+            subscription_data: {
+                metadata: {
+                    customer_id: customer.id,
+                    plan: productId,
+                    promo_code: promoCode || null
+                }
+            }
+        };
+
+        // Apply coupon to checkout
+        if (stripeCouponId) {
+            sessionConfig.discounts = [{
+                coupon: stripeCouponId
+            }];
+        }
+
+        const session = await global.__LT_stripe.checkout.sessions.create(sessionConfig);
+
+        // Record promo redemption
+        if (promoData) {
+            await recordPromoRedemption(
+                promoData.id, 
+                customer.id, 
+                stripeCouponId
+            );
+        }
+
+        return res.json({ url: session.url });
+
+    } catch (err) {
+        console.error("CHECKOUT WITH PROMO ERROR:", err);
+        return res.status(500).json({ error: "Checkout error" });
+    }
+});
+
+// -----------------------------------------------------------
+// ADMIN: CREATE PROMO CODE
+// -----------------------------------------------------------
+app.post("/api/admin/promo/create", 
+    global.__LT_authAdmin, 
+    async (req, res) => {
+    try {
+        let { 
+            code, 
+            discount_type, 
+            discount_value, 
+            plan_required,
+            max_uses,
+            expires_at
+        } = req.body;
+
+        code = global.__LT_sanitize(code?.toUpperCase());
+
+        if (!code || !discount_type) {
+            return res.status(400).json({ 
+                error: "Code and discount type required" 
+            });
+        }
+
+        // Check if code already exists
+        const existsQ = await global.__LT_pool.query(
+            `SELECT id FROM promo_codes WHERE code = $1`,
+            [code]
+        );
+
+        if (existsQ.rows.length > 0) {
+            return res.status(400).json({ 
+                error: "This promo code already exists" 
+            });
+        }
+
+        // Insert promo code
+        const result = await global.__LT_pool.query(
+            `INSERT INTO promo_codes 
+             (code, discount_type, discount_value, plan_required, max_uses, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING *`,
+            [
+                code,
+                discount_type,
+                discount_value || null,
+                plan_required || null,
+                max_uses || null,
+                expires_at || null
+            ]
+        );
+
+        // Audit log
+        await global.__LT_logAuditEvent(
+            'admin',
+            'Promo Code Created',
+            `Created promo code: ${code}`,
+            {
+                adminEmail: req.admin.email,
+                adminId: req.admin.id,
+                extra: { code, discount_type, discount_value }
+            }
+        );
+
+        return res.json({ 
+            success: true, 
+            promo: result.rows[0] 
+        });
+
+    } catch (err) {
+        console.error("CREATE PROMO ERROR:", err);
+        return res.status(500).json({ 
+            error: "Error creating promo code" 
+        });
+    }
+});
+
+// -----------------------------------------------------------
+// ADMIN: GET ALL PROMO CODES
+// -----------------------------------------------------------
+app.get("/api/admin/promo/list", 
+    global.__LT_authAdmin, 
+    async (req, res) => {
+    try {
+        const result = await global.__LT_pool.query(
+            `SELECT * FROM promo_codes ORDER BY created_at DESC`
+        );
+
+        return res.json(result.rows);
+
+    } catch (err) {
+        console.error("LIST PROMO ERROR:", err);
+        return res.status(500).json({ 
+            error: "Error loading promo codes" 
+        });
+    }
+});
+
+// -----------------------------------------------------------
+// ADMIN: DEACTIVATE PROMO CODE
+// -----------------------------------------------------------
+app.post("/api/admin/promo/deactivate/:id", 
+    global.__LT_authAdmin, 
+    async (req, res) => {
+    try {
+        await global.__LT_pool.query(
+            `UPDATE promo_codes SET active = false WHERE id = $1`,
+            [req.params.id]
+        );
+
+        return res.json({ success: true });
+
+    } catch (err) {
+        console.error("DEACTIVATE PROMO ERROR:", err);
+        return res.status(500).json({ 
+            error: "Error deactivating promo code" 
+        });
+    }
+});
+
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
+
+function getPromoDescription(promo) {
+    if (promo.discount_type === "free_month") {
+        const months = promo.discount_value || 1;
+        return `${months} month${months > 1 ? 's' : ''} free`;
+    }
+    if (promo.discount_type === "percentage") {
+        return `${promo.discount_value}% off`;
+    }
+    if (promo.discount_type === "fixed") {
+        return `$${(promo.discount_value / 100).toFixed(2)} off`;
+    }
+    return "Discount";
+}
+
+async function createStripeCoupon(promoData) {
+    const couponConfig = {
+        id: `PROMO_${promoData.code}_${Date.now()}`,
+        name: promoData.code
+    };
+
+    if (promoData.discount_type === "free_month") {
+        // 100% off for X months
+        couponConfig.percent_off = 100;
+        couponConfig.duration = "repeating";
+        couponConfig.duration_in_months = promoData.discount_value || 1;
+    } 
+    else if (promoData.discount_type === "percentage") {
+        couponConfig.percent_off = promoData.discount_value;
+        couponConfig.duration = "once";
+    } 
+    else if (promoData.discount_type === "fixed") {
+        couponConfig.amount_off = promoData.discount_value;
+        couponConfig.currency = "usd";
+        couponConfig.duration = "once";
+    }
+
+    const coupon = await global.__LT_stripe.coupons.create(couponConfig);
+    return coupon.id;
+}
+
+async function recordPromoRedemption(promoId, customerId, stripeCouponId) {
+    // Record redemption
+    await global.__LT_pool.query(
+        `INSERT INTO promo_code_redemptions 
+         (promo_code_id, customer_id, stripe_coupon_id)
+         VALUES ($1, $2, $3)`,
+        [promoId, customerId, stripeCouponId]
+    );
+
+    // Increment usage counter
+    await global.__LT_pool.query(
+        `UPDATE promo_codes 
+         SET times_used = times_used + 1 
+         WHERE id = $1`,
+        [promoId]
+    );
+}
+
 /***************************************************************
  *  SERVER START
  ***************************************************************/
