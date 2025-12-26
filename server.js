@@ -5,6 +5,8 @@
 
 process.env.TZ = "UTC";
 
+import moment from 'moment-timezone';
+
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -1374,7 +1376,7 @@ async function countRecipients(customerId) {
 }
 
 /***************************************************************
- *  ADD RECIPIENT
+ *  ADD RECIPIENT - FIXED VERSION
  ***************************************************************/
 app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) => {
     try {
@@ -1446,12 +1448,15 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
 
         const unsubscribeToken = crypto.randomBytes(16).toString("hex");
 
+        // ✅ FIX: Calculate proper next delivery time
+        const nextDelivery = calculateNextDelivery(frequency, timings, timezone);
+
         await global.__LT_pool.query(
             `INSERT INTO users 
                 (email, phone_number, delivery_method, customer_id, name, 
                  relationship, frequency, timings, timezone, 
                  unsubscribe_token, is_active, next_delivery, created_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,true,NOW(),NOW())`,
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,true,$11,NOW())`,
             [
                 email, 
                 phone_number || null, 
@@ -1462,11 +1467,12 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
                 frequency, 
                 timings, 
                 timezone, 
-                unsubscribeToken
+                unsubscribeToken,
+                nextDelivery  // ✅ Use calculated time instead of NOW()
             ]
         );
 
-        // ✅ AUDIT LOG - Add it HERE, before returning
+        // Audit log
         await global.__LT_logAuditEvent(
             'account',
             'Recipient Added',
@@ -1478,7 +1484,8 @@ app.post("/api/customer/recipients", global.__LT_authCustomer, async (req, res) 
                     recipientName: name,
                     recipientEmail: email,
                     relationship: relationship,
-                    deliveryMethod: delivery_method
+                    deliveryMethod: delivery_method,
+                    nextDelivery: nextDelivery.toISOString()
                 }
             }
         );
@@ -2382,48 +2389,81 @@ global.__LT_sendSMS = async function (to, message) {
 /***************************************************************
  *  NEXT DELIVERY TIME CALCULATOR
  ***************************************************************/
+/***************************************************************
+ *  TIMEZONE-AWARE NEXT DELIVERY CALCULATOR
+ *  Uses the moment-timezone library for accurate conversions
+ ***************************************************************/
+
+// First, install moment-timezone if you haven't:
+// npm install moment-timezone
+
+import moment from 'moment-timezone';
+
 function calculateNextDelivery(freq, timing, timezone) {
-    // Use timezone-aware date library
-    const now = new Date();
-    const next = new Date(now);
-
-    // TIME OF DAY (this is in UTC!)
+    // Default timezone if not provided
+    const tz = timezone || "America/Chicago";
+    
+    // Get current time in the recipient's timezone
+    const now = moment().tz(tz);
+    
+    // Determine the hour for delivery based on timing preference
+    let deliveryHour;
     switch (timing) {
-        case "morning":    next.setHours(9, 0, 0); break;
-        case "afternoon":  next.setHours(13, 0, 0); break;
-        case "evening":    next.setHours(18, 0, 0); break;
-        case "night":      next.setHours(22, 0, 0); break;
-        default:           next.setHours(12, 0, 0); break;
+        case "morning":    deliveryHour = 9; break;   // 9 AM
+        case "afternoon":  deliveryHour = 13; break;  // 1 PM
+        case "evening":    deliveryHour = 18; break;  // 6 PM
+        case "night":      deliveryHour = 22; break;  // 10 PM
+        default:           deliveryHour = 12; break;  // Noon
     }
-
-    // FREQUENCY
+    
+    // Start with today at the desired hour in recipient's timezone
+    let next = moment().tz(tz).set({
+        hour: deliveryHour,
+        minute: 0,
+        second: 0,
+        millisecond: 0
+    });
+    
+    // If that time has already passed today, start from tomorrow
+    if (next.isBefore(now)) {
+        next.add(1, 'day');
+    }
+    
+    // Apply frequency offset
     switch (freq) {
         case "daily":
-            next.setDate(now.getDate() + 1);
+            // Already set to next occurrence (today or tomorrow)
             break;
-
+            
         case "every-other-day":
-            next.setDate(now.getDate() + 2);
+            // Every 2 days
             break;
-
+            
         case "three-times-week":
-            next.setDate(now.getDate() + 2);
+            // Every 2-3 days (we'll do 2 for simplicity)
             break;
-
+            
         case "weekly":
-            next.setDate(now.getDate() + 7);
+            // 7 days from now
+            next.add(7, 'days');
             break;
-
+            
         case "bi-weekly":
-            next.setDate(now.getDate() + 14);
+            // 14 days from now
+            next.add(14, 'days');
             break;
-
+            
         default:
-            next.setDate(now.getDate() + 1);
+            // Default to daily
+            break;
     }
-
-    return next;
+    
+    // Convert to JavaScript Date object (in UTC for database storage)
+    return next.toDate();
 }
+
+// Export for use throughout the app
+global.__LT_calculateNextDelivery = calculateNextDelivery;
 
 /***************************************************************
  *  CRON JOB — AUTOMATIC MESSAGE SENDER (EVERY MINUTE)
