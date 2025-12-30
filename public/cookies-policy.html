@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Policy — LOVETEXTFORHER</title>
+    <script src="/config.js"></script>
+    <script> window.FORCE_PUBLIC_NAV = true; </script>
+    <script src="/js/nav.js" defer></script>
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --primary-light: #ffe3ed;
+            --secondary-light: #ede9fe;
+            --text-dark: #1a1a1a;
+            --text-light: #555;
+            --max-width: 900px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", sans-serif;
+        }
+
+        body {
+            background: #fff;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            padding-top: 60px;
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 1001;
+            background: white;
+            border: 1px solid rgba(214, 51, 108, 0.2);
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 28px;
+            height: 3px;
+            background: var(--text-dark);
+            margin: 5px 0;
+            transition: 0.3s;
+            border-radius: 2px;
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(-45deg) translate(-6px, 6px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(45deg) translate(-6px, -6px);
+        }
+
+        .mobile-nav-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100vh;
+            background: #fff;
+            z-index: 1000;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+
+        .mobile-nav-overlay.active {
+            right: 0;
+        }
+
+        .mobile-nav-content {
+            padding: 100px 30px 40px;
+        }
+
+        .mobile-nav-links {
+            list-style: none;
+            margin-bottom: 40px;
+        }
+
+        .mobile-nav-links li {
+            margin-bottom: 30px;
+        }
+
+        .mobile-nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 20px;
+            font-weight: 600;
+            display: block;
+            padding: 10px 0;
+            transition: color 0.2s;
+        }
+
+        .mobile-nav-links a:hover {
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .mobile-nav-overlay {
+                display: block;
+            }
+        }
+
+        /* Legal Page Styles */
+        .legal-container {
+            max-width: var(--max-width);
+            margin: 80px auto 60px;
+            padding: 0 28px;
+        }
+
+        .legal-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(214, 51, 108, 0.2);
+        }
+
+        .legal-badge {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .legal-title {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .legal-updated {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .legal-content {
+            background: #fafafa;
+            border: 1px solid rgba(214, 51, 108, 0.2);
+            border-radius: 16px;
+            padding: 50px;
+            line-height: 1.8;
+        }
+
+        .legal-content h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 40px;
+            margin-bottom: 16px;
+        }
+
+        .legal-content h2:first-child {
+            margin-top: 0;
+        }
+
+        .legal-content h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-top: 28px;
+            margin-bottom: 12px;
+        }
+
+        .legal-content p {
+            margin-bottom: 16px;
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        .legal-content ul {
+            margin-left: 24px;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+        }
+
+        .legal-content li {
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .legal-content a {
+            color: var(--primary);
+            text-decoration: none;
+            border-bottom: 1px solid var(--primary);
+            transition: all 0.2s;
+        }
+
+        .legal-content a:hover {
+            color: var(--secondary);
+            border-bottom-color: var(--secondary);
+        }
+
+        .legal-content strong {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .info-box {
+            background: var(--primary-light);
+            border-left: 3px solid var(--primary);
+            padding: 20px;
+            margin: 24px 0;
+            border-radius: 8px;
+        }
+
+        .info-box p {
+            margin-bottom: 0;
+            color: #b81847;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+            padding: 20px;
+            margin: 24px 0;
+            border-radius: 8px;
+        }
+
+        .warning-box p {
+            margin-bottom: 0;
+            color: #856404;
+        }
+
+        .cookie-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .cookie-table th {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .cookie-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(214, 51, 108, 0.1);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .cookie-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .cookie-table tr:hover {
+            background: rgba(214, 51, 108, 0.02);
+        }
+
+        /* Footer */
+        .footer {
+            background: #fafafa;
+            padding: 60px 28px 30px;
+            border-top: 1px solid rgba(214, 51, 108, 0.2);
+            margin-top: 100px;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-brand {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-description {
+            color: var(--text-light);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .footer-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(214, 51, 108, 0.2);
+            color: var(--text-light);
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .legal-title {
+                font-size: 32px;
+            }
+
+            .legal-content {
+                padding: 30px 24px;
+            }
+
+            .legal-content h2 {
+                font-size: 24px;
+            }
+
+            .legal-content h3 {
+                font-size: 18px;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+
+            .cookie-table {
+                font-size: 12px;
+            }
+
+            .cookie-table th,
+            .cookie-table td {
+                padding: 10px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Navigation (injected by nav.js) -->
+    <div id="navbar"></div>
+
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav-overlay" id="mobileNav">
+        <div class="mobile-nav-content">
+            <ul class="mobile-nav-links">
+                <li><a href="/index.html" onclick="closeMobileMenu()">Home</a></li>
+                <li><a href="/login.html" onclick="closeMobileMenu()">Login</a></li>
+                <li><a href="/register.html" onclick="closeMobileMenu()">Register</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Legal Content -->
+    <div class="legal-container">
+        <div class="legal-header">
+            <span class="legal-badge">Legal</span>
+            <h1 class="legal-title">Cookie Policy</h1>
+            <p class="legal-updated">Last Updated: December 29, 2025</p>
+        </div>
+
+        <div class="legal-content">
+            <p>This Cookie Policy explains how LoveTextForHer ("we," "us," or "our") uses cookies and similar tracking technologies when you visit our website and use our services. This policy should be read alongside our <a href="/privacy-policy.html">Privacy Policy</a> and <a href="/terms-of-service.html">Terms of Service</a>.</p>
+
+            <div class="info-box">
+                <p><strong>🍪 Quick Summary:</strong> We use cookies to improve your experience, remember your preferences, analyze site usage, and provide personalized features. You can control cookie settings through your browser, but some features may not work properly if cookies are disabled.</p>
+            </div>
+
+            <h2>1. What Are Cookies?</h2>
+            
+            <p>Cookies are small text files that are placed on your device (computer, smartphone, tablet) when you visit a website. They are widely used to make websites work more efficiently and provide information to website owners.</p>
+
+            <h3>1.1 Types of Cookies by Duration</h3>
+            <ul>
+                <li><strong>Session Cookies:</strong> Temporary cookies that expire when you close your browser. These are essential for basic website functionality.</li>
+                <li><strong>Persistent Cookies:</strong> Remain on your device for a set period or until you delete them. These remember your preferences and settings across visits.</li>
+            </ul>
+
+            <h3>1.2 Types of Cookies by Origin</h3>
+            <ul>
+                <li><strong>First-Party Cookies:</strong> Set by LoveTextForHer directly. We have full control over these cookies.</li>
+                <li><strong>Third-Party Cookies:</strong> Set by external services we use (e.g., analytics providers, payment processors). These are governed by the third party's privacy policy.</li>
+            </ul>
+
+            <h2>2. How We Use Cookies</h2>
+            
+            <p>LoveTextForHer uses cookies for the following purposes:</p>
+
+            <h3>2.1 Essential Cookies (Required)</h3>
+            <p>These cookies are necessary for the website to function properly. You cannot opt out of these cookies.</p>
+            <ul>
+                <li><strong>Authentication:</strong> Keep you logged in to your account</li>
+                <li><strong>Security:</strong> Protect against fraud and unauthorized access</li>
+                <li><strong>Session Management:</strong> Maintain your session as you navigate the site</li>
+                <li><strong>Load Balancing:</strong> Distribute traffic across our servers</li>
+            </ul>
+
+            <h3>2.2 Functional Cookies (Optional)</h3>
+            <p>These cookies enhance functionality and personalization but are not essential.</p>
+            <ul>
+                <li><strong>Preferences:</strong> Remember your settings (language, timezone, theme)</li>
+                <li><strong>Personalization:</strong> Customize content based on your usage</li>
+                <li><strong>Form Data:</strong> Remember information you've entered in forms</li>
+            </ul>
+
+            <h3>2.3 Analytics Cookies (Optional)</h3>
+            <p>These cookies help us understand how visitors interact with our website.</p>
+            <ul>
+                <li><strong>Usage Tracking:</strong> Pages visited, time spent, navigation patterns</li>
+                <li><strong>Performance Monitoring:</strong> Load times, errors, technical issues</li>
+                <li><strong>A/B Testing:</strong> Compare different versions of features</li>
+                <li><strong>Conversion Tracking:</strong> Measure effectiveness of marketing campaigns</li>
+            </ul>
+
+            <h3>2.4 Marketing Cookies (Optional)</h3>
+            <p>These cookies track your activity across websites to deliver targeted advertising.</p>
+            <ul>
+                <li><strong>Retargeting:</strong> Show relevant ads on other websites</li>
+                <li><strong>Social Media:</strong> Enable sharing and track social media interactions</li>
+                <li><strong>Campaign Attribution:</strong> Measure which marketing channels are effective</li>
+            </ul>
+
+            <h2>3. Specific Cookies We Use</h2>
+
+            <h3>3.1 Essential Cookies</h3>
+            <table class="cookie-table">
+                <thead>
+                    <tr>
+                        <th>Cookie Name</th>
+                        <th>Purpose</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>session_id</strong></td>
+                        <td>Maintains your login session and authentication state</td>
+                        <td>Session (deleted when browser closes)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>csrf_token</strong></td>
+                        <td>Security token to prevent cross-site request forgery attacks</td>
+                        <td>Session</td>
+                    </tr>
+                    <tr>
+                        <td><strong>load_balancer</strong></td>
+                        <td>Directs your requests to the appropriate server</td>
+                        <td>Session</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>3.2 Functional Cookies</h3>
+            <table class="cookie-table">
+                <thead>
+                    <tr>
+                        <th>Cookie Name</th>
+                        <th>Purpose</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>user_preferences</strong></td>
+                        <td>Stores your personalized settings and preferences</td>
+                        <td>1 year</td>
+                    </tr>
+                    <tr>
+                        <td><strong>cookie_consent</strong></td>
+                        <td>Remembers your cookie consent choices</td>
+                        <td>1 year</td>
+                    </tr>
+                    <tr>
+                        <td><strong>theme_mode</strong></td>
+                        <td>Remembers your light/dark mode preference</td>
+                        <td>6 months</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>3.3 Analytics Cookies</h3>
+            <table class="cookie-table">
+                <thead>
+                    <tr>
+                        <th>Cookie Name</th>
+                        <th>Purpose</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>_ga</strong></td>
+                        <td>Google Analytics - Distinguishes unique users</td>
+                        <td>2 years</td>
+                    </tr>
+                    <tr>
+                        <td><strong>_gid</strong></td>
+                        <td>Google Analytics - Distinguishes unique users</td>
+                        <td>24 hours</td>
+                    </tr>
+                    <tr>
+                        <td><strong>_gat</strong></td>
+                        <td>Google Analytics - Throttles request rate</td>
+                        <td>1 minute</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>3.4 Marketing Cookies</h3>
+            <table class="cookie-table">
+                <thead>
+                    <tr>
+                        <th>Cookie Name</th>
+                        <th>Purpose</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>_fbp</strong></td>
+                        <td>Facebook Pixel - Tracks conversions and retargeting</td>
+                        <td>3 months</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ads_preference</strong></td>
+                        <td>Stores advertising preferences and consent</td>
+                        <td>1 year</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>4. Third-Party Cookies and Services</h2>
+            
+            <p>We use trusted third-party services that may set their own cookies:</p>
+
+            <h3>4.1 Analytics Services</h3>
+            <ul>
+                <li><strong>Google Analytics:</strong> Website traffic and user behavior analysis
+                    <br><a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></li>
+            </ul>
+
+            <h3>4.2 Payment Processing</h3>
+            <ul>
+                <li><strong>Stripe:</strong> Secure payment processing for subscriptions
+                    <br><a href="https://stripe.com/privacy" target="_blank">Stripe Privacy Policy</a></li>
+            </ul>
+
+            <h3>4.3 Customer Support</h3>
+            <ul>
+                <li><strong>Intercom / Zendesk:</strong> Live chat and customer support (if applicable)
+                    <br>Refer to their respective privacy policies for more information</li>
+            </ul>
+
+            <h3>4.4 Social Media</h3>
+            <ul>
+                <li><strong>Facebook:</strong> Social sharing and advertising pixels</li>
+                <li><strong>Twitter:</strong> Social sharing buttons</li>
+            </ul>
+
+            <div class="warning-box">
+                <p><strong>Note:</strong> Third-party cookies are governed by the respective third party's privacy policy. We do not control these cookies and recommend reviewing each provider's privacy practices.</p>
+            </div>
+
+            <h2>5. How to Manage Cookies</h2>
+            
+            <p>You have several options to control and manage cookies:</p>
+
+            <h3>5.1 Browser Settings</h3>
+            <p>Most browsers allow you to:</p>
+            <ul>
+                <li>View what cookies are stored and delete them individually</li>
+                <li>Block third-party cookies</li>
+                <li>Block cookies from specific websites</li>
+                <li>Block all cookies from being set</li>
+                <li>Delete all cookies when you close your browser</li>
+            </ul>
+
+            <p><strong>How to manage cookies in popular browsers:</strong></p>
+            <ul>
+                <li><a href="https://support.google.com/chrome/answer/95647" target="_blank">Google Chrome</a></li>
+                <li><a href="https://support.mozilla.org/en-US/kb/enable-and-disable-cookies-website-preferences" target="_blank">Mozilla Firefox</a></li>
+                <li><a href="https://support.apple.com/guide/safari/manage-cookies-and-website-data-sfri11471/mac" target="_blank">Safari</a></li>
+                <li><a href="https://support.microsoft.com/en-us/microsoft-edge/delete-cookies-in-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" target="_blank">Microsoft Edge</a></li>
+            </ul>
+
+            <h3>5.2 Cookie Consent Banner</h3>
+            <p>When you first visit LoveTextForHer, you'll see a cookie consent banner allowing you to:</p>
+            <ul>
+                <li><strong>Accept All:</strong> Allow all cookies including analytics and marketing</li>
+                <li><strong>Decline:</strong> Block optional cookies (essential cookies still enabled)</li>
+                <li><strong>Customize:</strong> Choose which categories of cookies to allow</li>
+            </ul>
+
+            <h3>5.3 Opt-Out Tools</h3>
+            <p>You can opt out of specific tracking:</p>
+            <ul>
+                <li><strong>Google Analytics:</strong> <a href="https://tools.google.com/dlpage/gaoptout" target="_blank">Google Analytics Opt-out Browser Add-on</a></li>
+                <li><strong>Advertising Cookies:</strong> <a href="http://www.aboutads.info/choices/" target="_blank">Digital Advertising Alliance</a></li>
+                <li><strong>Do Not Track:</strong> Enable "Do Not Track" in your browser settings</li>
+            </ul>
+
+            <h3>5.4 Impact of Disabling Cookies</h3>
+            <div class="warning-box">
+                <p><strong>Important:</strong> If you disable cookies, some features of LoveTextForHer may not work properly, including:</p>
+                <ul style="margin-top: 12px; margin-bottom: 0;">
+                    <li>Staying logged in to your account</li>
+                    <li>Saving your preferences and settings</li>
+                    <li>Accessing certain features that require authentication</li>
+                    <li>Personalized content and recommendations</li>
+                </ul>
+            </div>
+
+            <h2>6. Other Tracking Technologies</h2>
+            
+            <p>In addition to cookies, we may use other tracking technologies:</p>
+
+            <h3>6.1 Web Beacons (Pixels)</h3>
+            <p>Small transparent images embedded in web pages or emails to track:</p>
+            <ul>
+                <li>Whether you've opened an email</li>
+                <li>Which links you've clicked</li>
+                <li>Page view statistics</li>
+            </ul>
+
+            <h3>6.2 Local Storage</h3>
+            <p>HTML5 local storage allows websites to store data locally in your browser:</p>
+            <ul>
+                <li>Larger storage capacity than cookies</li>
+                <li>Does not expire automatically</li>
+                <li>Used for caching and offline functionality</li>
+            </ul>
+
+            <h3>6.3 Session Storage</h3>
+            <p>Similar to local storage but data is cleared when the browser tab is closed.</p>
+
+            <h2>7. Your Rights and Choices</h2>
+            
+            <p>You have the following rights regarding cookies and tracking:</p>
+            <ul>
+                <li><strong>Right to Information:</strong> Know what cookies are being used</li>
+                <li><strong>Right to Opt-Out:</strong> Refuse non-essential cookies</li>
+                <li><strong>Right to Withdraw Consent:</strong> Change your cookie preferences at any time</li>
+                <li><strong>Right to Delete:</strong> Clear cookies from your device</li>
+            </ul>
+
+            <h2>8. International Data Transfers</h2>
+            
+            <p>Some of our third-party service providers may be located outside your country. When cookies involve data transfer to other countries, we ensure appropriate safeguards are in place:</p>
+            <ul>
+                <li>Standard Contractual Clauses (SCCs)</li>
+                <li>Privacy Shield frameworks (where applicable)</li>
+                <li>Adequacy decisions by regulatory authorities</li>
+            </ul>
+
+            <h2>9. Children's Privacy</h2>
+            
+            <p>LoveTextForHer is not intended for individuals under 18 years of age. We do not knowingly collect data from children through cookies or any other means. If you believe we have collected information from a child, please contact us immediately.</p>
+
+            <h2>10. Updates to This Cookie Policy</h2>
+            
+            <p>We may update this Cookie Policy from time to time to reflect changes in our practices or legal requirements. When we make changes:</p>
+            <ul>
+                <li>We will update the "Last Updated" date at the top of this page</li>
+                <li>Material changes will be communicated via email or website notification</li>
+                <li>Continued use of our website after changes constitutes acceptance</li>
+            </ul>
+
+            <h2>11. Contact Us</h2>
+            
+            <p>If you have questions about our use of cookies or this Cookie Policy, please contact us:</p>
+            
+            <div class="info-box">
+                <p><strong>LoveTextForHer</strong><br>
+                Email: <a href="mailto:privacy@lovetextforher.com">privacy@lovetextforher.com</a><br>
+                Support: <a href="mailto:support@lovetextforher.com">support@lovetextforher.com</a><br>
+                Phone: +1 (940) 217-8680<br>
+                Website: <a href="https://lovetextforher.com">https://lovetextforher.com</a></p>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid rgba(214, 51, 108, 0.2); margin: 40px 0;">
+
+            <h2>12. Quick Reference Guide</h2>
+            
+            <div class="info-box">
+                <p><strong>Essential Cookies:</strong> Required for site functionality (cannot be disabled)</p>
+            </div>
+
+            <div class="info-box">
+                <p><strong>Functional Cookies:</strong> Enhance your experience (can be disabled)</p>
+            </div>
+
+            <div class="info-box">
+                <p><strong>Analytics Cookies:</strong> Help us improve the service (can be disabled)</p>
+            </div>
+
+            <div class="info-box">
+                <p><strong>Marketing Cookies:</strong> Show relevant ads (can be disabled)</p>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid rgba(214, 51, 108, 0.2); margin: 40px 0;">
+
+            <p style="font-size: 12px; color: var(--text-light); line-height: 1.6;">
+                <strong>Legal Disclaimer:</strong> This Cookie Policy is provided as a comprehensive template. Cookie laws vary by jurisdiction, including GDPR in Europe, CCPA in California, and other regional regulations. We strongly recommend consulting with a qualified attorney to ensure full compliance with all applicable laws and regulations.
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div>
+                <div class="footer-brand">LOVETEXTFORHER</div>
+                <p class="footer-description">
+                    Keeping your relationships strong with thoughtful, automated messages. 
+                    Stay connected to the people you love, effortlessly.
+                </p>
+            </div>
+
+            <div>
+                <h4 class="footer-title">Services</h4>
+                <ul class="footer-links">
+                    <li><a href="/index.html">Daily Love Messages</a></li>
+                    <li><a href="/register.html">Free Trial</a></li>
+                    <li><a href="/index.html#products">Pricing Plans</a></li>
+                    <li><a href="/register.html">Get Started</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="footer-title">Company</h4>
+                <ul class="footer-links">
+                    <li><a href="/index.html">About Us</a></li>
+                    <li><a href="/index.html">How It Works</a></li>
+                    <li><a href="/login.html">Login</a></li>
+                    <li><a href="/register.html">Sign Up</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="footer-title">Legal</h4>
+                <ul class="footer-links">
+                    <li><a href="/privacy-policy.html">Privacy Policy</a></li>
+                    <li><a href="/terms-of-service.html">Terms of Service</a></li>
+                    <li><a href="/cookies-policy.html">Cookie Policy</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="footer-title">Connect</h4>
+                <ul class="footer-links">
+                    <li><a href="mailto:support@lovetextforher.com">support@lovetextforher.com</a></li>
+                    <li><a href="mailto:privacy@lovetextforher.com">privacy@lovetextforher.com</a></li>
+                    <li><a href="tel:+19402178680">+1 (940) 217-8680</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>© 2025 LoveTextForHer. Made with love for the people you care about.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile Menu Functions
+        function toggleMobileMenu() {
+            const btn = document.querySelector('.mobile-menu-btn');
+            const nav = document.getElementById('mobileNav');
+            const body = document.body;
+            
+            btn.classList.toggle('active');
+            nav.classList.toggle('active');
+            
+            if (nav.classList.contains('active')) {
+                body.style.overflow = 'hidden';
+            } else {
+                body.style.overflow = '';
+            }
+        }
+
+        function closeMobileMenu() {
+            const btn = document.querySelector('.mobile-menu-btn');
+            const nav = document.getElementById('mobileNav');
+            const body = document.body;
+            
+            btn.classList.remove('active');
+            nav.classList.remove('active');
+            body.style.overflow = '';
+        }
+    </script>
+</body>
+</html>
