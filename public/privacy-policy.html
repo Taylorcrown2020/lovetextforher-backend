@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service — LOVETEXTFORHER</title>
+    <title>Privacy Policy — LOVETEXTFORHER</title>
+    <script src="/config.js"></script>
+    <script> window.FORCE_PUBLIC_NAV = true; </script>
+    <script src="/js/nav.js" defer></script>
     <style>
         :root {
             --primary: #d6336c;
@@ -118,72 +121,6 @@
             .mobile-nav-overlay {
                 display: block;
             }
-        }
-
-        /* Navigation */
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(214, 51, 108, 0.2);
-            z-index: 1000;
-            box-shadow: 0 2px 20px rgba(214, 51, 108, 0.1);
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 16px 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-logo {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 32px;
-            list-style: none;
-            align-items: center;
-        }
-
-        .nav-links a {
-            color: var(--text-light);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
-            font-size: 14px;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-
-        .nav-cta-btn {
-            background: var(--primary);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 700;
-            transition: all 0.2s;
-        }
-
-        .nav-cta-btn:hover {
-            background: #b8285b;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(214, 51, 108, 0.4);
         }
 
         /* Legal Page Styles */
@@ -381,10 +318,6 @@
         }
 
         @media (max-width: 768px) {
-            .navbar .nav-links {
-                display: none;
-            }
-
             .legal-title {
                 font-size: 32px;
             }
@@ -409,18 +342,8 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/index.html" class="nav-logo">LOVETEXTFORHER</a>
-            <ul class="nav-links">
-                <li><a href="/index.html">Home</a></li>
-                <li><a href="/login.html">Login</a></li>
-                <li><a href="/register.html">Register</a></li>
-                <li><a href="/register.html" class="nav-cta-btn">Get Started</a></li>
-            </ul>
-        </div>
-    </nav>
+    <!-- Dynamic Navigation (injected by nav.js) -->
+    <div id="navbar"></div>
 
     <!-- Mobile Menu Button -->
     <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
@@ -444,333 +367,256 @@
     <div class="legal-container">
         <div class="legal-header">
             <span class="legal-badge">Legal</span>
-            <h1 class="legal-title">Terms of Service</h1>
+            <h1 class="legal-title">Privacy Policy</h1>
             <p class="legal-updated">Last Updated: December 29, 2025</p>
         </div>
 
         <div class="legal-content">
-            <p>Welcome to LoveTextForHer. Please read these Terms of Service ("Terms") carefully before using our automated messaging service. By accessing or using LoveTextForHer, you agree to be bound by these Terms.</p>
+            <p>Welcome to LoveTextForHer. Your privacy is important to us. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our automated messaging service.</p>
 
             <div class="info-box">
-                <p><strong>Important:</strong> If you do not agree to these Terms, you must not use our service. Contact us at <a href="mailto:support@lovetextforher.com">support@lovetextforher.com</a> with any questions.</p>
+                <p><strong>Important:</strong> By using LoveTextForHer, you agree to the collection and use of information in accordance with this policy. If you have questions, contact us at <a href="mailto:privacy@lovetextforher.com">privacy@lovetextforher.com</a>.</p>
             </div>
 
-            <h2>1. Acceptance of Terms</h2>
+            <h2>1. Information We Collect</h2>
             
-            <p>By creating an account, subscribing to our service, or using LoveTextForHer in any way, you:</p>
+            <h3>1.1 Personal Information</h3>
+            <p>When you create an account or use our service, we collect:</p>
             <ul>
-                <li>Confirm you are at least 18 years of age</li>
-                <li>Agree to comply with these Terms and all applicable laws</li>
-                <li>Acknowledge you have read and understand our <a href="/privacy-policy">Privacy Policy</a></li>
-                <li>Accept full responsibility for your use of the service</li>
+                <li><strong>Account Information:</strong> Name, email address, password (encrypted), phone number</li>
+                <li><strong>Payment Information:</strong> Credit card details, billing address (processed securely through third-party payment processors)</li>
+                <li><strong>Profile Information:</strong> Any additional information you provide in your profile</li>
             </ul>
 
-            <h2>2. Service Description</h2>
-            
-            <h3>2.1 What We Provide</h3>
-            <p>LoveTextForHer is an automated messaging service that allows you to:</p>
+            <h3>1.2 Recipient Information</h3>
+            <p>To provide our messaging service, we collect:</p>
             <ul>
-                <li>Set up recipient profiles for different relationship types (partner, family member, friend, etc.)</li>
-                <li>Schedule automated text messages to be sent to recipients</li>
-                <li>Customize message tone and frequency based on relationship type</li>
-                <li>Manage multiple recipients through a subscription-based platform</li>
+                <li>Recipient names and phone numbers</li>
+                <li>Relationship type (partner, family, friend, etc.)</li>
+                <li>Message preferences and scheduling information</li>
+                <li>Any custom message content you create</li>
             </ul>
 
-            <h3>2.2 What We Are NOT</h3>
-            <p>LoveTextForHer is:</p>
+            <h3>1.3 Automatically Collected Information</h3>
+            <p>When you access our service, we automatically collect:</p>
             <ul>
-                <li><strong>Not a counseling or therapy service:</strong> We do not provide relationship advice, mental health support, or crisis intervention</li>
-                <li><strong>Not a communication replacement:</strong> Our service is designed to supplement, not replace, genuine personal communication</li>
-                <li><strong>Not a guarantee:</strong> We cannot guarantee specific outcomes in your relationships</li>
+                <li><strong>Device Information:</strong> IP address, browser type, device type, operating system</li>
+                <li><strong>Usage Data:</strong> Pages visited, time spent on pages, links clicked, login timestamps</li>
+                <li><strong>Cookies and Tracking:</strong> We use cookies and similar technologies to enhance your experience</li>
             </ul>
 
-            <h2>3. User Obligations and Acceptable Use</h2>
+            <h2>2. How We Use Your Information</h2>
             
-            <h3>3.1 You Must NOT:</h3>
+            <p>We use the information we collect to:</p>
             <ul>
-                <li><strong>Send messages without consent:</strong> You must have explicit permission from recipients to send them automated messages</li>
-                <li><strong>Harass or spam:</strong> Use our service to send unwanted, threatening, abusive, or harassing messages</li>
-                <li><strong>Violate laws:</strong> Use the service in any way that violates federal, state, or local laws</li>
-                <li><strong>Misrepresent yourself:</strong> Impersonate others or provide false information</li>
-                <li><strong>Send illegal content:</strong> Transmit messages containing illegal, harmful, threatening, defamatory, or obscene content</li>
-                <li><strong>Interfere with service:</strong> Attempt to hack, disrupt, or damage our systems</li>
-                <li><strong>Share account access:</strong> Allow others to use your account credentials</li>
-                <li><strong>Resell the service:</strong> Redistribute or resell access to LoveTextForHer</li>
+                <li><strong>Provide the Service:</strong> Send automated messages to your recipients as scheduled</li>
+                <li><strong>Process Payments:</strong> Handle subscription billing and payment processing</li>
+                <li><strong>Account Management:</strong> Create and manage your account, authenticate users</li>
+                <li><strong>Customer Support:</strong> Respond to inquiries, troubleshoot issues, provide assistance</li>
+                <li><strong>Service Improvement:</strong> Analyze usage patterns to improve features and user experience</li>
+                <li><strong>Security:</strong> Detect and prevent fraud, abuse, and security incidents</li>
+                <li><strong>Legal Compliance:</strong> Comply with legal obligations and enforce our Terms of Service</li>
+                <li><strong>Marketing:</strong> Send promotional emails about new features, offers (you can opt-out anytime)</li>
             </ul>
+
+            <h2>3. How We Share Your Information</h2>
+            
+            <h3>3.1 Third-Party Service Providers</h3>
+            <p>We share your information with trusted third-party providers who help us operate our service:</p>
+            <ul>
+                <li><strong>SMS Providers:</strong> (e.g., Twilio, AWS SNS) to send text messages to your recipients</li>
+                <li><strong>Payment Processors:</strong> (e.g., Stripe, PayPal) to process subscription payments</li>
+                <li><strong>Analytics Services:</strong> (e.g., Google Analytics) to understand service usage</li>
+                <li><strong>Cloud Hosting:</strong> (e.g., AWS, Google Cloud) to store and process data</li>
+                <li><strong>Email Services:</strong> (e.g., SendGrid, Mailchimp) to send account and marketing emails</li>
+            </ul>
+            <p>These providers are contractually obligated to protect your data and use it only for the services they provide to us.</p>
+
+            <h3>3.2 Legal Requirements</h3>
+            <p>We may disclose your information if required by law or if we believe in good faith that such disclosure is necessary to:</p>
+            <ul>
+                <li>Comply with legal obligations, court orders, or government requests</li>
+                <li>Enforce our Terms of Service or other agreements</li>
+                <li>Protect the rights, property, or safety of LoveTextForHer, our users, or the public</li>
+                <li>Investigate potential violations or fraud</li>
+            </ul>
+
+            <h3>3.3 Business Transfers</h3>
+            <p>If LoveTextForHer is involved in a merger, acquisition, or sale of assets, your information may be transferred to the acquiring entity. We will notify you of any such change.</p>
+
+            <h3>3.4 With Your Consent</h3>
+            <p>We may share your information with third parties when you give us explicit consent to do so.</p>
 
             <div class="warning-box">
-                <p><strong>⚠️ Important:</strong> Violation of these terms may result in immediate account suspension or termination without refund, and we may report illegal activity to law enforcement.</p>
+                <p><strong>We do NOT sell your personal information to third parties for their marketing purposes.</strong></p>
             </div>
 
-            <h3>3.2 Recipient Consent</h3>
-            <p><strong>You are solely responsible for ensuring you have consent from all recipients to send them automated messages.</strong> This includes:</p>
-            <ul>
-                <li>Obtaining explicit permission before adding someone as a recipient</li>
-                <li>Respecting requests to stop receiving messages</li>
-                <li>Complying with all applicable anti-spam laws (CAN-SPAM Act, TCPA, etc.)</li>
-                <li>Understanding that recipients may report unwanted messages as spam</li>
-            </ul>
-
-            <h2>4. Account Registration and Security</h2>
+            <h2>4. Data Security</h2>
             
-            <h3>4.1 Account Creation</h3>
+            <p>We take data security seriously and implement industry-standard measures to protect your information:</p>
             <ul>
-                <li>You must provide accurate, current, and complete information during registration</li>
-                <li>You must maintain and update your account information</li>
-                <li>You are responsible for maintaining the confidentiality of your password</li>
-                <li>You are responsible for all activities that occur under your account</li>
-                <li>You must notify us immediately of any unauthorized use of your account</li>
+                <li><strong>Encryption:</strong> Data is encrypted in transit (HTTPS/TLS) and at rest</li>
+                <li><strong>Access Controls:</strong> Limited employee access to personal data on a need-to-know basis</li>
+                <li><strong>Secure Storage:</strong> Data stored on secure, access-controlled servers</li>
+                <li><strong>Regular Audits:</strong> Periodic security reviews and vulnerability assessments</li>
+                <li><strong>Password Protection:</strong> Passwords are hashed and salted using industry-standard algorithms</li>
             </ul>
 
-            <h3>4.2 Account Termination</h3>
-            <p>We reserve the right to suspend or terminate your account at any time for:</p>
-            <ul>
-                <li>Violation of these Terms</li>
-                <li>Fraudulent or illegal activity</li>
-                <li>Non-payment of subscription fees</li>
-                <li>Abuse of the service or recipients</li>
-                <li>Any reason we deem necessary to protect our service or users</li>
-            </ul>
+            <p>However, no method of transmission over the Internet or electronic storage is 100% secure. While we strive to protect your data, we cannot guarantee absolute security.</p>
 
-            <h2>5. Subscription and Payment Terms</h2>
+            <h2>5. Data Retention</h2>
             
-            <h3>5.1 Subscription Plans</h3>
-            <p>We offer the following subscription tiers:</p>
+            <p>We retain your information for as long as necessary to provide our services and comply with legal obligations:</p>
             <ul>
-                <li><strong>Free Trial:</strong> 3 days of full access, no credit card required</li>
-                <li><strong>Basic:</strong> $2.99/month for up to 3 recipients</li>
-                <li><strong>Plus:</strong> $6.99/month for up to 8 recipients</li>
+                <li><strong>Active Accounts:</strong> Information retained while your account is active</li>
+                <li><strong>After Cancellation:</strong> Account data may be retained for up to 30 days after cancellation</li>
+                <li><strong>Legal Requirements:</strong> Some data may be retained longer if required by law (e.g., tax records, transaction history)</li>
+                <li><strong>Anonymized Data:</strong> We may retain anonymized/aggregated data indefinitely for analytics</li>
             </ul>
 
-            <h3>5.2 Billing and Payments</h3>
-            <ul>
-                <li>Subscriptions are billed monthly in advance</li>
-                <li>All fees are in U.S. Dollars (USD)</li>
-                <li>You authorize us to charge your payment method on file</li>
-                <li>Failed payments may result in service suspension</li>
-                <li>We are not responsible for any bank fees, overdraft charges, or other charges resulting from subscription payments</li>
-            </ul>
-
-            <h3>5.3 Free Trial</h3>
-            <ul>
-                <li>New users receive a 3-day free trial with full access</li>
-                <li>After the trial ends, you must subscribe to continue using the service</li>
-                <li>Free trials are limited to one per user</li>
-            </ul>
-
-            <h3>5.4 Refund Policy</h3>
-            <p><strong>All sales are final.</strong> We do not offer refunds for subscription fees except:</p>
-            <ul>
-                <li>If required by law</li>
-                <li>In cases of service failure or technical issues on our end (at our sole discretion)</li>
-                <li>If you cancel within 24 hours of your initial subscription (first-time subscribers only)</li>
-            </ul>
-
-            <h3>5.5 Cancellation</h3>
-            <ul>
-                <li>You may cancel your subscription at any time through your account settings</li>
-                <li>Cancellation takes effect at the end of your current billing period</li>
-                <li>You will retain access until the end of the paid period</li>
-                <li>No partial refunds for unused time</li>
-            </ul>
-
-            <h3>5.6 Price Changes</h3>
-            <p>We reserve the right to modify subscription prices at any time. Price changes will:</p>
-            <ul>
-                <li>Be communicated at least 30 days in advance</li>
-                <li>Not affect your current billing cycle</li>
-                <li>Apply to renewals after the notice period</li>
-            </ul>
-
-            <h2>6. Message Delivery and Service Availability</h2>
+            <h2>6. Your Privacy Rights</h2>
             
-            <h3>6.1 No Guarantee of Delivery</h3>
-            <p>While we strive for reliable message delivery, we do not guarantee:</p>
+            <p>You have the following rights regarding your personal information:</p>
+
+            <h3>6.1 Access and Portability</h3>
             <ul>
-                <li>Messages will be delivered at the exact scheduled time</li>
-                <li>Messages will be delivered at all (due to carrier issues, recipient blocking, etc.)</li>
-                <li>Uninterrupted or error-free service</li>
-                <li>Service will be available 24/7 without maintenance or downtime</li>
+                <li>Request a copy of the personal data we hold about you</li>
+                <li>Request data in a machine-readable format for transfer to another service</li>
             </ul>
 
-            <h3>6.2 Service Limitations</h3>
+            <h3>6.2 Correction</h3>
             <ul>
-                <li>Message delivery depends on third-party SMS providers and cellular carriers</li>
-                <li>Recipients may block or filter automated messages</li>
-                <li>Carriers may delay or fail to deliver messages</li>
-                <li>Message delivery may be affected by recipient's phone status, network issues, or carrier policies</li>
+                <li>Update or correct inaccurate personal information through your account settings</li>
+                <li>Contact us if you need assistance updating your information</li>
             </ul>
 
-            <h3>6.3 Maintenance and Downtime</h3>
-            <p>We reserve the right to:</p>
+            <h3>6.3 Deletion</h3>
             <ul>
-                <li>Perform scheduled maintenance with advance notice</li>
-                <li>Conduct emergency maintenance without notice</li>
-                <li>Temporarily suspend service for upgrades or repairs</li>
+                <li>Request deletion of your personal data (subject to legal retention requirements)</li>
+                <li>You can delete your account through account settings or by contacting support</li>
             </ul>
 
-            <h2>7. Intellectual Property Rights</h2>
+            <h3>6.4 Opt-Out of Marketing</h3>
+            <ul>
+                <li>Unsubscribe from marketing emails via the link in any promotional email</li>
+                <li>Update email preferences in your account settings</li>
+            </ul>
+
+            <h3>6.5 Do Not Sell (California Residents)</h3>
+            <ul>
+                <li>We do not sell personal information</li>
+                <li>California residents have additional rights under the CCPA (see Section 9)</li>
+            </ul>
+
+            <p>To exercise any of these rights, contact us at <a href="mailto:privacy@lovetextforher.com">privacy@lovetextforher.com</a>. We will respond within 30 days.</p>
+
+            <h2>7. Cookies and Tracking Technologies</h2>
             
-            <h3>7.1 Our Intellectual Property</h3>
-            <p>All content, features, and functionality of LoveTextForHer, including but not limited to:</p>
-            <ul>
-                <li>Software, code, and algorithms</li>
-                <li>Text, graphics, logos, and design elements</li>
-                <li>Message templates and content generation</li>
-                <li>Trademarks and branding</li>
-            </ul>
-            <p>are owned by LoveTextForHer and are protected by copyright, trademark, and other intellectual property laws.</p>
+            <h3>7.1 What Are Cookies?</h3>
+            <p>Cookies are small text files stored on your device that help us recognize you and enhance your experience.</p>
 
-            <h3>7.2 Your Content</h3>
+            <h3>7.2 Types of Cookies We Use</h3>
             <ul>
-                <li>You retain ownership of any content you create or provide</li>
-                <li>By using our service, you grant us a license to store, process, and transmit your content as necessary to provide the service</li>
-                <li>You represent that you have all necessary rights to the content you provide</li>
+                <li><strong>Essential Cookies:</strong> Required for basic site functionality (login, session management)</li>
+                <li><strong>Analytics Cookies:</strong> Help us understand how users interact with our service</li>
+                <li><strong>Preference Cookies:</strong> Remember your settings and preferences</li>
+                <li><strong>Marketing Cookies:</strong> Track effectiveness of marketing campaigns</li>
             </ul>
 
-            <h2>8. Privacy and Data Protection</h2>
+            <h3>7.3 Managing Cookies</h3>
+            <p>You can control cookies through your browser settings:</p>
+            <ul>
+                <li>Block all cookies</li>
+                <li>Accept only first-party cookies</li>
+                <li>Delete cookies after browsing</li>
+            </ul>
+            <p>Note: Disabling cookies may affect site functionality.</p>
+
+            <h2>8. Third-Party Links</h2>
             
-            <p>Your use of LoveTextForHer is also governed by our <a href="/privacy-policy">Privacy Policy</a>, which describes how we collect, use, and protect your information.</p>
+            <p>Our service may contain links to third-party websites or services. We are not responsible for the privacy practices of these external sites. We encourage you to review their privacy policies before providing any personal information.</p>
+
+            <h2>9. California Privacy Rights (CCPA)</h2>
             
-            <p>Key points:</p>
+            <p>If you are a California resident, you have additional rights under the California Consumer Privacy Act (CCPA):</p>
+
+            <h3>9.1 Right to Know</h3>
             <ul>
-                <li>We collect personal information and recipient contact details</li>
-                <li>We use third-party services to send messages</li>
-                <li>We implement security measures to protect your data</li>
-                <li>You are responsible for the accuracy of recipient information</li>
+                <li>Categories of personal information collected</li>
+                <li>Sources of personal information</li>
+                <li>Business purpose for collecting information</li>
+                <li>Categories of third parties with whom we share information</li>
             </ul>
 
-            <h2>9. Disclaimers and Limitation of Liability</h2>
+            <h3>9.2 Right to Delete</h3>
+            <p>Request deletion of personal information collected from you (subject to exceptions)</p>
+
+            <h3>9.3 Right to Opt-Out</h3>
+            <p>We do not sell personal information. If our practices change, we will update this policy and provide an opt-out mechanism.</p>
+
+            <h3>9.4 Non-Discrimination</h3>
+            <p>We will not discriminate against you for exercising your CCPA rights.</p>
+
+            <p>To exercise your CCPA rights, contact us at <a href="mailto:privacy@lovetextforher.com">privacy@lovetextforher.com</a> or call us at +1 (940) 217-8680.</p>
+
+            <h2>10. European Privacy Rights (GDPR)</h2>
             
-            <h3>9.1 Service "AS IS"</h3>
-            <p>LoveTextForHer is provided "AS IS" and "AS AVAILABLE" without warranties of any kind, either express or implied, including but not limited to:</p>
+            <p>If you are located in the European Economic Area (EEA), you have rights under the General Data Protection Regulation (GDPR):</p>
+
+            <h3>10.1 Legal Basis for Processing</h3>
+            <p>We process your personal data based on:</p>
             <ul>
-                <li>Implied warranties of merchantability</li>
-                <li>Fitness for a particular purpose</li>
-                <li>Non-infringement</li>
-                <li>Accuracy, reliability, or timeliness</li>
+                <li><strong>Contract Performance:</strong> To provide the service you requested</li>
+                <li><strong>Legitimate Interests:</strong> To improve our service, prevent fraud, and ensure security</li>
+                <li><strong>Legal Compliance:</strong> To comply with applicable laws</li>
+                <li><strong>Consent:</strong> When you have given explicit consent (e.g., marketing emails)</li>
             </ul>
 
-            <h3>9.2 Disclaimer of Relationship Outcomes</h3>
-            <div class="warning-box">
-                <p><strong>Important:</strong> We make no guarantees about the effectiveness of our service in improving your relationships. Results may vary. LoveTextForHer is a tool to help you stay connected, not a substitute for genuine personal communication or professional relationship counseling.</p>
-            </div>
-
-            <h3>9.3 Limitation of Liability</h3>
-            <p><strong>TO THE MAXIMUM EXTENT PERMITTED BY LAW, LOVETEXTFORHER SHALL NOT BE LIABLE FOR:</strong></p>
+            <h3>10.2 Your GDPR Rights</h3>
             <ul>
-                <li>Any indirect, incidental, special, consequential, or punitive damages</li>
-                <li>Loss of profits, revenue, data, or business opportunities</li>
-                <li>Relationship damage or deterioration</li>
-                <li>Emotional distress or personal injury</li>
-                <li>Failed message delivery or delivery delays</li>
-                <li>Unauthorized access to your account</li>
-                <li>Third-party actions or services</li>
-            </ul>
-            
-            <p><strong>Our total liability to you for any claims arising from use of the service is limited to the amount you paid us in the 12 months prior to the claim, or $100, whichever is greater.</strong></p>
-
-            <h3>9.4 Third-Party Services</h3>
-            <p>We use third-party services for:</p>
-            <ul>
-                <li>SMS message delivery (e.g., Twilio, AWS SNS, or similar)</li>
-                <li>Payment processing</li>
-                <li>Analytics and service improvement</li>
-            </ul>
-            <p>We are not responsible for the actions, policies, or failures of these third-party services.</p>
-
-            <h2>10. Indemnification</h2>
-            
-            <p>You agree to indemnify, defend, and hold harmless LoveTextForHer, its officers, directors, employees, agents, and affiliates from any claims, liabilities, damages, losses, costs, or expenses (including reasonable attorneys' fees) arising from:</p>
-            <ul>
-                <li>Your use or misuse of the service</li>
-                <li>Violation of these Terms</li>
-                <li>Violation of any rights of third parties, including recipients</li>
-                <li>Sending messages without proper consent</li>
-                <li>Any content you provide or transmit</li>
-                <li>Your breach of any laws or regulations</li>
+                <li>Right to access your personal data</li>
+                <li>Right to rectification of inaccurate data</li>
+                <li>Right to erasure ("right to be forgotten")</li>
+                <li>Right to restrict processing</li>
+                <li>Right to data portability</li>
+                <li>Right to object to processing</li>
+                <li>Right to withdraw consent</li>
+                <li>Right to lodge a complaint with a supervisory authority</li>
             </ul>
 
-            <h2>11. Dispute Resolution and Arbitration</h2>
-            
-            <h3>11.1 Informal Resolution</h3>
-            <p>Before filing a claim, you agree to contact us at <a href="mailto:support@lovetextforher.com">support@lovetextforher.com</a> to attempt to resolve the dispute informally.</p>
-
-            <h3>11.2 Binding Arbitration</h3>
-            <p>If informal resolution fails, any disputes arising from these Terms or your use of the service shall be resolved through binding arbitration in accordance with the American Arbitration Association (AAA) rules, except:</p>
+            <h3>10.3 International Data Transfers</h3>
+            <p>Your data may be transferred to and processed in countries outside the EEA. We ensure adequate safeguards through:</p>
             <ul>
-                <li>Small claims court actions (under $10,000)</li>
-                <li>Injunctive relief for intellectual property infringement</li>
+                <li>Standard Contractual Clauses (SCCs)</li>
+                <li>Privacy Shield frameworks (where applicable)</li>
+                <li>Adequacy decisions by the European Commission</li>
             </ul>
 
-            <h3>11.3 Class Action Waiver</h3>
-            <p><strong>YOU AGREE THAT DISPUTES WILL BE RESOLVED ON AN INDIVIDUAL BASIS ONLY. YOU WAIVE ANY RIGHT TO PARTICIPATE IN CLASS ACTIONS OR CLASS-WIDE ARBITRATION.</strong></p>
-
-            <h3>11.4 Governing Law</h3>
-            <p>These Terms are governed by the laws of the State of [YOUR STATE], without regard to conflict of law principles.</p>
-
-            <h2>12. Modifications to Terms</h2>
+            <h2>11. Children's Privacy</h2>
             
-            <p>We reserve the right to modify these Terms at any time. When we make changes:</p>
+            <p>LoveTextForHer is not intended for use by individuals under the age of 18. We do not knowingly collect personal information from children.</p>
+
+            <p>If we discover that we have inadvertently collected information from a child under 18, we will delete it immediately. If you believe we have collected information from a child, please contact us at <a href="mailto:privacy@lovetextforher.com">privacy@lovetextforher.com</a>.</p>
+
+            <h2>12. Changes to This Privacy Policy</h2>
+            
+            <p>We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements. When we make changes:</p>
             <ul>
                 <li>We will update the "Last Updated" date at the top of this page</li>
                 <li>Material changes will be communicated via email to registered users</li>
                 <li>Continued use of the service after changes constitutes acceptance</li>
-                <li>If you disagree with changes, you must cancel your subscription</li>
+                <li>You can review the current policy at any time at <a href="https://lovetextforher.com/privacy-policy">https://lovetextforher.com/privacy-policy</a></li>
             </ul>
 
-            <h2>13. Termination</h2>
+            <h2>13. Contact Us</h2>
             
-            <h3>13.1 By You</h3>
-            <p>You may terminate your account at any time by canceling your subscription in your account settings or contacting support.</p>
-
-            <h3>13.2 By Us</h3>
-            <p>We may terminate or suspend your account immediately, without prior notice, for:</p>
-            <ul>
-                <li>Violation of these Terms</li>
-                <li>Fraudulent activity or payment disputes</li>
-                <li>Abuse of the service or recipients</li>
-                <li>Legal or regulatory requirements</li>
-                <li>Extended periods of inactivity</li>
-            </ul>
-
-            <h3>13.3 Effect of Termination</h3>
-            <p>Upon termination:</p>
-            <ul>
-                <li>Your access to the service will cease immediately</li>
-                <li>No refunds will be provided (except as required by law)</li>
-                <li>We may delete your account data after 30 days</li>
-                <li>Provisions that should survive termination will remain in effect (e.g., indemnification, limitation of liability)</li>
-            </ul>
-
-            <h2>14. Miscellaneous</h2>
-            
-            <h3>14.1 Entire Agreement</h3>
-            <p>These Terms, together with our Privacy Policy, constitute the entire agreement between you and LoveTextForHer.</p>
-
-            <h3>14.2 Severability</h3>
-            <p>If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions will remain in effect.</p>
-
-            <h3>14.3 Waiver</h3>
-            <p>Our failure to enforce any right or provision of these Terms does not constitute a waiver of that right or provision.</p>
-
-            <h3>14.4 Assignment</h3>
-            <p>You may not assign or transfer these Terms or your account. We may assign these Terms to any successor or affiliate.</p>
-
-            <h3>14.5 Force Majeure</h3>
-            <p>We are not liable for delays or failures in performance resulting from causes beyond our reasonable control, including but not limited to natural disasters, war, terrorism, riots, embargoes, acts of civil or military authorities, fire, floods, accidents, network infrastructure failures, strikes, or shortages of transportation facilities, fuel, energy, labor, or materials.</p>
-
-            <h3>14.6 No Agency Relationship</h3>
-            <p>No agency, partnership, joint venture, or employment relationship is created between you and LoveTextForHer by these Terms or use of the service.</p>
-
-            <h2>15. Contact Information</h2>
-            
-            <p>If you have questions about these Terms of Service or need to contact us for any reason:</p>
+            <p>If you have questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:</p>
             
             <div class="info-box">
                 <p><strong>LoveTextForHer</strong><br>
-                Email: <a href="mailto:support@lovetextforher.com">support@lovetextforher.com</a><br>
-                Legal: <a href="mailto:legal@lovetextforher.com">legal@lovetextforher.com</a><br>
+                Email: <a href="mailto:privacy@lovetextforher.com">privacy@lovetextforher.com</a><br>
+                Support: <a href="mailto:support@lovetextforher.com">support@lovetextforher.com</a><br>
+                Phone: +1 (940) 217-8680<br>
                 Website: <a href="https://lovetextforher.com">https://lovetextforher.com</a></p>
             </div>
 
@@ -778,24 +624,8 @@
 
             <hr style="border: none; border-top: 1px solid rgba(214, 51, 108, 0.2); margin: 40px 0;">
 
-            <h2>16. Acknowledgment and Acceptance</h2>
-            
-            <div class="warning-box">
-                <p><strong>BY CREATING AN ACCOUNT, SUBSCRIBING TO, OR USING LOVETEXTFORHER, YOU ACKNOWLEDGE THAT:</strong></p>
-                <ul style="margin-top: 12px; margin-bottom: 0;">
-                    <li>You have read and understood these Terms of Service</li>
-                    <li>You agree to be bound by these Terms</li>
-                    <li>You have obtained proper consent from all recipients</li>
-                    <li>You accept all risks associated with using the service</li>
-                    <li>You understand we are not liable for relationship outcomes</li>
-                    <li>You accept our refund policy and limitation of liability</li>
-                </ul>
-            </div>
-
-            <hr style="border: none; border-top: 1px solid rgba(214, 51, 108, 0.2); margin: 40px 0;">
-
             <p style="font-size: 12px; color: var(--text-light); line-height: 1.6;">
-                <strong>Legal Disclaimer:</strong> These Terms of Service are provided as a comprehensive template to protect the service provider. This document may not cover all legal requirements for your specific jurisdiction or business model. We strongly recommend consulting with a qualified attorney to ensure compliance with all applicable laws and regulations, including but not limited to consumer protection laws, telecommunications regulations (TCPA, CAN-SPAM), data protection laws (GDPR, CCPA), and state-specific requirements. This is especially important for automated messaging services which are subject to strict federal and state regulations.
+                <strong>Legal Disclaimer:</strong> This Privacy Policy is provided as a comprehensive template. This document may not cover all legal requirements for your specific jurisdiction or business model. We strongly recommend consulting with a qualified attorney to ensure compliance with all applicable privacy laws and regulations, including GDPR, CCPA, TCPA, and other data protection laws.
             </p>
         </div>
     </div>
@@ -844,7 +674,7 @@
                 <h4 class="footer-title">Connect</h4>
                 <ul class="footer-links">
                     <li><a href="mailto:support@lovetextforher.com">support@lovetextforher.com</a></li>
-                    <li><a href="mailto:legal@lovetextforher.com">legal@lovetextforher.com</a></li>
+                    <li><a href="mailto:privacy@lovetextforher.com">privacy@lovetextforher.com</a></li>
                     <li>Available 24/7<br>Customer Support</li>
                 </ul>
             </div>
