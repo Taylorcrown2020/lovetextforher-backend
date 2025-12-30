@@ -317,7 +317,12 @@
             font-size: 13px;
         }
 
-        @media (max-width: 768px) {
+                @media (max-width: 768px) {
+            /* Hide desktop nav on mobile */
+            #navbar {
+                display: none !important;
+            }
+            
             .legal-title {
                 font-size: 32px;
             }
