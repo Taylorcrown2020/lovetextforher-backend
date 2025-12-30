@@ -19,6 +19,244 @@
 }
 * {margin:0;padding:0;box-sizing:border-box;font-family:"Inter",sans-serif;}
 body {background:#fff;color:var(--text-dark);overflow-x:hidden;padding-top:35px;}
+
+/* ========================================
+   COOKIE CONSENT BANNER
+======================================== */
+.cookie-consent {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    max-width: 420px;
+    background: white;
+    border: 2px solid var(--primary);
+    border-radius: 16px;
+    padding: 20px;
+    z-index: 10001;
+    box-shadow: 0 8px 40px rgba(214, 51, 108, 0.3);
+    transform: translateX(500px);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cookie-consent.show {
+    transform: translateX(0);
+}
+
+.cookie-consent-container {
+    position: relative;
+}
+
+.cookie-consent-close {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid var(--primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    z-index: 10;
+}
+
+.cookie-consent-close:hover {
+    background: var(--primary);
+    transform: rotate(90deg);
+}
+
+.cookie-consent-close::before,
+.cookie-consent-close::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 2px;
+}
+
+.cookie-consent-close:hover::before,
+.cookie-consent-close:hover::after {
+    background: white;
+}
+
+.cookie-consent-close::before {
+    transform: rotate(45deg);
+}
+
+.cookie-consent-close::after {
+    transform: rotate(-45deg);
+}
+
+.cookie-consent-text {
+    margin-bottom: 16px;
+}
+
+.cookie-consent-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cookie-consent-description {
+    font-size: 12px;
+    color: var(--text-light);
+    line-height: 1.5;
+}
+
+.cookie-consent-description a {
+    color: var(--primary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--primary);
+}
+
+.cookie-consent-description a:hover {
+    color: var(--secondary);
+    border-bottom-color: var(--secondary);
+}
+
+.cookie-consent-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cookie-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.cookie-btn-accept {
+    background: var(--primary);
+    color: white;
+    flex: 1;
+}
+
+.cookie-btn-accept:hover {
+    background: #b8285b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(214, 51, 108, 0.4);
+}
+
+.cookie-btn-decline {
+    background: transparent;
+    color: var(--text-light);
+    border: 1px solid rgba(85, 85, 85, 0.3);
+}
+
+.cookie-btn-decline:hover {
+    background: rgba(85, 85, 85, 0.1);
+    color: var(--text-dark);
+}
+
+.cookie-btn-settings {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.cookie-btn-settings:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.cookie-icon {
+    font-size: 18px;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+/* ========================================
+   FOOTER
+======================================== */
+.footer {
+    background: #fafafa;
+    padding: 60px 28px 30px;
+    border-top: 1px solid rgba(214, 51, 108, 0.2);
+    margin-top: 100px;
+}
+
+.footer-container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.footer-brand {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-brand::before {
+    content: "❤️";
+    font-size: 20px;
+}
+
+.footer-description {
+    color: var(--text-light);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.footer-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--primary);
+}
+
+.footer-links {
+    list-style: none;
+}
+
+.footer-links li {
+    margin-bottom: 12px;
+}
+
+.footer-links a {
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 13px;
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: var(--primary);
+}
+
+.footer-bottom {
+    text-align: center;
+    padding-top: 30px;
+    border-top: 1px solid rgba(214, 51, 108, 0.2);
+    color: var(--text-light);
+    font-size: 13px;
+}
+
 .modal-overlay {display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:2000;animation:fadeIn 0.3s ease;}
 .modal-overlay.active {display:flex;justify-content:center;align-items:center;padding:20px;}
 @keyframes fadeIn {from{opacity:0;}to{opacity:1;}}
@@ -98,7 +336,29 @@ body {background:#fff;color:var(--text-dark);overflow-x:hidden;padding-top:35px;
 .product-price {font-size:22px;font-weight:700;margin-bottom:18px;}
 .product-btn {background:var(--primary);color:#fff;padding:10px 22px;font-size:15px;border-radius:10px;border:none;cursor:pointer;font-weight:600;}
 .product-btn:hover {background:#b8285b;}
+
 @media (max-width:768px) {
+.cookie-consent {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+    padding: 16px;
+}
+
+.cookie-consent-actions {
+    flex-direction: column;
+}
+
+.cookie-btn {
+    width: 100%;
+}
+
+.footer-container {
+    grid-template-columns: 1fr;
+    gap: 32px;
+}
+
 .modal-grid {grid-template-columns:1fr;}
 .modal-image {border-radius:24px 24px 0 0;padding:40px 30px;}
 .modal-image-icon {width:100px;height:100px;margin-bottom:20px;}
@@ -257,10 +517,6 @@ body {padding-top:40px;}
 <section class="features-strip">
 <div class="features">
 <div class="feature">
-<svg viewBox="0 0 24 24"><path d="M3 12h18M12 3v18" stroke-linecap="round"/></svg>
-<div>Automated Delivery</div>
-</div>
-<div class="feature">
 <svg viewBox="0 0 24 24"><path d="M4 4h16v12H4z"/><path d="M8 20h8" stroke-linecap="round"/></svg>
 <div>Personalized for Any Relationship</div>
 </div>
@@ -297,6 +553,93 @@ body {padding-top:40px;}
 </div>
 </div>
 </section>
+
+<!-- ========================================
+     FOOTER
+======================================== -->
+<footer class="footer">
+    <div class="footer-container">
+        <div>
+            <div class="footer-brand">LoveTextForHer</div>
+            <p class="footer-description">
+                Keeping your relationships strong with thoughtful, automated messages. 
+                Stay connected to the people you love, effortlessly.
+            </p>
+        </div>
+
+        <div>
+            <h4 class="footer-title">Services</h4>
+            <ul class="footer-links">
+                <li><a href="/index.html">Daily Love Messages</a></li>
+                <li><a href="/register.html">Free Trial</a></li>
+                <li><a href="/index.html#products">Pricing Plans</a></li>
+                <li><a href="/register.html">Get Started</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h4 class="footer-title">Company</h4>
+            <ul class="footer-links">
+                <li><a href="/index.html">About Us</a></li>
+                <li><a href="/index.html">How It Works</a></li>
+                <li><a href="/login.html">Login</a></li>
+                <li><a href="/register.html">Sign Up</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h4 class="footer-title">Legal</h4>
+            <ul class="footer-links">
+                <li><a href="/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/terms-of-service">Terms of Service</a></li>
+                <li><a href="/index.html">Cookie Policy</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h4 class="footer-title">Connect</h4>
+            <ul class="footer-links">
+                <li><a href="mailto:support@lovetextforher.com">support@lovetextforher.com</a></li>
+                <li><a href="tel:+1234567890">+1 (234) 567-890</a></li>
+                <li>Available 24/7<br>Customer Support</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <p>© 2025 LoveTextForHer. Made with love for the people you care about.</p>
+    </div>
+</footer>
+
+<!-- ========================================
+     COOKIE CONSENT BANNER
+======================================== -->
+<div class="cookie-consent" id="cookieConsent">
+    <div class="cookie-consent-container">
+        <div class="cookie-consent-text">
+            <div class="cookie-consent-title">
+                <span class="cookie-icon">🍪</span> We Value Your Privacy
+            </div>
+            <p class="cookie-consent-description">
+                We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. 
+                By clicking "Accept All", you consent to our use of cookies. 
+                Read our <a href="/privacy-policy">Privacy Policy</a> and <a href="/terms-of-service">Terms of Service</a>.
+            </p>
+        </div>
+        <div class="cookie-consent-actions">
+            <button class="cookie-btn cookie-btn-accept" onclick="acceptCookies()">
+                Accept All
+            </button>
+            <button class="cookie-btn cookie-btn-decline" onclick="declineCookies()">
+                Decline
+            </button>
+            <button class="cookie-btn cookie-btn-settings" onclick="openCookieSettings()">
+                Customize
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 function toggleMobileMenu() {
     const btn = document.querySelector('.mobile-menu-btn');
@@ -324,6 +667,79 @@ function closeModal() {
     const modal = document.getElementById('welcomeModal');
     modal.classList.remove('active');
     document.body.style.overflow = '';
+}
+
+// ========================================
+// COOKIE CONSENT FUNCTIONALITY
+// ========================================
+
+// Check if user has already made a choice
+document.addEventListener('DOMContentLoaded', function() {
+    const cookieConsent = localStorage.getItem('cookieConsent');
+    
+    if (!cookieConsent) {
+        // Show banner after 1 second delay
+        setTimeout(() => {
+            document.getElementById('cookieConsent').classList.add('show');
+        }, 1000);
+    }
+});
+
+// Accept all cookies
+function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'accepted');
+    localStorage.setItem('cookiePreferences', JSON.stringify({
+        necessary: true,
+        analytics: true,
+        marketing: true
+    }));
+    
+    hideCookieBanner();
+    
+    console.log('✅ Cookies accepted');
+}
+
+// Decline all non-essential cookies
+function declineCookies() {
+    localStorage.setItem('cookieConsent', 'declined');
+    localStorage.setItem('cookiePreferences', JSON.stringify({
+        necessary: true,
+        analytics: false,
+        marketing: false
+    }));
+    
+    hideCookieBanner();
+    
+    console.log('❌ Cookies declined');
+}
+
+// Open cookie settings (customize)
+function openCookieSettings() {
+    alert('Cookie customization coming soon! For now, please accept or decline all cookies.');
+}
+
+// Hide the cookie banner
+function hideCookieBanner() {
+    const banner = document.getElementById('cookieConsent');
+    banner.classList.remove('show');
+    
+    // Remove from DOM after animation
+    setTimeout(() => {
+        banner.style.display = 'none';
+    }, 400);
+}
+
+// Optional: Function to check if a specific cookie type is allowed
+function isCookieAllowed(type) {
+    const preferences = JSON.parse(localStorage.getItem('cookiePreferences') || '{}');
+    return preferences[type] === true;
+}
+
+// Optional: Function to reset cookie consent (for testing)
+function resetCookieConsent() {
+    localStorage.removeItem('cookieConsent');
+    localStorage.removeItem('cookiePreferences');
+    location.reload();
 }
 
 // ✅ FIXED: Aggressive cache-busting for promo code API
@@ -407,4 +823,8 @@ document.addEventListener('visibilitychange', function() {
 });
 </script>
 </body>
-</html>
+</html"><path d="M3 12h18M12 3v18" stroke-linecap="round"/></svg>
+<div>Automated Delivery</div>
+</div>
+<div class="feature">
+<svg viewBox="0 0 24 24
