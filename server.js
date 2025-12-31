@@ -4812,6 +4812,149 @@ app.get("/api/promo/latest", async (req, res) => {
 });
 
 /***************************************************************
+ * CONSENT MANAGEMENT ENDPOINTS
+ ***************************************************************/
+
+// Record consent (works for both logged-in and guest users)
+app.post("/api/consent/record", async (req, res) => {
+    try {
+        const { cookies, privacy, terms, timestamp, ipAddress } = req.body;
+        
+        // If user is logged in, update their customer record
+        if (req.cookies.customer_token) {
+            try {
+                const decoded = jwt.verify(req.cookies.customer_token, process.env.JWT_SECRET);
+                
+                await global.__LT_pool.query(
+                    `UPDATE customers 
+                     SET cookie_consent = $1,
+                         cookie_consent_date = $2,
+                         privacy_accepted = $3,
+                         privacy_accepted_date = $2,
+                         terms_accepted = $4,
+                         terms_accepted_date = $2,
+                         consent_ip_address = $5
+                     WHERE id = $6`,
+                    [cookies, timestamp, privacy, terms, ipAddress, decoded.id]
+                );
+                
+                console.log(`✅ Consent recorded for customer ${decoded.id}`);
+                
+                // Audit log
+                await global.__LT_logAuditEvent(
+                    'account',
+                    'Consent Updated',
+                    `Customer ${cookies ? 'accepted' : 'declined'} cookies, privacy, and terms`,
+                    {
+                        customerId: decoded.id,
+                        ipAddress: ipAddress,
+                        extra: {
+                            cookies,
+                            privacy,
+                            terms
+                        }
+                    }
+                );
+            } catch (err) {
+                console.log('User not logged in, consent stored locally only');
+            }
+        }
+        
+        return res.json({ success: true });
+        
+    } catch (err) {
+        console.error("CONSENT RECORD ERROR:", err);
+        return res.status(500).json({ error: "Error recording consent" });
+    }
+});
+
+// Sync consent on login (updates from localStorage)
+app.post("/api/consent/sync", global.__LT_authCustomer, async (req, res) => {
+    try {
+        const { cookies, privacy, terms, timestamp, ipAddress } = req.body;
+        
+        await global.__LT_pool.query(
+            `UPDATE customers 
+             SET cookie_consent = $1,
+                 cookie_consent_date = $2,
+                 privacy_accepted = $3,
+                 privacy_accepted_date = $2,
+                 terms_accepted = $4,
+                 terms_accepted_date = $2,
+                 consent_ip_address = $5
+             WHERE id = $6`,
+            [cookies, timestamp, privacy, terms, ipAddress, req.user.id]
+        );
+        
+        console.log(`✅ Consent synced for customer ${req.user.id}`);
+        
+        return res.json({ success: true });
+        
+    } catch (err) {
+        console.error("CONSENT SYNC ERROR:", err);
+        return res.status(500).json({ error: "Error syncing consent" });
+    }
+});
+
+// Admin: Get consent statistics
+app.get("/api/admin/consent/stats", global.__LT_authAdmin, async (req, res) => {
+    try {
+        const stats = await global.__LT_pool.query(`
+            SELECT 
+                COUNT(*) as total_customers,
+                COUNT(CASE WHEN cookie_consent = true THEN 1 END) as cookies_accepted,
+                COUNT(CASE WHEN cookie_consent = false THEN 1 END) as cookies_declined,
+                COUNT(CASE WHEN cookie_consent IS NULL THEN 1 END) as cookies_pending,
+                COUNT(CASE WHEN privacy_accepted = true THEN 1 END) as privacy_accepted,
+                COUNT(CASE WHEN privacy_accepted = false THEN 1 END) as privacy_declined,
+                COUNT(CASE WHEN terms_accepted = true THEN 1 END) as terms_accepted,
+                COUNT(CASE WHEN terms_accepted = false THEN 1 END) as terms_declined
+            FROM customers
+        `);
+        
+        return res.json(stats.rows[0]);
+        
+    } catch (err) {
+        console.error("CONSENT STATS ERROR:", err);
+        return res.status(500).json({ error: "Error loading consent stats" });
+    }
+});
+
+// Admin: Get detailed consent report
+app.get("/api/admin/consent/report", global.__LT_authAdmin, async (req, res) => {
+    try {
+        const report = await global.__LT_pool.query(`
+            SELECT 
+                id,
+                email,
+                name,
+                cookie_consent,
+                cookie_consent_date,
+                privacy_accepted,
+                privacy_accepted_date,
+                terms_accepted,
+                terms_accepted_date,
+                consent_ip_address,
+                created_at
+            FROM customers
+            ORDER BY 
+                CASE 
+                    WHEN cookie_consent IS NULL THEN 0
+                    WHEN cookie_consent = false THEN 1
+                    ELSE 2
+                END,
+                cookie_consent_date DESC NULLS LAST
+        `);
+        
+        return res.json(report.rows);
+        
+    } catch (err) {
+        console.error("CONSENT REPORT ERROR:", err);
+        return res.status(500).json({ error: "Error loading consent report" });
+    }
+});
+
+/***************************************************************
  *  SERVER START
  ***************************************************************/
 app.listen(PORT, () => {

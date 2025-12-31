@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consent Management — Admin Dashboard</title>
+    <script src="/config.js"></script>
+    <style>
+        :root {
+            --primary: #d6336c;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-soft: #6a6a6a;
+            --max-width: 1400px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(125deg, #fff7fa, #f6f3ff);
+            min-height: 100vh;
+            padding: 120px 28px 40px;
+        }
+
+        .page-header {
+            max-width: var(--max-width);
+            margin: 0 auto 40px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-soft);
+            font-size: 16px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            max-width: var(--max-width);
+            margin: 0 auto 40px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-soft);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-percentage {
+            font-size: 14px;
+            color: var(--text-soft);
+        }
+
+        /* Table */
+        .table-container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .table-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #fafafa;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-accepted {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-declined {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-soft);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 100px 16px 40px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                padding: 20px;
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 800px;
+            }
+
+            .filter-buttons {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>📋 Consent Management</h1>
+    <p class="subtitle">Track customer acceptance of cookies, privacy policy, and terms of service</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+        <div class="stat-label">Total Customers</div>
+        <div class="stat-value" id="totalCustomers">-</div>
+        <div class="stat-percentage">All registered users</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">✅ All Accepted</div>
+        <div class="stat-value" id="allAccepted">-</div>
+        <div class="stat-percentage" id="acceptedPercentage">-</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">❌ Any Declined</div>
+        <div class="stat-value" id="anyDeclined">-</div>
+        <div class="stat-percentage" id="declinedPercentage">-</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">⏳ Pending Decision</div>
+        <div class="stat-value" id="pending">-</div>
+        <div class="stat-percentage" id="pendingPercentage">-</div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="table-container">
+    <div class="table-header">
+        <div class="table-title">Detailed Consent Report</div>
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterTable('all')">All</button>
+            <button class="filter-btn" onclick="filterTable('accepted')">Accepted</button>
+            <button class="filter-btn" onclick="filterTable('declined')">Declined</button>
+            <button class="filter-btn" onclick="filterTable('pending')">Pending</button>
+        </div>
+    </div>
+
+    <div id="tableContent">
+        <div class="loading">Loading consent data...</div>
+    </div>
+</div>
+
+<script>
+let allData = [];
+let currentFilter = 'all';
+
+// Load consent data
+async function loadConsentData() {
+    try {
+        // Load stats
+        const statsRes = await fetch(`${API_BASE_URL}/api/admin/consent/stats`, {
+            credentials: 'include'
+        });
+        const stats = await statsRes.json();
+        
+        // Update stats cards
+        document.getElementById('totalCustomers').textContent = stats.total_customers;
+        
+        const allAcceptedCount = Math.min(
+            stats.cookies_accepted,
+            stats.privacy_accepted,
+            stats.terms_accepted
+        );
+        document.getElementById('allAccepted').textContent = allAcceptedCount;
+        document.getElementById('acceptedPercentage').textContent = 
+            `${((allAcceptedCount / stats.total_customers) * 100).toFixed(1)}% of customers`;
+        
+        const anyDeclinedCount = stats.cookies_declined;
+        document.getElementById('anyDeclined').textContent = anyDeclinedCount;
+        document.getElementById('declinedPercentage').textContent = 
+            `${((anyDeclinedCount / stats.total_customers) * 100).toFixed(1)}% of customers`;
+        
+        document.getElementById('pending').textContent = stats.cookies_pending;
+        document.getElementById('pendingPercentage').textContent = 
+            `${((stats.cookies_pending / stats.total_customers) * 100).toFixed(1)}% of customers`;
+        
+        // Load detailed report
+        const reportRes = await fetch(`${API_BASE_URL}/api/admin/consent/report`, {
+            credentials: 'include'
+        });
+        allData = await reportRes.json();
+        
+        renderTable(allData);
+        
+    } catch (error) {
+        console.error('Error loading consent data:', error);
+        document.getElementById('tableContent').innerHTML = 
+            '<div class="loading" style="color: var(--danger);">Error loading consent data</div>';
+    }
+}
+
+// Render table
+function renderTable(data) {
+    if (data.length === 0) {
+        document.getElementById('tableContent').innerHTML = 
+            '<div class="loading">No consent data available</div>';
+        return;
+    }
+    
+    const html = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>🍪 Cookies</th>
+                    <th>🔒 Privacy</th>
+                    <th>📄 Terms</th>
+                    <th>Date Decided</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.map(customer => `
+                    <tr>
+                        <td><strong>${customer.name}</strong></td>
+                        <td>${customer.email}</td>
+                        <td>${getStatusBadge(customer.cookie_consent)}</td>
+                        <td>${getStatusBadge(customer.privacy_accepted)}</td>
+                        <td>${getStatusBadge(customer.terms_accepted)}</td>
+                        <td>${formatDate(customer.cookie_consent_date)}</td>
+                        <td style="color: var(--text-soft); font-size: 12px;">
+                            ${customer.consent_ip_address || 'N/A'}
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+    
+    document.getElementById('tableContent').innerHTML = html;
+}
+
+// Get status badge HTML
+function getStatusBadge(status) {
+    if (status === true) {
+        return '<span class="status-badge status-accepted">✓ Accepted</span>';
+    } else if (status === false) {
+        return '<span class="status-badge status-declined">✗ Declined</span>';
+    } else {
+        return '<span class="status-badge status-pending">⏳ Pending</span>';
+    }
+}
+
+// Format date
+function formatDate(dateString) {
+    if (!dateString) return 'Not yet decided';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Filter table
+function filterTable(filter) {
+    currentFilter = filter;
+    
+    // Update active button
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Filter data
+    let filteredData = allData;
+    
+    if (filter === 'accepted') {
+        filteredData = allData.filter(c => 
+            c.cookie_consent === true && 
+            c.privacy_accepted === true && 
+            c.terms_accepted === true
+        );
+    } else if (filter === 'declined') {
+        filteredData = allData.filter(c => 
+            c.cookie_consent === false ||
+            c.privacy_accepted === false ||
+            c.terms_accepted === false
+        );
+    } else if (filter === 'pending') {
+        filteredData = allData.filter(c => 
+            c.cookie_consent === null ||
+            c.privacy_accepted === null ||
+            c.terms_accepted === null
+        );
+    }
+    
+    renderTable(filteredData);
+}
+
+// Load on page load
+document.addEventListener('DOMContentLoaded', loadConsentData);
+</script>
+
+</body>
+</html>

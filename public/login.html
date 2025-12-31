@@ -11,6 +11,7 @@
             --secondary: #8b5cf6;
             --text-dark: #1a1a1a;
             --text-soft: #5f3a4d;
+            --text-light: #555;
         }
 
         * {
@@ -27,7 +28,7 @@
         }
 
         /* ================= MOBILE MENU ================= */
-                .mobile-menu-btn {
+        .mobile-menu-btn {
             display: none;
             position: fixed;
             top: 4px;
@@ -211,6 +212,75 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* ========================================
+           FOOTER
+        ======================================== */
+        .footer {
+            background: #fafafa;
+            padding: 60px 28px 30px;
+            border-top: 1px solid rgba(214, 51, 108, 0.2);
+            margin-top: 80px;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-brand {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-description {
+            color: var(--text-light);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .footer-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--primary);
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(214, 51, 108, 0.2);
+            color: var(--text-light);
+            font-size: 13px;
+        }
+
         /* ============== MOBILE ============== */
         @media (max-width: 768px) {
             .mobile-menu-btn {
@@ -275,6 +345,11 @@
             #msg {
                 font-size: 14px;
                 margin-top: 16px;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr;
+                gap: 32px;
             }
         }
 
@@ -353,6 +428,63 @@
     </div>
 </div>
 
+<!-- ========================================
+     FOOTER
+======================================== -->
+<footer class="footer">
+    <div class="footer-container">
+        <div>
+            <div class="footer-brand">LOVETEXTFORHER</div>
+            <p class="footer-description">
+                Keeping your relationships strong with thoughtful, automated messages. 
+                Stay connected to the people you love, effortlessly.
+            </p>
+        </div>
+
+        <div>
+            <h4 class="footer-title">Services</h4>
+            <ul class="footer-links">
+                <li><a href="/index.html">Daily Love Messages</a></li>
+                <li><a href="/register.html">Free Trial</a></li>
+                <li><a href="/register.html">Pricing Plans</a></li>
+                <li><a href="/register.html">Get Started</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h4 class="footer-title">Company</h4>
+            <ul class="footer-links">
+                <li><a href="/index.html">About Us</a></li>
+                <li><a href="/index.html">How It Works</a></li>
+                <li><a href="/login.html">Login</a></li>
+                <li><a href="/register.html">Sign Up</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h4 class="footer-title">Legal</h4>
+            <ul class="footer-links">
+                <li><a href="/privacy-policy.html">Privacy Policy</a></li>
+                <li><a href="/terms-of-service.html">Terms of Service</a></li>
+                <li><a href="/cookies-policy.html">Cookie Policy</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <h4 class="footer-title">Connect</h4>
+            <ul class="footer-links">
+                <li><a href="mailto:support@lovetextforher.com">support@lovetextforher.com</a></li>
+                <li><a href="tel:+1234567890">+1 (940) 217-8680</a></li>
+                <li>Available 24/7<br>Customer Support</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <p>© 2025 LoveTextForHer. Made with love for the people you care about.</p>
+    </div>
+</footer>
+
 <script>
 
 function toggleMobileMenu() {
@@ -424,8 +556,6 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") login();
 });
 
-// REMOVED: Auto-redirect check that was causing issues
-// The login page should always be accessible
 </script>
 
 </body>
