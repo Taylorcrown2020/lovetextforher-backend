@@ -512,6 +512,43 @@ function closeMobileMenu() {
     body.style.overflow = '';
 }
 
+/***************************************************************
+ * CONSENT SYNC LOGIC FOR FRONTEND
+ * Add this to your login.html and register.html pages
+ ***************************************************************/
+
+// ============================================================
+// ADD TO LOGIN.HTML (after successful login)
+// ============================================================
+
+async function handleLogin(email, password) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/customer/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            console.log('✅ Login successful');
+            
+            // 🔑 SYNC CONSENT FROM LOCALSTORAGE TO DATABASE
+            await syncConsentToBackend();
+            
+            // Redirect to dashboard
+            window.location.href = '/dashboard.html';
+        } else {
+            alert(data.error || 'Login failed');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        alert('Login failed. Please try again.');
+    }
+}
+
 /* ------------------------------------------------------
    LOGIN FUNCTION — MATCHES NEW SERVER.JS EXACTLY
 ------------------------------------------------------ */
