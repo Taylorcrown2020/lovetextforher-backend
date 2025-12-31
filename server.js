@@ -4812,7 +4812,8 @@ app.get("/api/promo/latest", async (req, res) => {
 });
 
 /***************************************************************
- * CONSENT MANAGEMENT ENDPOINTS
+ * CONSENT MANAGEMENT ENDPOINTS - ADD TO YOUR SERVER.JS
+ * Place these AFTER your other admin endpoints (around Part 7)
  ***************************************************************/
 
 // Record consent (works for both logged-in and guest users)
@@ -4848,11 +4849,7 @@ app.post("/api/consent/record", async (req, res) => {
                     {
                         customerId: decoded.id,
                         ipAddress: ipAddress,
-                        extra: {
-                            cookies,
-                            privacy,
-                            terms
-                        }
+                        extra: { cookies, privacy, terms }
                     }
                 );
             } catch (err) {
